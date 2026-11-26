@@ -11,7 +11,7 @@ export interface TermulToolRow {
   state: TermulToolState
 }
 
-/** The Troupe tools the + menu and the + sheet offer, with each one's state in this project. */
+/** The Karsa tools the + menu and the + sheet offer, with each one's state in this project. */
 export function useTermulTools(projectId: string | null): TermulToolRow[] {
   const canvasReady = useCanvasStore((s) =>
     projectId ? s.sessions[projectId]?.phase.kind === 'ready' : false

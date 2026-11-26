@@ -54,10 +54,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
       // string would also set left and right and squeeze the toast.
       offset={isMobileWebShell ? MOBILE_TOAST_OFFSET : 20}
       mobileOffset={isMobileWebShell ? MOBILE_TOAST_OFFSET : undefined}
-      // Default 4s is fine for success; errors deserve a touch longer
-      // because they usually need reading. Per-call duration on toast()
-      // still wins over this.
-      duration={4000}
+      // Default 10s gives enough time to read longer notices and errors.
+      // Per-call duration on toast() still wins over this.
+      duration={10000}
       toastOptions={{
         classNames: {
           toast:

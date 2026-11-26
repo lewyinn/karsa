@@ -14,9 +14,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
 import { useAcpRegistryCatalog } from '@/hooks/use-acp-registry-catalog'
-import { useResolvedSupportedAcpAgents } from '@/hooks/use-resolved-supported-acp-agents'
+import { useProviderSignIn } from '@/hooks/use-provider-sign-in'
+import { useSupportedAcpAgentCatalog } from '@/hooks/use-resolved-supported-acp-agents'
 import { agentPolicy } from '@/lib/agents/acp-registry'
 import { useAgentIconCatalog } from '@/lib/agents/agent-icon-catalog'
+import {
+  type AgentSignIn,
+  installSupportedAgent,
+  isInstallable,
+  isOnDemandRuntimeAgent
+} from '@/lib/agents/agent-setup'
 import {
   type AgentUpdate,
   deriveAgentUpdates,
@@ -64,7 +71,7 @@ function iconSanitizesOk(svg: string): boolean {
 /**
  * Manual-install copy from the registry policy (S2-TS): managed-npm agents
  * carry their canonical reason string in the policy; every other manual-install
- * agent gets the generic "point Troupe at the binary" guidance.
+ * agent gets the generic "point Karsa at the binary" guidance.
  */
 function manualInstallCopy(entry: SupportedAcpAgentEntry): string {
   const install = agentPolicy(entry.id).install
@@ -183,41 +190,83 @@ function AgentPathEditor({ entry }: { entry: SupportedAcpAgentEntry }): React.JS
 
 interface AgentRowProps {
   entry: SupportedAcpAgentEntry
+  signIn: AgentSignIn | null
   /** Per-agent Update Check drift (advisory), when one exists. */
   update?: AgentUpdate
   /** No drift for this agent after a completed check (spawn version matches). */
   latest?: boolean
   onUpdate: (entry: SupportedAcpAgentEntry, update: AgentUpdate) => void
+  onInstalled: () => void
 }
 
-function AgentRow({ entry, update, latest, onUpdate }: AgentRowProps): React.JSX.Element {
+function AgentRow({
+  entry,
+  signIn,
+  update,
+  latest,
+  onUpdate,
+  onInstalled
+}: AgentRowProps): React.JSX.Element {
   const warmState = useConfigWarmState(entry.configId)
   const deleteAgentConfig = useAcpStore((s) => s.deleteAgentConfig)
   const [removeOpen, setRemoveOpen] = useState(false)
   const [removing, setRemoving] = useState(false)
+  const [installing, setInstalling] = useState(false)
   const catalog = useAgentIconCatalog()
   const iconEntry = useMemo(() => catalog.byKey(`acp:${entry.agent.id}`), [catalog, entry.agent.id])
   // Prefer a persisted custom icon (bundled or uploaded) over the catalog.
   const customIcon = entry.config?.icon
+  const onDemand = isOnDemandRuntimeAgent(entry)
 
-  const status: { label: string; tone: StatusTone; pending?: boolean } = warmState.sessionReady
-    ? { label: 'Session ready', tone: 'success' }
-    : warmState.warming || warmState.warmingSession
-      ? { label: 'Warming…', tone: 'muted', pending: true }
-      : warmState.connected
-        ? { label: 'Warm', tone: 'success' }
-        : entry.status === 'ready'
-          ? { label: 'Available', tone: 'success' }
-          : entry.status === 'install-required'
-            ? { label: 'Needs install', tone: 'warning' }
-            : entry.status === 'needs-runtime'
-              ? {
-                  label: entry.runtimeLauncher === 'uvx' ? 'Needs uv' : 'Needs Node.js',
-                  tone: 'warning'
-                }
-              : entry.status === 'manual-install'
-                ? { label: 'Manual install', tone: 'warning' }
-                : { label: 'Unavailable', tone: 'muted' }
+  const status: { label: string; tone: StatusTone; pending?: boolean } = installing
+    ? { label: 'Installing…', tone: 'muted', pending: true }
+    : warmState.sessionReady
+      ? { label: 'Session ready', tone: 'success' }
+      : warmState.warming || warmState.warmingSession
+        ? { label: 'Warming…', tone: 'muted', pending: true }
+        : warmState.connected
+          ? { label: 'Warm', tone: 'success' }
+          : entry.status === 'ready'
+            ? signIn === 'signed-out'
+              ? { label: 'Needs sign-in', tone: 'warning' }
+              : onDemand
+                ? { label: `Ready via ${entry.runtimeLauncher}`, tone: 'muted' }
+                : { label: 'Installed', tone: 'success' }
+            : entry.status === 'install-required'
+              ? { label: 'Needs install', tone: 'warning' }
+              : entry.status === 'needs-runtime'
+                ? {
+                    label: entry.runtimeLauncher === 'uvx' ? 'Needs uv' : 'Needs Node.js',
+                    tone: 'warning'
+                  }
+                : entry.status === 'manual-install'
+                  ? { label: 'Manual install', tone: 'warning' }
+                  : { label: 'Unavailable', tone: 'muted' }
+
+  const handleInstall = async (): Promise<void> => {
+    if (!isInstallable(entry) || installing) return
+    setInstalling(true)
+    try {
+      await installSupportedAgent(entry)
+      onInstalled()
+      void logFrontendError({
+        level: 'info',
+        source: 'AcpAgentsSettings:install',
+        message: `Installed ${entry.id} from Agents settings`
+      })
+      toast.success(`${entry.agent.name} installed and ready`)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      void logFrontendError({
+        level: 'warn',
+        source: 'AcpAgentsSettings:install',
+        message: `Install of ${entry.id} failed: ${message}`
+      })
+      toast.error(`Could not install ${entry.agent.name}: ${message}`)
+    } finally {
+      setInstalling(false)
+    }
+  }
 
   const handleCopyJson = async (): Promise<void> => {
     if (!entry.config) {
@@ -301,6 +350,17 @@ function AgentRow({ entry, update, latest, onUpdate }: AgentRowProps): React.JSX
             <StatusWord tone={status.tone} pending={status.pending}>
               {status.label}
             </StatusWord>
+            {entry.status === 'install-required' && isInstallable(entry) && (
+              <Button
+                type="button"
+                size="xs"
+                variant="secondary"
+                disabled={installing}
+                onClick={() => void handleInstall()}
+              >
+                {installing ? 'Installing…' : 'Install'}
+              </Button>
+            )}
             {update && entry.config && (
               // Agent language only: one action. The click absorbs the registry
               // opt-in on the user's behalf (explicit consent preserved) and
@@ -322,12 +382,35 @@ function AgentRow({ entry, update, latest, onUpdate }: AgentRowProps): React.JSX
             {entry.agent.description}
           </p>
         )}
+        {entry.status === 'ready' && (onDemand || signIn !== null) && (
+          <p
+            className={cn(
+              'mt-1 text-xs',
+              signIn === 'signed-out' ? 'text-warning' : 'text-muted-foreground'
+            )}
+          >
+            {[
+              onDemand
+                ? `Runs on demand via ${entry.runtimeLauncher} · Not installed locally`
+                : 'Installed locally',
+              signIn === 'ready'
+                ? 'Account signed in'
+                : signIn === 'signed-out'
+                  ? 'Account not signed in — sign in under Settings → Accounts'
+                  : null
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
+        )}
         {entry.status !== 'ready' && (
           <p className="mt-1 text-xs text-warning">
             {entry.status === 'install-required'
-              ? entry.install?.kind === 'managed-npm'
-                ? `Open Agent Chat to install the pinned ${entry.install.package} package.`
-                : 'Open Agent Chat and choose Install before first use.'
+              ? signIn === 'ready'
+                ? 'Account is signed in, but the agent binary is not installed in Karsa yet. Click Install to enable chats.'
+                : entry.install?.kind === 'managed-npm'
+                  ? `Click Install to install the pinned ${entry.install.package} package.`
+                  : 'Click Install to download the agent runtime for Karsa.'
               : entry.status === 'manual-install'
                 ? manualInstallCopy(entry)
                 : entry.unavailableReason}
@@ -396,7 +479,8 @@ export function AcpAgentsSettings(): React.JSX.Element {
   } = useAcpRegistryCatalog()
   const agentConfigs = useAcpStore((s) => s.agentConfigs)
   const applyAgentUpdate = useAcpStore((s) => s.applyAgentUpdate)
-  const supportedAgents = useResolvedSupportedAcpAgents(agentConfigs)
+  const { entries: supportedAgents, recheck } = useSupportedAcpAgentCatalog(agentConfigs)
+  const signIn = useProviderSignIn()
 
   // Per-agent Update Check: drift between each agent's spawn version and the
   // target registry — the applied registry when opted in, otherwise the
@@ -530,9 +614,14 @@ export function AcpAgentsSettings(): React.JSX.Element {
             <AgentRow
               key={entry.id}
               entry={entry}
+              signIn={signIn.of(entry.id)}
               update={updateByConfigId.get(entry.configId)}
               latest={latestConfigIds.has(entry.configId)}
               onUpdate={handleAgentUpdate}
+              onInstalled={() => {
+                recheck()
+                void signIn.reload()
+              }}
             />
           ))}
         </SettingsCard>

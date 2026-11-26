@@ -15,7 +15,7 @@ export interface ChatReference {
   cwd?: string
 }
 
-const READ_HINT = 'Read it with the Troupe read_chat tool.'
+const READ_HINT = 'Read it with the Karsa read_chat tool.'
 
 /**
  * A verbatim value kept on its line: a line break in a folder name or id
@@ -30,7 +30,7 @@ function oneLine(value: string): string {
  * an unknown value are left out.
  */
 export function formatChatReference({ chatId, title, project, cwd }: ChatReference): string {
-  const lines = [`Troupe chat: ${title.replace(/\s+/g, ' ').trim()}`, `Chat ID: ${chatId}`]
+  const lines = [`Karsa chat: ${title.replace(/\s+/g, ' ').trim()}`, `Chat ID: ${chatId}`]
   if (project) {
     const name = project.name?.replace(/\s+/g, ' ').trim()
     const id = oneLine(project.id)

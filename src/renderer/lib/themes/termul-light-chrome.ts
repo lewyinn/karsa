@@ -83,5 +83,5 @@ function termulLightChrome(): ThemeChrome {
   }
 }
 
-/** Interfere ramp for the default Troupe light theme. */
+/** Interfere ramp for the default Karsa light theme. */
 export const TERMUL_LIGHT_CHROME: ThemeChrome = termulLightChrome()

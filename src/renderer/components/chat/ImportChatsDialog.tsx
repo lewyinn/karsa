@@ -337,7 +337,7 @@ function importLabel(count: number): string {
 }
 
 /**
- * "Import chats": copies chats an agent keeps outside Troupe (for example
+ * "Import chats": copies chats an agent keeps outside Karsa (for example
  * Claude Code CLI chats) into the chat history of the active working copy.
  * The user picks one, several or all; an imported chat opens and continues
  * like any other chat.
@@ -376,7 +376,7 @@ export function ImportChatsDialog({
             {configName ? `Import chats from ${configName}` : 'Import chats'}
           </DialogTitle>
           <DialogDescription>
-            Bring in chats from {agentName} sessions you ran outside Troupe. You can continue them
+            Bring in chats from {agentName} sessions you ran outside Karsa. You can continue them
             here afterwards.
           </DialogDescription>
         </DialogHeader>

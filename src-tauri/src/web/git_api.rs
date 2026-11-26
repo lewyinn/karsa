@@ -49,6 +49,14 @@ pub struct GitCwdRequest {
     pub cwd: String,
 }
 
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct GitDiscoverReposRequest {
+    pub cwd: String,
+    #[serde(default)]
+    pub max_depth: Option<usize>,
+}
+
 /// `POST /git/diff { cwd, path, staged? }` body. `staged` defaults to `false`.
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -244,6 +252,46 @@ pub(super) fn cwd_string<T>(resolved: &std::path::Path) -> Result<String, RouteE
 }
 
 // ============================ Route handlers ============================
+
+/// `POST /git/discover-repos` — discover Git repositories at `cwd` and nested subdirs.
+pub async fn discover_repos(
+    State(state): State<AppState>,
+    Json(req): Json<GitDiscoverReposRequest>,
+) -> impl IntoResponse {
+    let resolved = match resolve_cwd::<Vec<git_tracker::DiscoveredGitRepo>>(
+        &req.cwd,
+        &state,
+        None,
+        false,
+    ) {
+        Ok(p) => p,
+        Err(resp) => return resp,
+    };
+    let cwd = match cwd_string::<Vec<git_tracker::DiscoveredGitRepo>>(&resolved) {
+        Ok(s) => s,
+        Err(resp) => return resp,
+    };
+    let max_depth = req.max_depth;
+    let cwd_for_log = cwd.clone();
+    let result = tokio::task::spawn_blocking(move || git_tracker::git_discover_repos(&cwd, max_depth))
+        .await
+        .map_err(|e| format!("git discover repos task failed: {e}"));
+    let body = match result {
+        Ok(Ok(repos)) => {
+            tracing::info!(path = %cwd_for_log, count = repos.len(), "git discover repos ok");
+            IpcBody::ok(repos)
+        }
+        Ok(Err(e)) => {
+            tracing::warn!(path = %cwd_for_log, error = %e, "git discover repos failed");
+            IpcBody::<Vec<git_tracker::DiscoveredGitRepo>>::err(e, "GIT_DISCOVER_ERROR")
+        }
+        Err(e) => {
+            tracing::error!(path = %cwd_for_log, error = %e, "git discover repos task panicked");
+            IpcBody::<Vec<git_tracker::DiscoveredGitRepo>>::err(e, "GIT_DISCOVER_ERROR")
+        }
+    };
+    (StatusCode::OK, Json(body))
+}
 
 /// `POST /git/status` — list modified/staged/untracked entries.
 /// Mirrors `git_get_status` → `git_tracker::git_get_status_detail`.

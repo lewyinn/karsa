@@ -2,7 +2,7 @@
  * APP BOOTSTRAP ENTRY POINT
  * =========================
  *
- * This is the generic renderer entry point for Troupe.
+ * This is the generic renderer entry point for Karsa.
  * The desktop runtime is Tauri-first, while this file remains useful for
  * browser-based development, preview, the web client (`build:web`), and tests.
  *

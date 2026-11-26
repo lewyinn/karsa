@@ -1,10 +1,10 @@
 /**
- * Troupe's registry overlay in the renderer: per-agent display name, logo and
+ * Karsa's registry overlay in the renderer: per-agent display name, logo and
  * brand colour, keyed by registry agent id.
  *
  * Seeded at import from the bundled `troupe.json`, so first paint already has
  * the brand colours, then replaced by the host's copy (`get_acp_agent_overlay`),
- * which a merge in the registry repository changes without a Troupe build.
+ * which a merge in the registry repository changes without a Karsa build.
  */
 
 import type { AcpAgentOverride, AgentBrandColor } from '@shared/types/acp-catalog.types'

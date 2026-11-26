@@ -119,7 +119,7 @@ pub struct PlatformTarget {
 }
 
 /// Whether a catalog entry came from the trusted bundled baseline, the
-/// explicitly-approved CDN registry augmentation, or Troupe's own registry
+/// explicitly-approved CDN registry augmentation, or Karsa's own registry
 /// overlay (`troupe_overlay`), which only adds ids neither of the others has
 /// (its remote copy's agents only under the same CDN opt-in).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -429,7 +429,7 @@ impl AcpCatalogService {
         Ok(catalog)
     }
 
-    /// Refresh the Troupe overlay off the caller's path. A new copy drops the
+    /// Refresh the Karsa overlay off the caller's path. A new copy drops the
     /// resolved catalog so the next `list_catalog` merges it.
     fn spawn_overlay_refresh(self: &Arc<Self>) {
         if !self.overlay.wants_refresh() {
@@ -452,7 +452,7 @@ impl AcpCatalogService {
         self.overlay.current().presentation()
     }
 
-    /// When OpenCode has no Troupe-managed install, attach a v2 binary found
+    /// When OpenCode has no Karsa-managed install, attach a v2 binary found
     /// on PATH or under `~/.opencode/bin`. A managed install already in
     /// `installed` wins and this probe does not run.
     pub async fn apply_external_opencode(&self, catalog: &mut AcpCatalog) {
@@ -739,7 +739,10 @@ impl AcpCatalogService {
         // Optional CDN augmentation (gated on the host-persisted opt-in).
         let mut agents: Vec<CatalogAgent> = bundled
             .iter()
-            .filter(|agent| !crate::acp::agent_aliases::is_legacy_agent_id(&agent.id))
+            .filter(|agent| {
+                !crate::acp::agent_aliases::is_legacy_agent_id(&agent.id)
+                    && is_allowed_agent_id(&agent.id)
+            })
             .map(|agent| {
                 compute_catalog_agent(agent, &host, &platform_arch, CatalogSource::Bundled)
             })
@@ -779,7 +782,9 @@ impl AcpCatalogService {
                     for snapshot_agent in &snapshot.agents {
                         // Validate the CDN entry (reuse the snapshot's
                         // `is_safe_agent_id` + `sanitize_distribution`).
-                        if !acp_registry_snapshot::is_safe_agent_id(&snapshot_agent.id) {
+                        if !acp_registry_snapshot::is_safe_agent_id(&snapshot_agent.id)
+                            || !is_allowed_agent_id(&snapshot_agent.id)
+                        {
                             continue;
                         }
                         // A legacy id such as `opencode-v2` is the same agent as
@@ -883,7 +888,7 @@ pub enum CatalogError {
     BundledParse(serde_json::Error),
     /// Filesystem read/write failure (permission, disk full, …).
     Io(io::Error),
-    /// The opt-in config was written by a NEWER Troupe (AD-18): refused, the
+    /// The opt-in config was written by a NEWER Karsa (AD-18): refused, the
     /// file is left untouched.
     NewerSchema(NewerSchema),
 }
@@ -981,6 +986,14 @@ fn probe_runtimes() -> CatalogRuntimeAvailability {
 // ---------------------------------------------------------------------------
 // Bundled catalog parsing
 // ---------------------------------------------------------------------------
+
+/// Curated ACP agent ids enabled in Karsa (bundled, overlay, and CDN sync).
+pub const ALLOWED_AGENT_IDS: &[&str] = &["claude-acp", "antigravity-acp"];
+
+/// True when `id` belongs to Karsa's curated catalog allowlist.
+pub(crate) fn is_allowed_agent_id(id: &str) -> bool {
+    ALLOWED_AGENT_IDS.contains(&id)
+}
 
 /// Parse the embedded `agents.json` into typed entries. Called at construction
 /// (eager parse so a malformed file surfaces at startup) and on each catalog
@@ -1150,7 +1163,7 @@ fn is_https_archive_url(url: &str) -> bool {
 
 /// Fill the OpenCode catalog row from an external v2 binary.
 ///
-/// A row that already has `installed` (the Troupe install manifest) is left
+/// A row that already has `installed` (the Karsa install manifest) is left
 /// alone. `binary == None` leaves an install-required row unchanged. The
 /// reported `version` is the catalog pin, so a newer PATH binary does not
 /// show as a downgrade against that pin.

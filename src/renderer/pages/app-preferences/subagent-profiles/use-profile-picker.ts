@@ -29,7 +29,7 @@ const noop = (): void => {}
 const NO_PROJECT: PrepareChatError = {
   category: 'unknown',
   label: 'Open a project to load models',
-  detail: 'Troupe starts the agent in the open project to read its models.'
+  detail: 'Karsa starts the agent in the open project to read its models.'
 }
 
 /** A change to a profile, applied to the profile as it is when the change is sent. */

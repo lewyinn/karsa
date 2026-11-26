@@ -75,7 +75,7 @@ export function WebTokenGateScreen(): React.JSX.Element {
         <div className="flex flex-col gap-1.5 text-center">
           <h1 className="text-lg font-semibold text-foreground">Server access token required</h1>
           <p className="text-sm text-muted-foreground">
-            This Troupe server requires a token. Paste the token from your bootstrap link or server
+            This Karsa server requires a token. Paste the token from your bootstrap link or server
             console.
           </p>
         </div>

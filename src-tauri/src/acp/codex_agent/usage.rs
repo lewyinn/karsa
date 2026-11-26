@@ -1,7 +1,7 @@
 //! Codex Account usage: a cached read of each Account's plan windows through
 //! `codex app-server` on stdio. The child runs with that Account's
 //! `CODEX_HOME`. `OPENAI_API_KEY` and `CODEX_ACCESS_TOKEN` are removed, so an
-//! API key on the host is not treated as the ChatGPT login. Troupe never
+//! API key on the host is not treated as the ChatGPT login. Karsa never
 //! reads or logs a token, and it never logs an Account id.
 
 use std::collections::HashMap;
@@ -327,7 +327,7 @@ async fn exchange(child: &mut tokio::process::Child) -> ProbeVerdict {
             "id": 1,
             "method": "initialize",
             "params": {
-                "clientInfo": { "name": "troupe", "title": "Troupe", "version": "0.0.0" },
+                "clientInfo": { "name": "karsa", "title": "Karsa", "version": "0.0.0" },
                 "capabilities": { "experimentalApi": true }
             }
         }),

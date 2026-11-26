@@ -16,6 +16,7 @@ import {
   type AgentSetupStatus,
   installSupportedAgent,
   isInstallable,
+  isOnDemandRuntimeAgent,
   RUNTIME_HELP_URLS,
   saveSupportedAgentConfig
 } from '@/lib/agents/agent-setup'
@@ -34,9 +35,15 @@ interface StatusWordSpec {
 
 /** The word each setup status reads as. Exhaustive: a new status fails the build here. */
 const ONBOARDING_AGENT_STATUS: {
-  [K in AgentSetupKind]: (status: Extract<AgentSetupStatus, { kind: K }>) => StatusWordSpec
+  [K in AgentSetupKind]: (
+    status: Extract<AgentSetupStatus, { kind: K }>,
+    entry: SupportedAcpAgentEntry
+  ) => StatusWordSpec
 } = {
-  ready: () => ({ label: 'Ready', tone: 'success' }),
+  ready: (_status, entry) =>
+    isOnDemandRuntimeAgent(entry)
+      ? { label: `Ready via ${entry.runtimeLauncher}`, tone: 'muted' }
+      : { label: 'Installed', tone: 'success' },
   'checking-sign-in': () => ({ label: 'Checking…', tone: 'muted', pending: true }),
   'needs-sign-in': () => ({ label: 'Needs sign-in', tone: 'warning' }),
   installable: () => ({ label: 'Not installed', tone: 'muted' }),
@@ -48,8 +55,13 @@ const ONBOARDING_AGENT_STATUS: {
   unavailable: () => ({ label: 'Not available here', tone: 'muted' })
 }
 
-function statusWord(status: AgentSetupStatus): StatusWordSpec {
-  return (ONBOARDING_AGENT_STATUS[status.kind] as (s: AgentSetupStatus) => StatusWordSpec)(status)
+function statusWord(status: AgentSetupStatus, entry: SupportedAcpAgentEntry): StatusWordSpec {
+  return (
+    ONBOARDING_AGENT_STATUS[status.kind] as (
+      s: AgentSetupStatus,
+      e: SupportedAcpAgentEntry
+    ) => StatusWordSpec
+  )(status, entry)
 }
 
 function runtimeName(runtime: 'npx' | 'uvx'): string {
@@ -63,20 +75,24 @@ function runtimeName(runtime: 'npx' | 'uvx'): string {
 function detailFor(entry: SupportedAcpAgentEntry, status: AgentSetupStatus): string {
   switch (status.kind) {
     case 'ready':
-      if (entry.installedVersion) return `v${entry.installedVersion}`
-      return entry.runtimeLauncher ? `Runs with ${entry.runtimeLauncher}` : 'Found on this computer'
+      if (isOnDemandRuntimeAgent(entry)) {
+        return `Runs on demand via ${entry.runtimeLauncher} · Not installed locally`
+      }
+      return entry.installedVersion
+        ? `Installed locally · v${entry.installedVersion}`
+        : 'Installed locally'
     case 'checking-sign-in':
       return 'Checking sign-in'
     case 'needs-sign-in':
       return 'Installed · Not signed in'
     case 'installable':
       return entry.install?.kind === 'managed-npm'
-        ? 'Troupe installs it with npm'
-        : 'Troupe downloads and installs it'
+        ? 'Karsa installs it with npm'
+        : 'Karsa downloads and installs it'
     case 'manual-install':
       return 'Install it yourself, then check again'
     case 'needs-runtime':
-      return `Install ${runtimeName(status.runtime)}, then restart Troupe`
+      return `Install ${runtimeName(status.runtime)}, then restart Karsa`
     case 'unavailable':
       return 'Not offered for this system'
   }
@@ -123,7 +139,9 @@ export function AgentSetupRow({
   const [codexAccount, setCodexAccount] = useState<CodexAccountView | null>(null)
   const [antigravityAccount, setAntigravityAccount] = useState<AntigravityAccountView | null>(null)
   const selectable = status.kind === 'ready'
-  const word = busy ? { label: busy, tone: 'muted' as const, pending: true } : statusWord(status)
+  const word = busy
+    ? { label: busy, tone: 'muted' as const, pending: true }
+    : statusWord(status, entry)
 
   const install = async (): Promise<void> => {
     if (!isInstallable(entry)) return

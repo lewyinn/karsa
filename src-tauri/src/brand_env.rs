@@ -1,4 +1,4 @@
-//! Environment variables under the Troupe name with the old product name as a
+//! Environment variables under the Karsa name with the old product name as a
 //! fallback. `TROUPE_<suffix>` wins; `TERMUL_<suffix>` still works and logs
 //! one deprecation line per variable per process. Values are never logged.
 
@@ -28,7 +28,7 @@ static NOTICES: Mutex<Notices> = Mutex::new(Notices {
     pending: Vec::new(),
 });
 
-/// Both names of a variable Troupe sets for a child process, new name first.
+/// Both names of a variable Karsa sets for a child process, new name first.
 #[must_use]
 pub fn names(suffix: &str) -> [String; 2] {
     [

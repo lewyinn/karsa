@@ -46,7 +46,7 @@ pub fn parse_node_major(output: &str) -> Option<u64> {
 /// `FRESH_PATH_CACHE` pattern in `pty::env_refresh`): catalog resolution and
 /// managed-config preflights probe repeatedly, and `node --version` spawns a
 /// process each time. A host that installs or upgrades Node must restart
-/// Troupe to re-probe — the same tradeoff the cached PATH probe already makes.
+/// Karsa to re-probe — the same tradeoff the cached PATH probe already makes.
 static NODE_MAJOR_CACHE: std::sync::OnceLock<Option<u64>> = std::sync::OnceLock::new();
 
 pub(crate) fn probe_node_major() -> Option<u64> {
@@ -204,10 +204,10 @@ pub(crate) fn claude_runtime_block(
 pub(crate) fn claude_unavailable_reason(block: ClaudeRuntimeBlock) -> &'static str {
     match block {
         ClaudeRuntimeBlock::NodeTooOld => {
-            "Claude Agent ACP requires Node.js 22 or newer. Install or upgrade Node.js, then restart Troupe."
+            "Claude Agent ACP requires Node.js 22 or newer. Install or upgrade Node.js, then restart Karsa."
         }
         ClaudeRuntimeBlock::NpmMissing => {
-            "Claude Agent ACP requires npm. Install npm alongside Node.js 22 or newer, then restart Troupe."
+            "Claude Agent ACP requires npm. Install npm alongside Node.js 22 or newer, then restart Karsa."
         }
         ClaudeRuntimeBlock::CliMissing => {
             "Install Claude Code CLI from Anthropic, then run `claude auth login` in a terminal."
@@ -579,7 +579,7 @@ impl ClaudeAgentService {
     }
 
     /// Run Anthropic's interactive `claude auth login` in the caller's
-    /// terminal. Troupe never installs or updates the external Claude CLI.
+    /// terminal. Karsa never installs or updates the external Claude CLI.
     pub fn run_cli_login(&self) -> Result<(), String> {
         self.run_cli_login_in(None)
     }

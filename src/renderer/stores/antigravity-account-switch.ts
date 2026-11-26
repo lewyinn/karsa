@@ -511,7 +511,7 @@ export function chatSwitchToast(
       return {
         kind: 'info',
         title: 'The account of this chat already changed',
-        description: 'Troupe or another device switched it first.'
+        description: 'Karsa or another device switched it first.'
       }
     case 'pending':
       return { kind: 'info', title: `This chat moves to ${to} when its reply ends` }

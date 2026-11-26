@@ -14,6 +14,7 @@ use super::cache::{CacheKey, QuotaReserve, ReadCache, READ_TTL};
 use super::checkout;
 use super::checks::{self, CHECK_FIELDS, LOG_READ_BYTES};
 use super::comment;
+use super::create_issue;
 use super::detail::{self, MergeState};
 use super::edit;
 use super::error::GithubError;
@@ -609,6 +610,31 @@ impl GithubService {
             });
             self.cache.invalidate_repo(repo);
             result.map(|_| GithubCreateLabelResult { label })
+        })
+    }
+
+    pub(crate) fn create_issue(
+        &self,
+        request: &GithubCreateIssueRequest,
+    ) -> Result<GithubCreateIssueResult, GithubError> {
+        let checked = create_issue::checked_issue(request).inspect_err(|error| {
+            log::warn!("[github] create_issue refused code={}", error.code());
+        })?;
+        self.run_op("create_issue", &request.cwd, request.repo, |repo| {
+            let call = GhCall::new(Some(&repo.host), create_issue::create_issue_args(repo))
+                .with_stdin(create_issue::create_issue_payload(&checked));
+            let result = self.runner.stdout(&call).map_err(|error| match error {
+                GithubError::Timeout => edit::maybe_applied("gh did not respond in time"),
+                other => other,
+            });
+            self.cache.invalidate_repo(repo);
+            let stdout = result?;
+            let created = create_issue::parse_created_issue(&stdout)?;
+            log::info!(
+                "[github] create_issue ok repo={repo} number={}",
+                created.number
+            );
+            Ok(created)
         })
     }
 

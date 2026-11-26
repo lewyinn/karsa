@@ -209,8 +209,7 @@ fn termul_server_log_path() -> Option<PathBuf> {
 }
 
 /// Desktop shared-live: the Tauri `app_log_dir` layout for the app
-/// identifier `com.termul-manager.app` (`tauri.conf.json`) — the same paths
-/// the GitHub issue template prints. Selected when
+/// identifier `com.karsa.app` (`tauri.conf.json`). Selected when
 /// `shared_live_writes_denied` marks this process as a desktop-hosted
 /// shared-live server.
 #[cfg(target_os = "macos")]
@@ -218,7 +217,7 @@ fn desktop_log_path() -> Option<PathBuf> {
     std::env::home_dir().map(|home| {
         home.join("Library")
             .join("Logs")
-            .join("com.termul-manager.app")
+            .join("com.karsa.app")
             .join("termul.log")
     })
 }
@@ -231,7 +230,7 @@ fn desktop_log_path() -> Option<PathBuf> {
         .filter(|p| !p.as_os_str().is_empty() && p.is_absolute())
         .or_else(|| std::env::home_dir().map(|home| home.join(".local").join("share")));
     data_home.map(|base| {
-        base.join("com.termul-manager.app")
+        base.join("com.karsa.app")
             .join("logs")
             .join("termul.log")
     })
@@ -243,7 +242,7 @@ fn desktop_log_path() -> Option<PathBuf> {
     std::env::var_os("LOCALAPPDATA")
         .map(PathBuf::from)
         .map(|base| {
-            base.join("com.termul-manager.app")
+            base.join("com.karsa.app")
                 .join("logs")
                 .join("termul.log")
         })

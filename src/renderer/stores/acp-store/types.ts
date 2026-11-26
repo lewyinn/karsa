@@ -294,8 +294,8 @@ export interface AcpSession {
    * `session/list` chats). Carried on the live record so `persistSession`
    * preserves it even when no `sessionIndex` entry exists yet (the
    * disconnect/close path would otherwise default a discovered session to
-   * `discovered: false` and leak it into the Troupe-only Chats tab).
-   * Absent/`false` for sessions Troupe created via `createSession`.
+   * `discovered: false` and leak it into the Karsa-only Chats tab).
+   * Absent/`false` for sessions Karsa created via `createSession`.
    */
   discovered?: boolean
   /**
@@ -583,8 +583,8 @@ export interface AcpState {
   pendingMcpInstalls: Record<string, PendingMcpInstall>
 
   // MCP probe state — on-demand only (no persistent always-on connections).
-  // `mcpProbeStatus` reflects Troupe's own rmcp client connection, NOT the
-  // agent's; the dot answers "can Troupe reach this server and list its tools?".
+  // `mcpProbeStatus` reflects Karsa's own rmcp client connection, NOT the
+  // agent's; the dot answers "can Karsa reach this server and list its tools?".
   // `mcpTools` is the cached `tools/list` output; `mcpToolsLoaded` gates the
   // auto-probe on first expand; `mcpProbing` dedupes concurrent probes.
   mcpProbeStatus: Record<string, ProbeStatus>
@@ -997,7 +997,7 @@ export interface AcpState {
 
   // Actions — MCP probe (on-demand, read-only). State slices above.
   /**
-   * Probe a registered MCP server by id (Troupe's own rmcp client — NOT the
+   * Probe a registered MCP server by id (Karsa's own rmcp client — NOT the
    * agent's). Updates `mcpProbeStatus[id]` + `mcpTools[id]` +
    * `mcpToolsLoaded[id]=true`, and `mcpProbeError[id]` with the redacted
    * `ProbeResult.error` on a disconnected result (cleared on connected and on

@@ -71,22 +71,53 @@ export function SectionHeader({
   label,
   count,
   selectionCount,
+  collapsed = false,
+  onToggle,
   children
 }: {
   label: string
   count: number
   selectionCount: number
+  collapsed?: boolean
+  onToggle?: () => void
   children?: React.ReactNode
 }) {
-  return (
-    <div className="group/section flex h-8 items-center gap-1.5 pl-2 pr-1">
-      <ChevronDown size={11} className="shrink-0 text-muted-foreground" aria-hidden />
+  const headingContent = (
+    <>
+      <ChevronDown
+        size={11}
+        className={cn(
+          'shrink-0 text-muted-foreground transition-transform duration-150',
+          collapsed && '-rotate-90'
+        )}
+        aria-hidden
+      />
       <span className="label-panel truncate">{label}</span>
       <span className="text-2xs tabular-nums text-muted-foreground">{count}</span>
       {selectionCount > 1 && (
         <span className="truncate text-2xs tabular-nums text-muted-foreground">
           · {selectionCount} selected
         </span>
+      )}
+    </>
+  )
+
+  return (
+    <div className="group/section flex h-8 items-center gap-1.5 pl-1 pr-1">
+      {onToggle ? (
+        <button
+          type="button"
+          aria-expanded={!collapsed}
+          onClick={onToggle}
+          className={cn(
+            'flex min-w-0 flex-1 items-center gap-1.5 rounded px-1 py-1 text-left transition-colors hover:bg-foreground/[0.04]',
+            FOCUS_RING_CLASS
+          )}
+        >
+          {headingContent}
+        </button>
+      ) : (
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 px-1">{headingContent}</div>
       )}
       <div className="ml-auto flex shrink-0 items-center gap-0.5">{children}</div>
     </div>

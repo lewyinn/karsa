@@ -39,6 +39,8 @@
     {
       "identifier": "fs:scope",
       "allow": [
+        { "path": "$APPDATA/karsa/**" },
+        { "path": "$HOME/.karsa/**" },
         { "path": "$APPDATA/termul/**" },
         { "path": "$HOME/.termul/**" },
         { "path": "$HOME/**" },
@@ -62,10 +64,6 @@
     "clipboard-manager:allow-write-text",
     "clipboard-manager:allow-read-image",
     "clipboard-manager:allow-write-image",
-    "updater:allow-check",
-    "updater:allow-download",
-    "updater:allow-install",
-    "updater:allow-download-and-install",
     "process:allow-restart",
     "shell:default",
     "shell:allow-open",

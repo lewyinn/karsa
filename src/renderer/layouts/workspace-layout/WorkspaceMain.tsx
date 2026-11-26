@@ -87,7 +87,7 @@ export function WorkspaceMain({
             </div>
             <h2 className="mb-2 text-xl font-semibold text-foreground">No Projects Yet</h2>
             <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
-              Create your first project to organize your terminals, snapshots, and commands
+              Create your first project to organize your terminals, chats, and git workflows
             </p>
             <Button type="button" size="sm" onClick={() => setIsNewProjectModalOpen(true)}>
               Create Your First Project

@@ -115,7 +115,7 @@ export function SecondAccountNotice({
     >
       <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-muted-foreground" />
       <p>
-        Troupe does not recommend using many {terms.name} accounts. A separate work account is fine.
+        Karsa does not recommend using many {terms.name} accounts. A separate work account is fine.
         Using several accounts to get past usage limits can break {terms.company}'s terms and get
         your accounts suspended. <DocsLink href={terms.docsUrl}>More info</DocsLink>
       </p>

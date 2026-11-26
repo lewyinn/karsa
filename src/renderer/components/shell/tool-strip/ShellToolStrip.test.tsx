@@ -25,12 +25,6 @@ vi.mock('@/lib/platform', async (importOriginal) => ({
   }
 }))
 vi.mock('@/lib/log-api', () => ({ logFrontendError: mockLog }))
-vi.mock('@/components/RemoteAccessPopover', () => ({
-  RemoteAccessPopover: () => <button type="button">Remote terminal access</button>
-}))
-vi.mock('@/components/ServerQrPopover', () => ({
-  ServerQrPopover: () => <button type="button">Show server QR code</button>
-}))
 vi.mock('@/components/ConnectionStatusIndicator', () => ({
   ConnectionStatusIndicator: () => <span role="status" aria-label="Connected" />
 }))
@@ -105,19 +99,19 @@ describe('ShellToolStrip', () => {
     expect(strip()).not.toHaveClass('pt-[50px]')
   })
 
-  it('shows Explorer, Changes, GitHub on top and Terminal, Browser, Remote access pinned', () => {
+  it('shows Explorer, Changes, GitHub on top and Terminal, Browser pinned', () => {
     renderStrip()
     const [top, bottom] = within(strip()).getAllByRole('group')
     expect(
       within(top)
         .getAllByRole('button')
         .map((b) => b.getAttribute('aria-label'))
-    ).toEqual(['Explorer', 'Changes', 'GitHub'])
+    ).toEqual(['Explorer', 'Changes', 'GitHub', 'Run Stack', 'Env'])
     expect(
       within(bottom)
         .getAllByRole('button')
         .map((b) => b.textContent || b.getAttribute('aria-label'))
-    ).toEqual(['New terminal', 'New browser tab', 'Remote terminal access'])
+    ).toEqual(['New terminal', 'New browser tab'])
   })
 
   it('opens the right panel on a view and raises its button; the same click closes it', () => {
@@ -196,12 +190,10 @@ describe('ShellToolStrip', () => {
     )
   })
 
-  it('on web: no Browser and no Remote access, server QR popover + connection lamp instead', () => {
+  it('on web: no Browser button, shows connection lamp instead', () => {
     tauriRef.current = false
     renderStrip()
     expect(within(strip()).queryByRole('button', { name: 'New browser tab' })).toBeNull()
-    expect(within(strip()).queryByText('Remote terminal access')).toBeNull()
-    expect(within(strip()).getByRole('button', { name: 'Show server QR code' })).toBeInTheDocument()
     expect(within(strip()).getByRole('status', { name: 'Connected' })).toBeInTheDocument()
   })
 

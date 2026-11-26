@@ -395,7 +395,6 @@ vi.mock('@/components/workspace/PaneRenderer', async () => {
 // P17: shared canonical mock shape for the Story 6 sync hook + banner —
 // identical inline factories across the three WorkspaceLayout suites.
 vi.mock('@/pages/WorkspaceDashboard', () => ({ default: () => <div>dashboard</div> }))
-vi.mock('@/pages/WorkspaceSnapshots', () => ({ default: () => <div>snapshots</div> }))
 // Story 6: the stub mirrors the REAL AppPreferencesModal close wiring —
 // SettingsModal renders a visible close button wired to
 // useSettingsModalStore close — so the mobile repro (open prefs, tap

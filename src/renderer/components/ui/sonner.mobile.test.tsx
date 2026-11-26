@@ -76,11 +76,12 @@ describe('Sonner Toaster mobile expansion + offset', () => {
     expect(props.mobileOffset).toBeUndefined()
   })
 
-  it('follows Troupe appearance and paints a card, not a rich-color wash', () => {
+  it('follows Karsa appearance, uses 10s default duration, and paints a card', () => {
     render(<Toaster />)
 
     const props = sonnerPropsRef.current!
     expect(props.theme).toBe('dark')
+    expect(props.duration).toBe(10000)
     expect(props.richColors).toBeFalsy()
     const options = props.toastOptions as { classNames: { toast: string; description: string } }
     expect(options.classNames.toast).toContain('bg-card')

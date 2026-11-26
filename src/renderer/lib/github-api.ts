@@ -17,6 +17,8 @@ import type {
   GithubCommentRequest,
   GithubCommentResult,
   GithubContext,
+  GithubCreateIssueRequest,
+  GithubCreateIssueResult,
   GithubCreateLabelRequest,
   GithubCreateLabelResult,
   GithubEditItemRequest,
@@ -91,6 +93,10 @@ export const githubApi = {
 
   createLabel(request: GithubCreateLabelRequest): Promise<IpcResult<GithubCreateLabelResult>> {
     return call('github_create_label', '/github/create-label', request)
+  },
+
+  createIssue(request: GithubCreateIssueRequest): Promise<IpcResult<GithubCreateIssueResult>> {
+    return call('github_create_issue', '/github/create-issue', request)
   },
 
   editItem(request: GithubEditItemRequest): Promise<IpcResult<GithubEditItemResult>> {

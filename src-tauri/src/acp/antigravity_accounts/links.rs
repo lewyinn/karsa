@@ -23,7 +23,7 @@ pub const AGENT_DIR: &str = "antigravity-acp";
 pub const SHARED_DIRS: &[&str] = &["antigravity-acp/conversations", "antigravity-acp/brain"];
 
 /// Shared directories that are linked only when the shared home already has
-/// them. Troupe does not create these.
+/// them. Karsa does not create these.
 pub const OPTIONAL_DIRS: &[&str] = &["config", "antigravity-cli", "artifacts"];
 
 /// Shared files. Antigravity has none: every file it keeps under its own

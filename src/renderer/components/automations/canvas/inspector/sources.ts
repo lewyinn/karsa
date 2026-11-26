@@ -2,7 +2,7 @@
  * What the agent and MCP tool forms offer to pick: the agents the host can
  * launch (`list_agents`), an agent's models (the list its chats last
  * reported), and the MCP servers and tools (the shared registry the host
- * reads, and Troupe's own `tools/list` of each).
+ * reads, and Karsa's own `tools/list` of each).
  */
 
 import type { KnownAgent } from '@shared/types/automation.types'

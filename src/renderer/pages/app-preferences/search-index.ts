@@ -5,7 +5,7 @@ import type { SettingsSearchEntry } from '@/lib/settings-search'
 import { isTauriContext } from '@/lib/tauri-runtime'
 
 // Rows that exist on one runtime only: the updater is desktop-only (issue
-// #843), the Troupe browser (Open links in) is desktop-only, and the server
+// #843), the Karsa browser (Open links in) is desktop-only, and the server
 // form is web-only (gh-1105).
 const DESKTOP_ONLY_ANCHORS = new Set([
   rowId('link-open-mode'),
@@ -244,7 +244,7 @@ const APP_PREF_SEARCH_INDEX: SettingsSearchEntry[] = [
   {
     categoryId: 'subagents',
     label: 'Sub-agent approvals',
-    description: 'Answer permission prompts in the chat, or let Troupe allow them.',
+    description: 'Answer permission prompts in the chat, or let Karsa allow them.',
     keywords: ['subagent', 'sub-agent', 'approvals', 'allow', 'bypass', 'permissions', 'auto'],
     anchorId: rowId('subagent-profiles')
   },
@@ -330,7 +330,7 @@ const APP_PREF_SEARCH_INDEX: SettingsSearchEntry[] = [
   {
     categoryId: 'about',
     label: 'Check for updates',
-    description: 'Your Troupe version, and a check for a newer one.',
+    description: 'Your Karsa version, and a check for a newer one.',
     keywords: ['version', 'upgrade', 'update', 'about'],
     anchorId: rowId('check-updates')
   },
@@ -351,30 +351,23 @@ const APP_PREF_SEARCH_INDEX: SettingsSearchEntry[] = [
   {
     categoryId: 'about',
     label: 'Connect another device',
-    description: 'Scan a QR code to open this Troupe server on a phone or tablet.',
+    description: 'Scan a QR code to open this Karsa server on a phone or tablet.',
     keywords: ['qr', 'qrcode', 'barcode', 'phone', 'mobile', 'tablet', 'scan', 'connect', 'link'],
     anchorId: rowId('server-qr')
   },
   {
     categoryId: 'about',
     label: 'Server',
-    description: 'Address, port and update channel for this Troupe server.',
+    description: 'Address, port and update channel for this Karsa server.',
     keywords: ['server', 'address', 'port', 'host', 'bind', 'remote', 'restart'],
     anchorId: rowId('server-config')
   },
   {
     categoryId: 'about',
-    label: 'Server version',
-    description: 'The web client updates together with the termul-server.',
-    keywords: ['version', 'upgrade', 'server'],
+    label: 'Version',
+    description: 'The current Karsa app version.',
+    keywords: ['version', 'upgrade'],
     anchorId: rowId('server-version')
-  },
-  {
-    categoryId: 'about',
-    label: 'Report a bug',
-    description: 'File an issue with a redacted diagnostics bundle.',
-    keywords: ['bug', 'issue', 'report', 'feedback'],
-    anchorId: rowId('report-bug')
   },
   {
     categoryId: 'about',

@@ -20,7 +20,7 @@ export function oauthFailureMessage(error: unknown): string {
   if (error instanceof McpOAuthError) {
     switch (error.code) {
       case MCP_UNSAFE_URL:
-        return "This server's sign-in link isn't a secure https link, so Troupe didn't open it."
+        return "This server's sign-in link isn't a secure https link, so Karsa didn't open it."
       case 'OAUTH_DISCOVERY_FAILED':
         return 'Could not discover OAuth settings for this MCP server. Check the server URL and try again.'
       case 'OAUTH_REGISTRATION_FAILED':

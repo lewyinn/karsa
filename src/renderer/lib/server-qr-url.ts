@@ -114,7 +114,7 @@ export function buildServerShareUrl({
       return {
         status: 'no-lan-address',
         reason:
-          'Could not detect a LAN IP address for this server. Open Troupe using its network address or run `troupe-server qr --host <ip>` on the host.'
+          'Could not detect a LAN IP address for this server. Open Karsa using its network address or run `troupe-server qr --host <ip>` on the host.'
       }
     }
     const hostPart =
@@ -130,7 +130,7 @@ export function buildServerShareUrl({
     return {
       status: 'no-lan-address',
       reason:
-        'Open Troupe using this server’s network address or run `troupe-server qr` on the host to generate a phone-scannable QR code.'
+        'Open Karsa using this server’s network address or run `troupe-server qr` on the host to generate a phone-scannable QR code.'
     }
   }
 

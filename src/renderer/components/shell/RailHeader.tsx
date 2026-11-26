@@ -7,7 +7,7 @@ import { useRailCollapsed } from './rail/rail-density'
 import { RAIL_LABEL_FADE_CLASS, RAIL_TRAVEL_CLASS } from './rail/rail-motion'
 import { TRAFFIC_LIGHT_CLEARANCE_PX } from './traffic-light-inset'
 
-/** Width of the Troupe mark (`ShellBrandMark`, `size-7`). */
+/** Width of the Karsa mark (`ShellBrandMark`, `size-7`). */
 const MARK_PX = 28
 
 /**
@@ -19,7 +19,7 @@ const MAC_MARK_TRAVEL_PX = 28 - MARK_PX / 2 - TRAFFIC_LIGHT_CLEARANCE_PX
 /**
  * Top row part of the Rail (Paper "Rail header"), 44px tall, in line with the
  * tab bar and the right panel header. Left to right:
- * - macOS: the traffic-light clearance, then the Troupe mark.
+ * - macOS: the traffic-light clearance, then the Karsa mark.
  * - Elsewhere: a 56px slot that centers the mark on the Rail icon column
  *   (x = 28), the x of every row icon below it.
  * Then drag space, then the 28px Rail toggle at the end, its glyph on the

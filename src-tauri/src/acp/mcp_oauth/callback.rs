@@ -27,9 +27,9 @@ const CALLBACK_HEADER_READ_TIMEOUT: Duration = Duration::from_secs(2);
 const MAX_CALLBACK_HEADER_BYTES: u64 = 32 * 1024;
 const MAX_CONCURRENT_CALLBACK_READERS: usize = 16;
 
-const CALLBACK_SUCCESS_HTML: &str = "<!DOCTYPE html><html><body><h2>Authorization complete</h2><p>You can close this tab and return to Troupe.</p><script>window.close();</script></body></html>";
-const CALLBACK_DENIED_HTML: &str = "<!DOCTYPE html><html><body><h2>Authorization cancelled</h2><p>Sign-in was not completed. You can close this tab and return to Troupe.</p></body></html>";
-const CALLBACK_FAILED_HTML: &str = "<!DOCTYPE html><html><body><h2>Authorization failed</h2><p>Troupe could not finish signing in. You can close this tab and return to Troupe.</p></body></html>";
+const CALLBACK_SUCCESS_HTML: &str = "<!DOCTYPE html><html><body><h2>Authorization complete</h2><p>You can close this tab and return to Karsa.</p><script>window.close();</script></body></html>";
+const CALLBACK_DENIED_HTML: &str = "<!DOCTYPE html><html><body><h2>Authorization cancelled</h2><p>Sign-in was not completed. You can close this tab and return to Karsa.</p></body></html>";
+const CALLBACK_FAILED_HTML: &str = "<!DOCTYPE html><html><body><h2>Authorization failed</h2><p>Karsa could not finish signing in. You can close this tab and return to Karsa.</p></body></html>";
 
 async fn write_http_response(
     stream: &mut tokio::net::TcpStream,

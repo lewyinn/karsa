@@ -31,7 +31,7 @@ function authState(account: CodexAccountView | undefined): CodexCliAuthState | n
 
 /**
  * Keep open Codex chats on the login the account snapshot reports for each
- * home. `codex login` and `codex logout` outside Troupe change that login.
+ * home. `codex login` and `codex logout` outside Karsa change that login.
  * This poll restarts the agent when the snapshot for that home changes.
  */
 export function CodexCliAuthSync(): null {

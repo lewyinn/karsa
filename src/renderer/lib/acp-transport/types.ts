@@ -296,7 +296,7 @@ export interface AcpTransport {
    */
   setCatalogOptIn(enabled: boolean): Promise<void>
   /**
-   * Troupe's registry overlay presentation (`get_acp_agent_overlay`): display
+   * Karsa's registry overlay presentation (`get_acp_agent_overlay`): display
    * names, logos and brand colours. The host refreshes a copy older than an
    * hour before it answers. Failures throw {@link AcpTransportError}.
    */
@@ -350,7 +350,7 @@ export interface AcpTransport {
   setSubagentSettings(input: SubagentSettingsInput): Promise<SubagentSettingsView>
   fetchRegistrySnapshot(reason: RegistryCheckReason): Promise<AcpRegistrySnapshot>
   /**
-   * On-demand MCP client probe (Troupe's own rmcp client connection — NOT the
+   * On-demand MCP client probe (Karsa's own rmcp client connection — NOT the
    * agent's). Stateless: takes the renderer-supplied wire config, opens a fresh
    * rmcp client, calls `initialize` + `tools/list`, then closes. Desktop↔web
    * parity: on web the probe runs on the termul-server host via

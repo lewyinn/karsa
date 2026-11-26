@@ -5,14 +5,12 @@ import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { Info } from '@/components/icons'
 import { AntigravityProjectAccountSettings } from '@/components/settings/provider/AntigravityProjectAccountSettings'
 import { toastAccountChoiceError } from '@/components/settings/provider/account-choice-error'
-import { CodexProjectAccountSettings } from '@/components/settings/provider/CodexProjectAccountSettings'
 import { ProjectProviderSettings } from '@/components/settings/provider/ProjectProviderSettings'
 import { SettingsLayout, SettingsSection } from '@/components/settings/SettingsLayout'
 import { SettingsWindow } from '@/components/settings/SettingsWindow'
 import { Button } from '@/components/ui/button'
 import { useProjectAntigravityAccountDraft } from '@/hooks/use-project-antigravity-account-draft'
 import { useProjectClaudeAccountDraft } from '@/hooks/use-project-claude-account-draft'
-import { useProjectCodexAccountDraft } from '@/hooks/use-project-codex-account-draft'
 import { CLAUDE_AGENT_CONFIG_ID } from '@/lib/agents/registry-config-id'
 import { dialogApi, filesystemApi, shellApi, worktreeApi } from '@/lib/api'
 import { mergeEnvVars, parseEnvFile, resolveProjectEnvPath } from '@/lib/env-parser'
@@ -22,7 +20,6 @@ import {
   applyProjectAntigravityAccount
 } from '@/stores/antigravity-account-switch'
 import { applyProjectClaudeAccount } from '@/stores/claude-account-switch'
-import { applyProjectCodexAccount, CODEX_AGENT_CONFIG_ID } from '@/stores/codex-account-switch'
 import { useActiveProjectId, useProjectActions, useProjectStore } from '@/stores/project-store'
 import { useSettingsModalStore } from '@/stores/settings-modal-store'
 import type { EnvVariable, Project, ProjectColor } from '@/types/project'
@@ -57,7 +54,6 @@ export function ProjectSettingsModal() {
     state.projects.find((p) => p.id === settingsProjectId)
   )
   const claudeAccountDraft = useProjectClaudeAccountDraft(settingsProject?.id, { enabled: isOpen })
-  const codexAccountDraft = useProjectCodexAccountDraft(settingsProject?.id, { enabled: isOpen })
   const antigravityAccountDraft = useProjectAntigravityAccountDraft(settingsProject?.id, {
     enabled: isOpen
   })
@@ -129,8 +125,6 @@ export function ProjectSettingsModal() {
   // is left as is.
   const claudeDraftRef = useRef(claudeAccountDraft)
   claudeDraftRef.current = claudeAccountDraft
-  const codexDraftRef = useRef(codexAccountDraft)
-  codexDraftRef.current = codexAccountDraft
   const antigravityDraftRef = useRef(antigravityAccountDraft)
   antigravityDraftRef.current = antigravityAccountDraft
   const removedHandledRef = useRef<string | null>(null)
@@ -144,7 +138,6 @@ export function ProjectSettingsModal() {
     if (removedHandledRef.current === targetProjectId) return
     removedHandledRef.current = targetProjectId
     claudeDraftRef.current.reset()
-    codexDraftRef.current.reset()
     antigravityDraftRef.current.reset()
     envImportRequestRef.current += 1
     // Forget the initialized project so the next open re-reads its fields.
@@ -159,7 +152,6 @@ export function ProjectSettingsModal() {
 
   const handleDiscard = () => {
     claudeAccountDraft.reset()
-    codexAccountDraft.reset()
     antigravityAccountDraft.reset()
     if (settingsProject) resetForm(settingsProject)
     else setHasChanges(false)
@@ -230,7 +222,6 @@ export function ProjectSettingsModal() {
       // Before the host write, as the launcher chip does: a chat started while
       // the save runs must not land on an agent of the old Account.
       if (claudeAccountDraft.dirty) renewAgentCredentials(CLAUDE_AGENT_CONFIG_ID, projectId)
-      if (codexAccountDraft.dirty) renewAgentCredentials(CODEX_AGENT_CONFIG_ID, projectId)
       if (antigravityAccountDraft.dirty) {
         renewAgentCredentials(ANTIGRAVITY_AGENT_CONFIG_ID, projectId)
       }
@@ -241,15 +232,6 @@ export function ProjectSettingsModal() {
         })
         .catch((err) => {
           toastAccountChoiceError(err, 'Could not save the Claude account')
-        })
-      void codexAccountDraft
-        .save()
-        .then((changed) => {
-          if (changed) void applyProjectCodexAccount(projectId, { credentialsRenewed: true })
-        })
-        .catch((err) => {
-          toastAccountChoiceError(err, 'Could not save the Codex account')
-          setHasChanges(true)
         })
       void antigravityAccountDraft
         .save()
@@ -497,17 +479,6 @@ export function ProjectSettingsModal() {
           <SettingsSection id="provider">
             <ProjectProviderSettings
               claude={claudeAccountDraft}
-              onChange={() => setHasChanges(true)}
-              onManageAccounts={() => {
-                if (hasChanges) {
-                  toast.warning('Save or discard your changes first.')
-                  return
-                }
-                openAppSettings('provider')
-              }}
-            />
-            <CodexProjectAccountSettings
-              codex={codexAccountDraft}
               onChange={() => setHasChanges(true)}
               onManageAccounts={() => {
                 if (hasChanges) {

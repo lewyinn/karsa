@@ -1,9 +1,9 @@
 {
 	"$schema": "https://schema.tauri.app/config/2",
-	"productName": "Troupe",
-	"mainBinaryName": "troupe",
-	"version": "0.5.0",
-	"identifier": "com.termul-manager.app",
+	"productName": "Karsa",
+	"mainBinaryName": "karsa",
+	"version": "0.1.0",
+	"identifier": "com.karsa.app",
 	"build": {
 		"beforeDevCommand": "npx vite --config vite.config.tauri.ts",
 		"devUrl": "http://localhost:5180/tauri-index.html",
@@ -16,7 +16,7 @@
 			{
 				"label": "main",
 				"url": "tauri-index.html",
-				"title": "Troupe",
+				"title": "Karsa",
 				"width": 1200,
 				"height": 800,
 				"minWidth": 800,
@@ -40,16 +40,6 @@
 	"plugins": {
 		"fs": {
 			"requireLiteralLeadingDot": false
-		},
-		"updater": {
-			"active": true,
-			"pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDZFNDdGQUQ5NTc4M0Q5OTIKUldTUzJZTlgyZnBIYmdObmg3dFc0QS9PN3F5N2Y5dUNoTy94dWcvTmNxam10Y25tS240dm0ySnYK",
-			"endpoints": [
-				"https://github.com/gnoviawan/troupe/releases/latest/download/latest.json"
-			],
-			"windows": {
-				"installMode": "passive"
-			}
 		}
 	},
 	"bundle": {
@@ -58,7 +48,7 @@
 		"externalBin": [
 			"bin/rg"
 		],
-		"createUpdaterArtifacts": true,
+		"createUpdaterArtifacts": false,
 		"icon": [
 			"icons/32x32.png",
 			"icons/128x128.png",
@@ -66,21 +56,20 @@
 			"icons/icon.icns",
 			"icons/icon.ico"
 		],
-		"publisher": "gnoviawan",
-		"copyright": "Copyright © 2025 gnoviawan",
+		"publisher": "lewyinn",
+		"copyright": "Copyright © 2025 gnoviawan, 2026 mannnrachman, 2026 lewyinn (Karsa)",
 		"category": "Productivity",
-		"shortDescription": "Troupe - Project-aware terminal manager",
-		"longDescription": "Troupe is a desktop application built with Tauri for enhanced productivity. Organize terminals by project with persistent sessions and snapshots.",
+		"shortDescription": "Karsa - Personal AI-assisted multi-repo workspace",
+		"longDescription": "Karsa is a personal desktop workspace built with Tauri by lewyinn (forked from Troupe) for multi-repo development, terminals, Git/GitHub workflows, Run Stack, and Env management.",
 		"macOS": {
 			"entitlements": "Entitlements.plist"
 		},
 		"windows": {
 			"nsis": {
-				"displayLanguageSelector": false,
-				"installerHooks": "windows/installer-hooks.nsh"
+				"displayLanguageSelector": false
 			},
 			"wix": {
-				"upgradeCode": "3ebd61be-890f-598f-90bd-448d14f3ba7a"
+				"upgradeCode": "8a4f2c91-6e3b-4d7a-9c5e-1b2d3e4f5a6c"
 			}
 		}
 	}

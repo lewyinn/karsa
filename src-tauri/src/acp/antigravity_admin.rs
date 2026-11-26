@@ -2,7 +2,7 @@
 //! (`troupe-server antigravity account ...`). They run before the server binds a
 //! socket. They print account ids and names only — never login details.
 //! Antigravity has no terminal sign-in: `login` explains that the Google
-//! sign-in runs from Settings → Provider → Antigravity in the Troupe UI, and
+//! sign-in runs from Settings → Provider → Antigravity in the Karsa UI, and
 //! exits non-zero.
 
 use std::path::PathBuf;
@@ -126,7 +126,7 @@ fn block_on(
         .block_on(operation)
 }
 
-/// Where the operator signs a new account in: the Troupe UI.
+/// Where the operator signs a new account in: the Karsa UI.
 pub(crate) fn login_hint() -> String {
     format!(
         "{} Then `account list` shows it signed in.",

@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
  * - `collapsing`: the width shrinks (200ms) while the rows keep their expanded
  *   layout and every expanded-only part fades out (150ms) before it goes to
  *   `display: none`. Shared parts that sit at a different x in the two
- *   densities (a project's chat rows and icons, the macOS Troupe mark) travel
+ *   densities (a project's chat rows and icons, the macOS Karsa mark) travel
  *   to their collapsed x with the width ({@link RAIL_TRAVEL_CLASS}), so the
  *   layout switch that follows moves nothing.
  * - `settling`: the rows switch to the collapsed layout; collapsed-only parts

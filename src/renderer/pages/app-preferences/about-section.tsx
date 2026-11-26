@@ -21,11 +21,9 @@ import { Switch } from '@/components/ui/switch'
 import { logApi } from '@/lib/api'
 import { isMac, isWindows } from '@/lib/platform'
 import { isTauriContext } from '@/lib/tauri-runtime'
-import { isAurUpdateMode, type UpdateChannel } from '@/lib/tauri-updater-api'
+import { APP_UPDATER_DISABLED, isAurUpdateMode, type UpdateChannel } from '@/lib/tauri-updater-api'
 import { cn } from '@/lib/utils'
-import { useReportBugStore } from '@/stores/report-bug-store'
 import { useUpdaterActions, useUpdaterState } from '@/stores/updater-store'
-import { ServerSection } from './server-section'
 
 const CHANNELS: Array<{ value: UpdateChannel; label: string; description: string }> = [
   { value: 'stable', label: 'Stable', description: 'Production releases. Most reliable.' },
@@ -51,19 +49,16 @@ export function AboutSection({ onResetAll }: { onResetAll: () => void }): React.
       {isDesktop ? (
         <>
           <VersionCard isAurUpdater={isAurUpdater} />
-          <UpdatesGroup isAurUpdater={isAurUpdater} />
+          {!APP_UPDATER_DISABLED && <UpdatesGroup isAurUpdater={isAurUpdater} />}
         </>
       ) : (
-        <>
-          <SettingsCard>
-            <SettingsRow
-              id={rowId('server-version')}
-              label={`termul-server ${APP_VERSION}`}
-              description="The web client is served by the termul-server and updates together with it. Reload the page after the server updates."
-            />
-          </SettingsCard>
-          <ServerSection />
-        </>
+        <SettingsCard>
+          <SettingsRow
+            id={rowId('server-version')}
+            label={`Karsa ${APP_VERSION}`}
+            description="Running in browser mode."
+          />
+        </SettingsCard>
       )}
       <LogsGroup isDesktop={isDesktop} />
       <div
@@ -124,7 +119,7 @@ function UpdatesGroup({ isAurUpdater }: { isAurUpdater: boolean }): React.JSX.El
           id={rowId('auto-update')}
           htmlFor="auto-update"
           label="Check for updates automatically"
-          description="Troupe checks for a new version from time to time."
+          description="Karsa checks for a new version from time to time."
           layout="inline"
         >
           <Switch
@@ -150,24 +145,8 @@ function UpdatesGroup({ isAurUpdater }: { isAurUpdater: boolean }): React.JSX.El
 
 function LogsGroup({ isDesktop }: { isDesktop: boolean }): React.JSX.Element {
   return (
-    <SettingsGroup title="Logs and bug reports">
+    <SettingsGroup title="Logs">
       <SettingsCard>
-        <SettingsRow
-          id={rowId('report-bug')}
-          label="Report a bug"
-          description="File an issue with a redacted diagnostics bundle."
-          layout="inline"
-        >
-          <Button
-            type="button"
-            size="xs"
-            variant="secondary"
-            aria-label="Report a bug"
-            onClick={() => useReportBugStore.getState().openReport()}
-          >
-            Report
-          </Button>
-        </SettingsRow>
         <SettingsRow
           id={rowId('application-log')}
           label="Application log"

@@ -306,7 +306,7 @@ impl Supervisor {
                         self.acp.keep_launch_recipe(&session_id.0, false);
                     }
                     return Err(
-                        "This chat does not run on an Antigravity account Troupe manages."
+                        "This chat does not run on an Antigravity account Karsa manages."
                             .to_string(),
                     );
                 };
@@ -315,7 +315,7 @@ impl Supervisor {
                         self.acp.keep_launch_recipe(&session_id.0, false);
                     }
                     return Err(
-                        "This chat does not run on an Antigravity account Troupe manages."
+                        "This chat does not run on an Antigravity account Karsa manages."
                             .to_string(),
                     );
                 }

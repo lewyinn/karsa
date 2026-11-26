@@ -264,7 +264,7 @@ pub fn default_sessions_dir() -> Option<PathBuf> {
         std::env::var_os("LOCALAPPDATA")
             .map(PathBuf::from)
             .filter(|p| !p.as_os_str().is_empty())
-            .map(|base| base.join("Termul").join("sessions"))
+            .map(|base| base.join("Karsa").join("sessions"))
     }
     #[cfg(not(any(unix, windows)))]
     None
@@ -323,7 +323,7 @@ pub fn default_projects_file() -> Option<PathBuf> {
         std::env::var_os("LOCALAPPDATA")
             .map(PathBuf::from)
             .filter(|p| !p.as_os_str().is_empty())
-            .map(|base| base.join("Termul").join("projects.json"))
+            .map(|base| base.join("Karsa").join("projects.json"))
     }
     #[cfg(not(any(unix, windows)))]
     None
@@ -645,7 +645,7 @@ impl ServerConfig {
                 .map(PathBuf::from)
                 .filter(|p| !p.as_os_str().is_empty())
             {
-                return base.join("Termul");
+                return base.join("Karsa");
             }
         }
         std::env::temp_dir().join("termul")

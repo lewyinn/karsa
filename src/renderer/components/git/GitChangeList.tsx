@@ -1,5 +1,6 @@
 import type { GitStashInfo, GitStatusDetail } from '@shared/types/ipc.types'
 import type React from 'react'
+import { useState } from 'react'
 import { FileItem, RowAction, SectionAction, SectionHeader } from '@/components/git/rows'
 import { StashSection } from '@/components/git/StashSection'
 import type { GitActions } from '@/components/git/use-git-actions'
@@ -82,6 +83,8 @@ export function GitChangeList({
 
   const isColumn = variant === 'column'
   const busy = isMutating || isGenerating
+  const [stagedCollapsed, setStagedCollapsed] = useState(false)
+  const [changesCollapsed, setChangesCollapsed] = useState(false)
 
   const body = (
     <div className={cn('space-y-2 px-2 pb-2', variant === 'desktop' ? 'w-[312px]' : 'w-full')}>
@@ -91,6 +94,8 @@ export function GitChangeList({
             label="Staged"
             count={stagedFiles.length}
             selectionCount={stagedSelectionCount}
+            collapsed={stagedCollapsed}
+            onToggle={() => setStagedCollapsed((prev) => !prev)}
           >
             <SectionAction
               icon={<Minus size={13} />}
@@ -100,28 +105,29 @@ export function GitChangeList({
               onClick={() => runUnstage(stagedFiles.map((f) => f.path))}
             />
           </SectionHeader>
-          {stagedFiles.map((file: GitStatusDetail) => {
-            const inSelection = selectionSection === 'staged' && selectedPaths.has(file.path)
-            return (
-              <FileItem
-                key={file.path}
-                file={file}
-                variant={fileItemVariant}
-                isActive={selectedFile === file.path && selectedStaged}
-                isSelected={inSelection}
-                onClick={(e) => onFileClick(e, file.path, true, stagedFiles)}
-              >
-                <RowAction
-                  icon={<Minus size={rowIconSize} />}
-                  label="Unstage changes"
-                  touch={rowActionTouch}
-                  disabled={busy}
-                  gated={!admitted}
-                  onClick={() => runUnstage(targetsFor(file.path, 'staged'))}
-                />
-              </FileItem>
-            )
-          })}
+          {!stagedCollapsed &&
+            stagedFiles.map((file: GitStatusDetail) => {
+              const inSelection = selectionSection === 'staged' && selectedPaths.has(file.path)
+              return (
+                <FileItem
+                  key={file.path}
+                  file={file}
+                  variant={fileItemVariant}
+                  isActive={selectedFile === file.path && selectedStaged}
+                  isSelected={inSelection}
+                  onClick={(e) => onFileClick(e, file.path, true, stagedFiles)}
+                >
+                  <RowAction
+                    icon={<Minus size={rowIconSize} />}
+                    label="Unstage changes"
+                    touch={rowActionTouch}
+                    disabled={busy}
+                    gated={!admitted}
+                    onClick={() => runUnstage(targetsFor(file.path, 'staged'))}
+                  />
+                </FileItem>
+              )
+            })}
         </div>
       )}
 
@@ -130,6 +136,8 @@ export function GitChangeList({
           label="Changes"
           count={unstagedFiles.length}
           selectionCount={unstagedSelectionCount}
+          collapsed={changesCollapsed}
+          onToggle={() => setChangesCollapsed((prev) => !prev)}
         >
           {unstagedFiles.length > 0 && (
             <>
@@ -151,51 +159,55 @@ export function GitChangeList({
             </>
           )}
         </SectionHeader>
-        {unstagedFiles.length === 0 ? (
-          <div className="px-4 py-8 text-center">
-            {statusError && !isNotARepository(statusError) ? (
-              <p role="alert" className="whitespace-pre-wrap break-words text-xs text-destructive">
-                Couldn't read changes: {statusError}
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                {statusError ? 'This folder is not a git repository.' : 'No changes detected'}
-              </p>
-            )}
-          </div>
-        ) : (
-          unstagedFiles.map((file: GitStatusDetail) => {
-            const inSelection = selectionSection === 'unstaged' && selectedPaths.has(file.path)
-            return (
-              <FileItem
-                key={file.path}
-                file={file}
-                variant={fileItemVariant}
-                isActive={selectedFile === file.path && !selectedStaged}
-                isSelected={inSelection}
-                onClick={(e) => onFileClick(e, file.path, false, unstagedFiles)}
-              >
-                <RowAction
-                  icon={<RotateCcw size={rowIconSize} />}
-                  label="Discard changes"
-                  touch={rowActionTouch}
-                  variant="danger"
-                  disabled={busy}
-                  gated={!admitted}
-                  onClick={() => requestDiscard(targetsFor(file.path, 'unstaged'))}
-                />
-                <RowAction
-                  icon={<Plus size={rowIconSize} />}
-                  label="Stage changes"
-                  touch={rowActionTouch}
-                  disabled={busy}
-                  gated={!admitted}
-                  onClick={() => runStage(targetsFor(file.path, 'unstaged'))}
-                />
-              </FileItem>
-            )
-          })
-        )}
+        {!changesCollapsed &&
+          (unstagedFiles.length === 0 ? (
+            <div className="px-4 py-8 text-center">
+              {statusError && !isNotARepository(statusError) ? (
+                <p
+                  role="alert"
+                  className="whitespace-pre-wrap break-words text-xs text-destructive"
+                >
+                  Couldn't read changes: {statusError}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {statusError ? 'This folder is not a git repository.' : 'No changes detected'}
+                </p>
+              )}
+            </div>
+          ) : (
+            unstagedFiles.map((file: GitStatusDetail) => {
+              const inSelection = selectionSection === 'unstaged' && selectedPaths.has(file.path)
+              return (
+                <FileItem
+                  key={file.path}
+                  file={file}
+                  variant={fileItemVariant}
+                  isActive={selectedFile === file.path && !selectedStaged}
+                  isSelected={inSelection}
+                  onClick={(e) => onFileClick(e, file.path, false, unstagedFiles)}
+                >
+                  <RowAction
+                    icon={<RotateCcw size={rowIconSize} />}
+                    label="Discard changes"
+                    touch={rowActionTouch}
+                    variant="danger"
+                    disabled={busy}
+                    gated={!admitted}
+                    onClick={() => requestDiscard(targetsFor(file.path, 'unstaged'))}
+                  />
+                  <RowAction
+                    icon={<Plus size={rowIconSize} />}
+                    label="Stage changes"
+                    touch={rowActionTouch}
+                    disabled={busy}
+                    gated={!admitted}
+                    onClick={() => runStage(targetsFor(file.path, 'unstaged'))}
+                  />
+                </FileItem>
+              )
+            })
+          ))}
       </div>
 
       <StashSection

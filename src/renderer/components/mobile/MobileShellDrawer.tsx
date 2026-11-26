@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { findVisibleQuestionFocusTarget } from '@/components/chat/use-approval-dock'
 import {
   CalendarClock,
-  Camera,
   ChevronDown,
   FileCode,
   Folder2,
@@ -372,13 +371,13 @@ export function MobileShellDrawer({
               <>
                 <TermulMark size={20} className="ml-2 shrink-0" />
                 <SheetTitle ref={titleRef} tabIndex={-1} className="text-base font-semibold">
-                  Troupe
+                  Karsa
                 </SheetTitle>
               </>
             ) : (
               <>
                 <SheetTitle ref={titleRef} tabIndex={-1} className="sr-only">
-                  Troupe
+                  Karsa
                 </SheetTitle>
                 <div className="min-w-0 flex-1">
                   <DrawerProjectRow
@@ -506,19 +505,6 @@ export function MobileShellDrawer({
               }}
             >
               <Settings size={18} />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className={FOOTER_ICON_CLASS}
-              aria-label="Snapshots"
-              onClick={() => {
-                closeForNavigation()
-                navigate('/snapshots')
-              }}
-            >
-              <Camera size={18} />
             </Button>
             {!isTauriContext() && onOpenGitHistory && (
               <Button

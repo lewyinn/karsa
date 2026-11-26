@@ -51,7 +51,7 @@ export function WelcomeStep({ onNext }: { onNext: () => void }): React.JSX.Eleme
           <TermulMark size={56} className="text-secondary-foreground" />
           <div className="flex flex-col gap-2">
             <h1 ref={titleRef} tabIndex={-1} className={ONBOARDING_TITLE_CLASS}>
-              Welcome to Troupe
+              Welcome to Karsa
             </h1>
             <p className="text-sm text-muted-foreground">
               Run Claude Code, Codex and other coding agents side by side, in your own projects.

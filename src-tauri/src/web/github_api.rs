@@ -164,7 +164,7 @@ pub async fn comment(
     .await
 }
 
-/// The service accepts only Troupe chat worktrees of the resolved project.
+/// The service accepts only Karsa chat worktrees of the resolved project.
 pub async fn checkout_pr(
     State(state): State<AppState>,
     ConnectInfo(peer): ConnectInfo<SocketAddr>,
@@ -221,6 +221,21 @@ pub async fn set_item_state(
     let cwd = req.cwd.clone();
     run(&state, "set_item_state", &cwd, move |service, cwd| {
         service.set_item_state(&GithubSetItemStateRequest { cwd, ..req })
+    })
+    .await
+}
+
+pub async fn create_issue(
+    State(state): State<AppState>,
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
+    Json(req): Json<GithubCreateIssueRequest>,
+) -> Reply<GithubCreateIssueResult> {
+    if let Some(refused) = write_refused(&state, peer, "/github/create-issue") {
+        return refused;
+    }
+    let cwd = req.cwd.clone();
+    run(&state, "create_issue", &cwd, move |service, cwd| {
+        service.create_issue(&GithubCreateIssueRequest { cwd, ..req })
     })
     .await
 }

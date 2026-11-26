@@ -113,7 +113,7 @@ function settle(id: number, open: boolean): void {
   if (pending === null || pending.id !== id) return
   setState({ pending: null })
   if (!open) return
-  // Opens where "Open links in" says (default browser or a Troupe tab).
+  // Opens where "Open links in" says (default browser or a Karsa tab).
   openLink(pending.url).catch((error: unknown) => {
     void logFrontendError({
       level: 'warn',

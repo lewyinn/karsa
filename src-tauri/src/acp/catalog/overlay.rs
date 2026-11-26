@@ -1,6 +1,9 @@
-//! Merges Troupe's registry overlay into a resolved catalog.
+//! Merges Karsa's registry overlay into a resolved catalog.
 
-use super::{compute_catalog_agent, BundledAgent, CatalogAgent, CatalogSource, HostCapability};
+use super::{
+    compute_catalog_agent, is_allowed_agent_id, BundledAgent, CatalogAgent, CatalogSource,
+    HostCapability,
+};
 use crate::acp::troupe_overlay::AgentOverride;
 use crate::acp_registry_snapshot::AcpRegistrySnapshotAgent;
 
@@ -17,7 +20,9 @@ pub(super) fn apply_troupe_overlay(
 ) {
     let mut added = 0;
     for agent in launchable {
-        if crate::acp::agent_aliases::is_legacy_agent_id(&agent.id) {
+        if crate::acp::agent_aliases::is_legacy_agent_id(&agent.id)
+            || !is_allowed_agent_id(&agent.id)
+        {
             continue;
         }
         if agents.iter().any(|existing| existing.id == agent.id) {

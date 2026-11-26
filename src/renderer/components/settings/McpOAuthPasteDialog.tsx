@@ -55,11 +55,11 @@ function pasteErrorFor(err: unknown, redirectUri: string): PasteError | null {
       }
     case 'OAUTH_EXCHANGE_FAILED':
       return {
-        message: `Troupe could not finish signing in (${detail}). Dismiss, then press Connect to try again.`,
+        message: `Karsa could not finish signing in (${detail}). Dismiss, then press Connect to try again.`,
         final: true
       }
     default:
-      return { message: detail || 'Could not reach Troupe. Try again.', final: false }
+      return { message: detail || 'Could not reach Karsa. Try again.', final: false }
   }
 }
 
@@ -173,7 +173,7 @@ export function McpOAuthPasteDialog({
             }}
           />
           <p className="text-xs text-muted-foreground">
-            A browser on the same machine as Troupe finishes by itself, and this dialog closes.
+            A browser on the same machine as Karsa finishes by itself, and this dialog closes.
           </p>
         </div>
 

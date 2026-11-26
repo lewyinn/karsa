@@ -80,7 +80,7 @@ fn ops_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
 
 pub const GUIDE_DESCRIPTION: &str = "Read this first when the user wants something to run on \
 a schedule or on demand (an automation, a recurring task, a cron job, a workflow). Returns the \
-rules and the format for building a Troupe automation with the automation_* tools: node kinds \
+rules and the format for building a Karsa automation with the automation_* tools: node kinds \
 and fields, ports, templates, the output schema subset, ops, issue codes, and when to ask the \
 user questions. Returns Markdown.";
 
@@ -133,9 +133,9 @@ needs approval again."
 }
 
 /// The `automation_guide` text.
-pub const GUIDE: &str = r#"# Authoring a Troupe automation
+pub const GUIDE: &str = r#"# Authoring a Karsa automation
 
-An automation is a graph the Troupe host runs on a schedule or on demand, with no chat open. You build it with the automation_* tools; the user approves it in the Automations tab. You cannot approve, enable, run or delete an automation, or set a secret.
+An automation is a graph the Karsa host runs on a schedule or on demand, with no chat open. You build it with the automation_* tools; the user approves it in the Automations tab. You cannot approve, enable, run or delete an automation, or set a secret.
 
 ## Steps
 

@@ -9,7 +9,7 @@
 
 import { logFrontendError } from './log-api'
 
-export const RENAME_NOTICE_TITLE = 'Termul is now Troupe'
+export const RENAME_NOTICE_TITLE = 'Karsa'
 export const RENAME_NOTICE_DESCRIPTION =
   "It's the same app with a new name. Your projects, chats, settings and sign-ins are unchanged."
 export const RENAME_NOTICE_DISMISS_LABEL = 'Got it'
@@ -84,23 +84,15 @@ function classifyBootStorage(storage: Storage | null): boolean {
 // Runs at module load, which both renderer roots reach through their static
 // imports before React mounts and before `ensureClientIdentity` mints the
 // device id. Deferring it to a hook would see that id on every fresh install.
-let updatedFromEarlierVersion = classifyBootStorage(safeLocalStorage())
+let _updatedFromEarlierVersion = classifyBootStorage(safeLocalStorage())
 
-/** True while an updated device has not dismissed the notice. */
+/** Disabled in Karsa (the legacy Termul -> Troupe transition notice does not apply). */
 export function isRenameNoticeDue(): boolean {
-  if (!updatedFromEarlierVersion) return false
-  const storage = safeLocalStorage()
-  if (!storage) return false
-  try {
-    return parseRecord(storage.getItem(RENAME_NOTICE_STORAGE_KEY)) === null
-  } catch {
-    reportStorageFailure('read')
-    return false
-  }
+  return false
 }
 
 export function dismissRenameNotice(): void {
-  updatedFromEarlierVersion = false
+  _updatedFromEarlierVersion = false
   try {
     safeLocalStorage()?.setItem(RENAME_NOTICE_STORAGE_KEY, 'dismissed')
   } catch {

@@ -10,6 +10,17 @@ import { useProjectStore } from '@/stores/project-store'
 
 const MAX_COMMIT_MESSAGE_DIFF_CHARS = 120_000
 
+const OMITTED_COMMIT_DIFF_PATTERNS: readonly RegExp[] = [
+  /(?:^|\/)(?:package-lock\.json|bun\.lockb?|yarn\.lock|pnpm-lock\.yaml|Cargo\.lock|poetry\.lock|composer\.lock|Gemfile\.lock|Podfile\.lock)$/i,
+  /\.min\.(?:js|css)$/i,
+  /\.map$/i
+]
+
+function isOmittedCommitDiffPath(path: string): boolean {
+  const normalized = path.replace(/\\/g, '/')
+  return OMITTED_COMMIT_DIFF_PATTERNS.some((pattern) => pattern.test(normalized))
+}
+
 interface UseGitActionsOptions {
   cwd: string
   /** Syncs which side (staged vs unstaged) of the selected path is shown in the
@@ -280,7 +291,12 @@ export function useGitActions({ cwd, setSelectedStaged, clearSelection }: UseGit
   const hasUsableAgent =
     selectedAgentConfigId !== null &&
     agentConfigs.some((config) => config.id === selectedAgentConfigId)
-  const canGenerate = stagedCount > 0 && !isGenerating && !isCommitting && !isPushing && !isMutating
+  const canGenerate =
+    (stagedCount > 0 || hasUncommittedChanges) &&
+    !isGenerating &&
+    !isCommitting &&
+    !isPushing &&
+    !isMutating
   const canCommit =
     !writesBlocked &&
     summary.trim().length > 0 &&
@@ -303,8 +319,9 @@ export function useGitActions({ cwd, setSelectedStaged, clearSelection }: UseGit
       toast.error('Configure and select an ACP agent before generating a commit message')
       return
     }
-    if (stagedCount === 0) {
-      toast.error('Stage files before generating a commit message')
+    const useStaged = stagedCount > 0
+    if (!useStaged && !hasUncommittedChanges) {
+      toast.error('No changes available to generate a commit message')
       return
     }
 
@@ -313,23 +330,34 @@ export function useGitActions({ cwd, setSelectedStaged, clearSelection }: UseGit
     const requestedToken = ++generationToken.current
     setIsGenerating(true)
     try {
-      const paths = [
-        ...new Set(
-          (statuses[normalizePath(cwd)] ?? [])
-            .filter((status) => status.staged)
-            .map((status) => status.path)
-        )
-      ]
-      if (paths.length !== stagedCount) {
+      const repoEntries = statuses[normalizePath(cwd)] ?? []
+      const targetEntries = repoEntries.filter((status) =>
+        useStaged ? status.staged : !status.staged
+      )
+      const paths = [...new Set(targetEntries.map((status) => status.path))]
+      if (useStaged && paths.length !== stagedCount) {
         throw new Error('Staged files changed. Refresh Git status and retry')
       }
+      if (paths.length === 0) {
+        throw new Error('No changed files found. Refresh Git status and retry')
+      }
+      const statusByPath = new Map(targetEntries.map((entry) => [entry.path, entry.status]))
       const sections = await Promise.all(
-        paths.map(async (path) => ({ path, diff: await gitApi.getDiff(requestedCwd, path, true) }))
+        paths.map(async (path) => {
+          if (isOmittedCommitDiffPath(path)) {
+            return { path, diff: '[lockfile/generated diff omitted — file changed]' }
+          }
+          const diff = await gitApi.getDiff(requestedCwd, path, useStaged)
+          if (!diff.trim() && statusByPath.get(path) === 'untracked') {
+            return { path, diff: '[new untracked file added]' }
+          }
+          return { path, diff }
+        })
       )
       const latestPaths = [
         ...new Set(
           (currentStatuses.current[normalizePath(requestedCwd)] ?? [])
-            .filter((status) => status.staged)
+            .filter((status) => (useStaged ? status.staged : !status.staged))
             .map((status) => status.path)
         )
       ]
@@ -341,31 +369,44 @@ export function useGitActions({ cwd, setSelectedStaged, clearSelection }: UseGit
         sortedLatestPaths.length !== sortedPaths.length ||
         sortedLatestPaths.some((path, index) => path !== sortedPaths[index])
       ) {
-        throw new Error('Staged files or repository changed during generation. Retry')
+        throw new Error(
+          useStaged
+            ? 'Staged files or repository changed during generation. Retry'
+            : 'Changed files or repository changed during generation. Retry'
+        )
       }
-      const stagedDiff = sections
+      const sectionKind = useStaged ? 'STAGED' : 'UNSTAGED'
+      const combinedDiff = sections
         .filter(({ diff }) => diff.trim().length > 0)
         .map(
           ({ path, diff }) =>
-            `--- BEGIN STAGED FILE: ${path} ---\n${diff}\n--- END STAGED FILE: ${path} ---`
+            `--- BEGIN ${sectionKind} FILE: ${path} ---\n${diff}\n--- END ${sectionKind} FILE: ${path} ---`
         )
         .join('\n\n')
         .trim()
-      if (stagedDiff.length === 0) {
-        throw new Error('The staged diff is empty. Refresh Git status and retry')
-      }
-      if (stagedDiff.length > MAX_COMMIT_MESSAGE_DIFF_CHARS) {
+      if (combinedDiff.length === 0) {
         throw new Error(
-          `The staged diff is too large to generate safely (${stagedDiff.length.toLocaleString()} characters; limit ${MAX_COMMIT_MESSAGE_DIFF_CHARS.toLocaleString()})`
+          useStaged
+            ? 'The staged diff is empty. Refresh Git status and retry'
+            : 'The unstaged diff is empty. Refresh Git status and retry'
         )
       }
-      const generated = await generateCommitMessage(requestedCwd, stagedDiff)
+      if (combinedDiff.length > MAX_COMMIT_MESSAGE_DIFF_CHARS) {
+        throw new Error(
+          `The diff is too large to generate safely (${combinedDiff.length.toLocaleString()} characters; limit ${MAX_COMMIT_MESSAGE_DIFF_CHARS.toLocaleString()})`
+        )
+      }
+      const generated = await generateCommitMessage(requestedCwd, combinedDiff)
       if (currentCwd.current !== requestedCwd || generationToken.current !== requestedToken) {
         throw new Error('Repository changed during generation. Generated message was discarded')
       }
       setSummary(generated.summary)
       setDescription(generated.description)
-      toast.success('Commit message generated')
+      toast.success(
+        useStaged
+          ? 'Commit message generated from staged changes'
+          : 'Commit message generated from unstaged changes'
+      )
     } catch (error) {
       toast.error(String(error instanceof Error ? error.message : error))
     } finally {

@@ -59,6 +59,7 @@ import {
   useAntigravityLimit
 } from './antigravity-account/use-antigravity-limit'
 import { BrowserConsentCard } from './BrowserConsentCard'
+import { ChangedFilesCard } from './ChangedFilesCard'
 import { ChatEmptyState } from './ChatEmptyState'
 import { ChatErrorNotice } from './ChatErrorNotice'
 import { ChatInputBar } from './ChatInputBar'
@@ -86,6 +87,7 @@ import { StoppedChatDock } from './StoppedChatDock'
 import { SubagentSurfaceProvider } from './SubagentSurface'
 import { useAdoptedLaunchSession } from './use-adopted-launch-session'
 import { useApprovalDock } from './use-approval-dock'
+import { useChatChangedFiles } from './use-chat-changed-files'
 import { AUTO_RESUME_FAILED_REASON, useIdleStopAutoResume } from './use-idle-stop-auto-resume'
 
 /** Concatenate the text blocks of a message into a single string. */
@@ -818,6 +820,11 @@ export function AgentChatPanel({
   // narrow desktop panes keep a right gutter clear of it. On the phone shell it
   // floats below the plan bar with no gutter, so it never shifts the layout.
   const [statusRailShown, setStatusRailShown] = useState(false)
+  const chatChanges = useChatChangedFiles(
+    quickChat || isEmptyChat ? '' : (session?.cwd ?? ''),
+    toolCalls,
+    session?.activeTurn ?? false
+  )
   const statusRail = session ? (
     <ChatStatusChips
       sessionId={session.id}
@@ -826,7 +833,7 @@ export function AgentChatPanel({
       toolCalls={toolCalls}
       messages={messages}
       turnActive={session.activeTurn}
-      hideChanges={quickChat}
+      hideChanges={quickChat || !isEmptyChat}
       onOpenGitChanges={
         quickChat
           ? undefined
@@ -1161,6 +1168,13 @@ export function AgentChatPanel({
         </div>
       ) : (
         <div ref={dockRef} data-chat-dock="true" className={dockClassName}>
+          {!quickChat && !isEmptyChat && chatChanges.files.length > 0 && (
+            <div className={`${CHAT_GUTTER_X} pb-2`}>
+              <div className="mx-auto w-full max-w-3xl">
+                <ChangedFilesCard changes={chatChanges} cwd={session.cwd} toolCalls={toolCalls} />
+              </div>
+            </div>
+          )}
           <ChatInputBar
             session={composerSession ?? session}
             projectRoot={skillsProjectRoot}

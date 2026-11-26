@@ -45,7 +45,7 @@ function resolveWorkingCopyCwd(projectId: string, action: string): string | null
   if (wc?.state === 'unresolved') {
     reportUnresolvedWorkingCopy(projectId, wc)
     toast.error('This worktree is no longer available', {
-      description: `${action} is blocked while Troupe refreshes the worktree list.`
+      description: `${action} is blocked while Karsa refreshes the worktree list.`
     })
     return null
   }

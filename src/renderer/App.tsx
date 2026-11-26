@@ -35,7 +35,6 @@ import { useGitStatus } from './hooks/use-git-status'
 import { useGitStatusRefresh } from './hooks/use-git-status-refresh'
 import { useProjectGitBranch } from './hooks/use-project-git-branch'
 import { useProjectIcon } from './hooks/use-project-icon'
-import { useRemoteProjects } from './hooks/use-remote-projects'
 import { useRenameNotice } from './hooks/use-rename-notice'
 import { useSSHSessionEvents } from './hooks/use-ssh-session-events'
 import { useTerminalDetachedOutput } from './hooks/use-terminal-detached-output'
@@ -47,7 +46,6 @@ import { useTerminalAutoSave } from './hooks/useTerminalAutoSave'
 import WorkspaceLayout from './layouts/WorkspaceLayout'
 
 const WorkspaceDashboard = lazy(() => import('./pages/WorkspaceDashboard'))
-const WorkspaceSnapshots = lazy(() => import('./pages/WorkspaceSnapshots'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 function RouteFallback(): React.JSX.Element {
@@ -146,7 +144,7 @@ function AppEffects(): null {
   // Background Update Check: advisory only, never auto-applies (Q8/Q10).
   // Same cadence as the desktop root; failures are silent on both surfaces.
   useAcpUpdateChecks()
-  // Agent names, logos and brand colours from Troupe's registry. Both roots.
+  // Agent names, logos and brand colours from Karsa's registry. Both roots.
   useAgentOverlayLoader()
   // One-shot: prime the server write-admission capability cache from
   // `GET /health` so write-gated web surfaces (e.g. the worktree picker) reflect
@@ -188,7 +186,6 @@ function AppEffects(): null {
   useTerminalExitNotification()
   useTerminalIdleNotification()
   useAgentChatNotification()
-  useRemoteProjects()
   useAcpListeners()
   useAcpAgents()
   useAcpHistory()
@@ -260,15 +257,7 @@ const router = createHashRouter(
             </Suspense>
           )
         },
-        { path: 'c/:sessionId', element: <ChatRoute /> },
-        {
-          path: 'snapshots',
-          element: (
-            <Suspense fallback={<RouteFallback />}>
-              <WorkspaceSnapshots />
-            </Suspense>
-          )
-        }
+        { path: 'c/:sessionId', element: <ChatRoute /> }
       ]
     },
     {

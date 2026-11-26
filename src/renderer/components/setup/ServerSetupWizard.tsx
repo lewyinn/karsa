@@ -3,7 +3,7 @@
  *
  * A fresh `termul-server` boots a minimal setup mode (health + `/setup/*` +
  * this SPA — no app stack). This wizard is the friendly front of it: plain-
- * language questions ("Where can Troupe be reached?" rather than "bind
+ * language questions ("Where can Karsa be reached?" rather than "bind
  * host"), server-provided defaults, and per-field errors inline so nothing
  * is saved until every answer is valid.
  *
@@ -118,7 +118,7 @@ const CHANNEL_OPTIONS: Array<{ value: 'none' | ServerUpdateChannel; label: strin
 ]
 
 const CHANNEL_HINTS: Record<'none' | ServerUpdateChannel, string> = {
-  none: 'Troupe will not look for new versions.',
+  none: 'Karsa will not look for new versions.',
   stable: 'Recommended — finished, tested releases.',
   nightly: 'The very latest changes every day — expect breakage.'
 }
@@ -317,7 +317,7 @@ export function ServerSetupWizard({
     answers === null ? null : (
       <>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="server-setup-host">Where can Troupe be reached?</Label>
+          <Label htmlFor="server-setup-host">Where can Karsa be reached?</Label>
           <Select value={answers.host} onValueChange={handleHostChange} disabled={submitting}>
             <SelectTrigger
               id="server-setup-host"
@@ -460,7 +460,7 @@ export function ServerSetupWizard({
                 spellCheck={false}
               />
               <p id="server-setup-sessions-dir-hint" className="text-xs text-muted-foreground">
-                Where Troupe keeps terminal sessions.
+                Where Karsa keeps terminal sessions.
               </p>
               <FieldError
                 id={fieldErrorId('server-setup-sessions-dir')}
@@ -484,7 +484,7 @@ export function ServerSetupWizard({
                 spellCheck={false}
               />
               <p id="server-setup-projects-file-hint" className="text-xs text-muted-foreground">
-                Where Troupe stores your project list.
+                Where Karsa stores your project list.
               </p>
               <FieldError
                 id={fieldErrorId('server-setup-projects-file')}
@@ -530,7 +530,7 @@ export function ServerSetupWizard({
 
         <Button type="submit" disabled={submitting}>
           {submitting ? <Spinner size={16} decorative className="mr-2" /> : null}
-          {submitting ? 'Saving…' : mode === 'setup' ? 'Start Troupe' : 'Save and restart'}
+          {submitting ? 'Saving…' : mode === 'setup' ? 'Start Karsa' : 'Save and restart'}
         </Button>
       </>
     )
@@ -550,14 +550,14 @@ export function ServerSetupWizard({
           ) : (
             <form
               className="flex w-full max-w-md flex-col gap-5"
-              aria-label="Set up Troupe"
+              aria-label="Set up Karsa"
               noValidate
               onSubmit={(event) => {
                 void handleSubmit(event)
               }}
             >
               <div className="flex flex-col gap-1.5 text-center">
-                <h1 className="text-lg font-semibold text-foreground">Set up Troupe</h1>
+                <h1 className="text-lg font-semibold text-foreground">Set up Karsa</h1>
                 <p className="text-sm text-muted-foreground">
                   A few questions and you're in — the defaults work for most people.
                 </p>
@@ -570,7 +570,7 @@ export function ServerSetupWizard({
                   <AlertTriangle size={14} className="mt-0.5 shrink-0" />
                   <p>
                     A saved server configuration couldn't be used ({configError}). Answer the
-                    questions below and Troupe will write a fresh one.
+                    questions below and Karsa will write a fresh one.
                   </p>
                 </div>
               ) : null}
@@ -599,7 +599,7 @@ export function ServerSetupWizard({
     >
       <SettingsCard>
         <SettingsRow
-          label="Where can Troupe be reached?"
+          label="Where can Karsa be reached?"
           htmlFor="server-setup-host"
           description={
             <RowHelp id="server-setup-host" error={fieldErrors.host}>
@@ -698,7 +698,7 @@ export function ServerSetupWizard({
           htmlFor="server-setup-sessions-dir"
           description={
             <RowHelp id="server-setup-sessions-dir" error={fieldErrors.sessionsDir}>
-              Where Troupe keeps terminal sessions.
+              Where Karsa keeps terminal sessions.
             </RowHelp>
           }
         >
@@ -720,7 +720,7 @@ export function ServerSetupWizard({
           htmlFor="server-setup-projects-file"
           description={
             <RowHelp id="server-setup-projects-file" error={fieldErrors.projectsFile}>
-              Where Troupe stores your project list.
+              Where Karsa stores your project list.
             </RowHelp>
           }
         >

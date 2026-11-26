@@ -164,7 +164,7 @@ export function applyCodexLimitAction(event: CodexLimitActionEvent, eventSeq?: n
         if (reportedFailures.has(key)) return
         reportedFailures.add(key)
       }
-      toast.warning('Troupe could not continue the chat', { description: event.reason })
+      toast.warning('Karsa could not continue the chat', { description: event.reason })
       return
     }
     case 'switched':

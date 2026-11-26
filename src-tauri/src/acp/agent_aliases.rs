@@ -3,7 +3,7 @@
 //! `opencode-v2` was a separate opt-in while `opencode` was 1.x
 //! (agentclientprotocol/registry#657). Both ids now ship the same OpenCode 2
 //! binary. The registry keeps `opencode-v2` so old saved ids still resolve
-//! (registry#764 names it "OpenCode (legacy ID)"). Troupe lists only `opencode`.
+//! (registry#764 names it "OpenCode (legacy ID)"). Karsa lists only `opencode`.
 //!
 //! Reuse, do not migrate. A saved config, chat, history session, or install
 //! that still says `opencode-v2` resolves to OpenCode at read time. The files

@@ -4,7 +4,7 @@ import { logFrontendError } from '@/lib/log-api'
 /**
  * Command status gutter: a green/red dot left of each finished command.
  *
- * SIGNALS (both written in-band by Troupe's integrated zsh and bash shells, so
+ * SIGNALS (both written in-band by Karsa's integrated zsh and bash shells, so
  * ordering against the command output is exact on every surface that renders
  * the PTY stream: desktop, shared-live remote, and the browser client):
  * - `OSC 133;A;termul` marks where a prompt starts. The host prompt spacer may
@@ -13,7 +13,7 @@ import { logFrontendError } from '@/lib/log-api'
  * - `OSC 133;D;<exit>;termul` follows a user command and precedes the next
  *   prompt mark. It closes the most recent prompt with that exit code.
  *
- * Empty Enter, Ctrl+C at the prompt, and Troupe's own completion probes emit no
+ * Empty Enter, Ctrl+C at the prompt, and Karsa's own completion probes emit no
  * `D`, so they get no dot. Plain `133;A`/`133;D` from user prompt frameworks are
  * ignored to avoid double dots.
  *

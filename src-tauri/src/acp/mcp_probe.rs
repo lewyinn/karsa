@@ -396,7 +396,7 @@ pub(crate) struct McpConnection {
     _tree: Option<crate::process_util::KillOnCloseJob>,
 }
 
-/// What every Troupe MCP client advertises: no elicitation, sampling, roots
+/// What every Karsa MCP client advertises: no elicitation, sampling, roots
 /// or tasks, so a server cannot ask it for user input.
 pub(crate) fn client_config() -> ClientConfig {
     ClientConfig::default()
@@ -636,7 +636,7 @@ async fn check_oauth_required(url: &str, headers: &[McpNameValuePair]) -> Option
         "params": {
             "protocolVersion": "2024-11-05",
             "capabilities": {},
-            "clientInfo": { "name": "termul-probe", "version": "0.1" }
+            "clientInfo": { "name": "karsa-probe", "version": "0.1" }
         }
     });
     let mut request = client

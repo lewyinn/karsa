@@ -12,6 +12,8 @@ interface ProviderGroupHeaderProps {
   name: string
   /** Quiet text after the name, e.g. "2 accounts". */
   count?: string
+  /** Optional runtime status indicator shown beside the account count. */
+  status?: React.ReactNode
   /** Oldest usage read in the group, epoch ms. */
   lastChecked: number | null
   refreshing: boolean
@@ -26,6 +28,7 @@ export function ProviderGroupHeader({
   iconKey,
   name,
   count,
+  status,
   lastChecked,
   refreshing,
   onRefresh,
@@ -49,6 +52,7 @@ export function ProviderGroupHeader({
       )}
       <h3 className="text-sm font-medium leading-5 text-foreground">{name}</h3>
       {count && <span className="text-xs tabular-nums text-muted-foreground">{count}</span>}
+      {status}
       <span
         className="ml-auto flex items-center gap-1.5 text-2xs text-muted-foreground"
         aria-live="polite"

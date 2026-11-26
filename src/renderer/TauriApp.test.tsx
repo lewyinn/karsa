@@ -52,10 +52,6 @@ vi.mock('./pages/AppPreferences', () => ({
   default: () => null
 }))
 
-vi.mock('./pages/WorkspaceSnapshots', () => ({
-  default: () => null
-}))
-
 vi.mock('./pages/NotFound', () => ({
   default: () => null
 }))

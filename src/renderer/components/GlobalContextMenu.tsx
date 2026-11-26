@@ -31,7 +31,7 @@
  * document-wide selectAll fallback).
  *
  * Right-clicking an http(s) link, or with exactly one URL selected (a
- * `localhost:4321` in a code span), adds "Open in Troupe browser" on the
+ * `localhost:4321` in a code span), adds "Open in Karsa browser" on the
  * desktop app, which opens the URL in a new browser tab instead of the
  * system browser.
  *
@@ -77,7 +77,7 @@ interface GlobalContextMenuState {
   isMutableEditableFocused: boolean
   focusedEditable: HTMLElement | null
   selection: SelectionSnapshot
-  /** The http(s) URL the right-click is on, when Troupe's browser can open it. */
+  /** The http(s) URL the right-click is on, when Karsa's browser can open it. */
   linkUrl: string | null
 }
 
@@ -220,13 +220,13 @@ export function GlobalContextMenu({ children }: GlobalContextMenuProps): React.J
             <ContextMenuItem
               onSelect={() => {
                 if (!openUrlInTroupeBrowser(linkUrl)) {
-                  toast.error('Could not open the link in the Troupe browser', {
+                  toast.error('Could not open the link in the Karsa browser', {
                     description: 'Open a project pane first, then try again.'
                   })
                 }
               }}
             >
-              Open in Troupe browser
+              Open in Karsa browser
             </ContextMenuItem>
             <ContextMenuSeparator />
           </>

@@ -173,6 +173,7 @@ export function GitPanel({ cwd, isVisible }: GitPanelProps) {
             isPushing={isPushing}
             commitContext={commitContext}
             stagedCount={stagedCount}
+            hasUncommittedChanges={hasUncommittedChanges}
             hasUsableAgent={hasUsableAgent}
             canGenerate={canGenerate}
             canCommit={canCommit}

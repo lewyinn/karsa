@@ -50,7 +50,6 @@ import { usePreventFileDropNavigation } from './hooks/use-prevent-file-drop-navi
 import { useProjectGitBranch } from './hooks/use-project-git-branch'
 import { useProjectIcon } from './hooks/use-project-icon'
 import { useProjectRegistry } from './hooks/use-project-registry'
-import { useRemoteProjects } from './hooks/use-remote-projects'
 import { useRenameNotice } from './hooks/use-rename-notice'
 import { useShellLayoutHydration } from './hooks/use-shell-layout-hydration'
 import { useSmoothWheelScroll } from './hooks/use-smooth-wheel-scroll'
@@ -70,7 +69,6 @@ import WorkspaceLayout from './layouts/WorkspaceLayout'
 import { initNotificationPermissions } from './lib/tauri-notification-api'
 import NotFound from './pages/NotFound'
 import WorkspaceDashboard from './pages/WorkspaceDashboard'
-import WorkspaceSnapshots from './pages/WorkspaceSnapshots'
 
 const queryClient = new QueryClient()
 
@@ -113,7 +111,6 @@ function AppEffects(): null {
   useTerminalExitNotification()
   useTerminalIdleNotification()
   useAgentChatNotification()
-  useRemoteProjects()
   useAcpListeners()
   useAcpAgents()
   useAcpHistory()
@@ -179,8 +176,7 @@ const router = createHashRouter(
       element: <WorkspaceLayout />,
       children: [
         { index: true, element: <WorkspaceDashboard /> },
-        { path: 'c/:sessionId', element: <ChatRoute /> },
-        { path: 'snapshots', element: <WorkspaceSnapshots /> }
+        { path: 'c/:sessionId', element: <ChatRoute /> }
       ]
     },
     { path: '*', element: <NotFound /> }
@@ -197,7 +193,7 @@ export default function TauriApp(): React.JSX.Element {
   const whatsNew = useWhatsNew()
   // Background Update Check: advisory only, never auto-applies (Q8/Q10).
   useAcpUpdateChecks()
-  // Agent names, logos and brand colours from Troupe's registry. Both roots.
+  // Agent names, logos and brand colours from Karsa's registry. Both roots.
   useAgentOverlayLoader()
 
   useEffect(() => {

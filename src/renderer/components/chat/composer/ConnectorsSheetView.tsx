@@ -71,7 +71,7 @@ function summaryLine(
  * The phone Add sheet's Connectors view (Paper "2.6n"): a summary line, then
  * "Needs attention" (a disconnected server offers Reconnect, a server that
  * needs a sign-in offers Sign in; no switch until it works), "On" and "Off"
- * with a switch each and the tool count once Troupe has probed the server.
+ * with a switch each and the tool count once Karsa has probed the server.
  * A stale chat offers Reload; Manage opens the MCP settings.
  */
 export function ConnectorsSheetView({

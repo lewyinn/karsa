@@ -205,7 +205,7 @@ export function applyAgentUpdateFlow(
       // Binary agent: Update Application = verified-atomic host re-install
       // (sha256-checked archive), then overwrite from the install outcome.
       if (!derived.archiveUrl) {
-        throw new Error(`Agent ${agent.id} requires a manual install; update it outside Troupe`)
+        throw new Error(`Agent ${agent.id} requires a manual install; update it outside Karsa`)
       }
       const installed = await acpApi.installAcpAgent(agent.id)
       await get().saveAgentConfig({

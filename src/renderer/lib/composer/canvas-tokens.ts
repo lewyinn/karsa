@@ -1,5 +1,5 @@
 /**
- * Canvas mention pills: layers on the project's Troupe Canvas that the user
+ * Canvas mention pills: layers on the project's Karsa Canvas that the user
  * mentioned from the composer's @ menu.
  *
  * ## Display-string token
@@ -180,7 +180,7 @@ const ESCAPES: Record<string, string> = { '&': '&amp;', '"': '&quot;', '<': '&lt
 const escapeAttr = (value: string): string => value.replace(/[&"<>]/g, (c) => ESCAPES[c] ?? c)
 
 const ENVELOPE_INTRO =
-  'Layers the user mentioned on the Troupe Canvas, read when the message was sent. ' +
+  'Layers the user mentioned on the Karsa Canvas, read when the message was sent. ' +
   'The ids work with the canvas tools: get_node for every property, select, screenshot and export.'
 
 export function canvasEnvelope(ref: CanvasRef, body: string): string {

@@ -230,12 +230,12 @@ export function MobileChatShell({
   const terminalName = activeTerminal?.name || 'Terminal'
 
   // Header title: the tab on screen's own name; an empty section's name; else
-  // "Troupe" when no tab is open.
+  // "Karsa" when no tab is open.
   const headerTitle = ((): string => {
     if (quickSessionId) return sessionTitle ?? 'Quick chat'
     // The quick chat launcher: no chat yet.
     if (quickOpen) return 'New chat'
-    if (!activeTab) return 'Troupe'
+    if (!activeTab) return 'Karsa'
     switch (activeTab.type) {
       case 'terminal':
         return terminalName
@@ -261,7 +261,7 @@ export function MobileChatShell({
         return 'Automations'
       default:
         reportUnknownTabKind(activeTab, 'MobileChatShell.headerTitle', 'using default title')
-        return 'Troupe'
+        return 'Karsa'
     }
   })()
 

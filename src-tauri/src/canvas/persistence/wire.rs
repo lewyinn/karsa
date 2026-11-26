@@ -124,7 +124,7 @@ pub async fn dirty_changed(
         .await
 }
 
-/// Troupe's watcher saw the document change, or (`reload_failed`) the
+/// Karsa's watcher saw the document change, or (`reload_failed`) the
 /// renderer could not load the bytes the last report handed it.
 pub async fn disk_changed(
     mounts: &CanvasPersistence,

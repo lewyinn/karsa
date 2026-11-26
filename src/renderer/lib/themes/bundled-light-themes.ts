@@ -6,10 +6,10 @@ import type { ColorThemeDefinition } from './types'
 
 /** Light appearance twins (`{family}-light`). Syntax: opencode light + vscode fallback. */
 export const BUNDLED_LIGHT_COLOR_THEMES: Record<string, ColorThemeDefinition> = {
-  // syntax: bright Troupe palette (see termul-syntax.ts)
+  // syntax: bright Karsa palette (see termul-syntax.ts)
   'termul-light': {
     id: 'termul-light',
-    name: 'Troupe Light',
+    name: 'Karsa Light',
     appearance: 'light',
     familyId: 'termul',
     dark: {

@@ -194,6 +194,47 @@ describe('GitPanel commit message generation', () => {
     expect(screen.getByLabelText('Commit summary')).toHaveValue('Existing')
     expect(commit).not.toHaveBeenCalled()
   })
+
+  it('falls back to unstaged changes when nothing is staged yet', async () => {
+    gitState.statuses['/work'] = [
+      { path: 'src/app.ts', staged: false, status: 'modified' },
+      { path: 'src/new.ts', staged: false, status: 'untracked' }
+    ]
+    gitState.commitContexts['/work'].stagedCount = 0
+    getDiff.mockImplementation(async (_cwd: string, path: string) =>
+      path === 'src/app.ts' ? '+const ok = true' : ''
+    )
+
+    render(<GitPanel cwd="/work" isVisible={false} />)
+    const button = screen.getByRole('button', { name: 'Generate message' })
+    expect(button).toBeEnabled()
+    fireEvent.click(button)
+
+    await waitFor(() => expect(generateCommitMessage).toHaveBeenCalledTimes(1))
+    expect(getDiff).toHaveBeenCalledWith('/work', 'src/app.ts', false)
+    expect(generateCommitMessage.mock.calls[0][1]).toContain('BEGIN UNSTAGED FILE: src/app.ts')
+    expect(generateCommitMessage.mock.calls[0][1]).toContain('BEGIN UNSTAGED FILE: src/new.ts')
+    expect(generateCommitMessage.mock.calls[0][1]).toContain('[new untracked file added]')
+  })
+
+  it('omits noisy lockfile diffs instead of failing on oversized output', async () => {
+    gitState.statuses['/work'] = [
+      { path: 'bun.lock', staged: true, status: 'modified' },
+      { path: 'src/index.ts', staged: true, status: 'modified' }
+    ]
+    gitState.commitContexts['/work'].stagedCount = 2
+    getDiff.mockImplementation(async (_cwd: string, path: string) =>
+      path === 'bun.lock' ? 'x'.repeat(200_000) : '+export const x = 1'
+    )
+
+    render(<GitPanel cwd="/work" isVisible={false} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Generate message' }))
+
+    await waitFor(() => expect(generateCommitMessage).toHaveBeenCalledTimes(1))
+    expect(getDiff).toHaveBeenCalledTimes(1)
+    expect(getDiff).toHaveBeenCalledWith('/work', 'src/index.ts', true)
+    expect(generateCommitMessage.mock.calls[0][1]).toContain('[lockfile/generated diff omitted')
+  })
 })
 
 describe('GitPanel write block for an unresolved working copy', () => {

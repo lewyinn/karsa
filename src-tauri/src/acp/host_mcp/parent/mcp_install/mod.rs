@@ -721,7 +721,7 @@ fn unsupported_result(reason: &McpCatalogReason) -> Value {
         steps.push(step(
             "unsupported",
             None,
-            "Troupe cannot install this server. The reason explains why. Nothing was saved.",
+            "Karsa cannot install this server. The reason explains why. Nothing was saved.",
         ));
     }
     tool_result(ToolOutcome {

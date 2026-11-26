@@ -13,6 +13,8 @@ import { agentPolicy } from '@/lib/agents/acp-registry'
 import { passThroughProjectEnv } from '@/lib/env-parser'
 import { logFrontendError } from '@/lib/log-api'
 import { agentReuseKey, useAcpStore } from '@/stores/acp-store'
+import { prepareChatKey } from '@/stores/acp-store/helpers'
+import { sessionHasAdvertisedModels } from '@/stores/acp-store/post-auth-refresh'
 import {
   beginLoginTerminalSignIn,
   useLoginTerminalSignInStore
@@ -83,7 +85,7 @@ export function useAgentSignIn({
 
   // Run the agent-advertised authenticate for a chosen method, then re-prepare
   // so the session is created now that the provider login is complete. The
-  // provider owns the login UX (often opening its own browser); Troupe never
+  // provider owns the login UX (often opening its own browser); Karsa never
   // invents a redirect URL or stores credentials. Mirrors Zed's
   // ThreadState::Unauthenticated → authenticate → reset flow.
   const runAuthenticate = useCallback(
@@ -104,14 +106,25 @@ export function useAgentSignIn({
         const store = useAcpStore.getState()
         if (input) await store.authenticateAgent(liveAgentId, methodId, input)
         else await store.authenticateAgent(liveAgentId, methodId)
-        onSignedIn()
+        // If `authenticateAgent` already refreshed `session/new` and loaded the
+        // model catalog (e.g. `oauth-personal` on `antigravity-acp`), avoid
+        // tearing down the just-prepared session with a duplicate re-prepare.
+        const latest = useAcpStore.getState()
+        const preparedId =
+          configId && cwd
+            ? latest.preparedSessions?.[prepareChatKey(configId, cwd, undefined)]
+            : null
+        const alreadyLoaded = Boolean(
+          preparedId && sessionHasAdvertisedModels(latest.sessions?.[preparedId])
+        )
+        if (!alreadyLoaded) onSignedIn()
       } catch (err) {
         toast.error(err instanceof Error ? err.message : 'Sign-in failed')
       } finally {
         setAuthenticatingMethodId(null)
       }
     },
-    [liveAgentId, signingInMethodId, onSignedIn]
+    [liveAgentId, signingInMethodId, onSignedIn, configId, cwd]
   )
 
   // Terminal auth methods (spec-acp-terminal-auth): spawn the agent binary

@@ -55,6 +55,19 @@ impl AntigravityLaunchAuth {
     pub fn applied(&self) -> bool {
         !matches!(self, Self::Unmanaged)
     }
+
+    /// `true` only when the host already verified a login for this launch
+    /// (a linked Account or a `GEMINI_HOME` override). The built-in `default`
+    /// Account skips the host login probe so in-app ACP `authenticate`
+    /// (`oauth-personal`) and auto-retry stay enabled.
+    #[must_use]
+    pub fn host_auth_ready(&self) -> bool {
+        match self {
+            Self::Unmanaged => false,
+            Self::Fixed => true,
+            Self::Account(id) => id != BUILTIN_ACCOUNT_ID,
+        }
+    }
 }
 
 /// Which setting chose the Antigravity home of a managed agent.

@@ -12,7 +12,6 @@ import {
 } from '@/hooks/use-command-history'
 import { usePinnedCommandsLoader } from '@/hooks/use-pinned-commands'
 import { useRecentCommandsLoader } from '@/hooks/use-recent-commands'
-import { useCreateSnapshot, useSnapshotLoader } from '@/hooks/use-snapshots'
 import { persistenceApi, terminalApi } from '@/lib/api'
 import { canTerminalWriteToPty } from '@/lib/command-lifecycle/input-guard'
 import { useCommandHistoryStore } from '@/stores/command-history-store'
@@ -22,12 +21,10 @@ interface UseCommandPaletteDataOptions {
   activeProjectId: string
 }
 
-/** Loaders and handlers backing the command palette, snapshot and command-history modals. */
+/** Loaders and handlers backing the command palette and command-history modals. */
 export function useCommandPaletteData({ activeProjectId }: UseCommandPaletteDataOptions) {
   const activeTerminal = useActiveTerminal()
 
-  // Load snapshots when project changes
-  useSnapshotLoader()
   // Load recent commands for command palette
   useRecentCommandsLoader()
   // Load pinned commands for command palette
@@ -36,14 +33,6 @@ export function useCommandPaletteData({ activeProjectId }: UseCommandPaletteData
   useCommandHistoryLoader(activeProjectId)
   const commandHistory = useCommandHistory(activeProjectId)
   const allCommandHistory = useAllCommandHistory()
-  const createSnapshot = useCreateSnapshot()
-
-  const handleCreateSnapshot = useCallback(
-    async (name: string, description?: string) => {
-      await createSnapshot(name, description)
-    },
-    [createSnapshot]
-  )
 
   // Command history handlers
   const handleInsertCommand = useCallback(
@@ -90,7 +79,6 @@ export function useCommandPaletteData({ activeProjectId }: UseCommandPaletteData
   return {
     commandHistory,
     allCommandHistory,
-    handleCreateSnapshot,
     handleInsertCommand,
     handleClearCommandHistory
   }

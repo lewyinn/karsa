@@ -115,7 +115,7 @@ function CatalogSource({ state, setSync }: McpCatalogStatusHandle): React.JSX.El
   if (state.status === 'unavailable') {
     return (
       <p className="text-xs text-muted-foreground">
-        Troupe couldn't check where the catalog comes from.
+        Karsa couldn't check where the catalog comes from.
       </p>
     )
   }
@@ -259,7 +259,7 @@ export function McpCatalogBrowser(): React.JSX.Element {
             </Button>
           }
         >
-          Troupe couldn't load the MCP catalog.
+          Karsa couldn't load the MCP catalog.
         </SettingsNotice>
       ) : results === null ? (
         <div

@@ -60,7 +60,7 @@ function agent(id: string, name: string, overrides: Partial<SupportedAcpAgentEnt
 }
 
 const claude = agent('claude-acp', 'Claude Code', { installedVersion: '2.1.4' })
-const codex = agent('codex-acp', 'Codex')
+const antigravity = agent('antigravity-acp', 'Google Antigravity')
 const gemini = agent('gemini', 'Gemini CLI', {
   status: 'install-required',
   install: { kind: 'managed-npm', package: '@google/gemini-cli' }
@@ -81,8 +81,8 @@ function row(name: string): HTMLElement {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mocks.entries = [claude, codex, gemini, cursor, pi]
-  mocks.signIn = { 'claude-acp': 'ready', 'codex-acp': 'signed-out' }
+  mocks.entries = [claude, antigravity, gemini, cursor, pi]
+  mocks.signIn = { 'claude-acp': 'ready', 'antigravity-acp': 'signed-out' }
   mocks.land.mockResolvedValue(undefined)
   useAppSettingsStore.setState({ settings: { ...DEFAULT_APP_SETTINGS }, isLoaded: true })
   useProjectStore.setState({ projects: [] })
@@ -96,7 +96,7 @@ describe('Onboarding', () => {
     const onClose = vi.fn()
     render(<Onboarding onClose={onClose} />)
 
-    expect(screen.getByRole('heading', { name: 'Welcome to Troupe' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Welcome to Karsa' })).toBeInTheDocument()
     expect(screen.queryByRole('radio', { name: 'System' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('radio', { name: 'Light' }))
     expect(useAppSettingsStore.getState().settings.appearanceMode).toBe('light')
@@ -104,13 +104,16 @@ describe('Onboarding', () => {
 
     expect(screen.getByRole('heading', { name: 'Check your agents' })).toBeInTheDocument()
     expect(screen.getByText('Step 2 of 3')).toBeInTheDocument()
-    expect(screen.getByText('Found 1 ready on this computer')).toBeInTheDocument()
-    expect(within(row('Claude Code')).getByText('Ready')).toBeInTheDocument()
+    expect(screen.getByText('1 installed locally')).toBeInTheDocument()
+    expect(within(row('Claude Code')).getByText('Installed')).toBeInTheDocument()
+    expect(within(row('Claude Code')).getByText('Installed locally · v2.1.4')).toBeInTheDocument()
     expect(row('Claude Code')).toHaveAttribute('aria-selected', 'true')
-    expect(within(row('Codex')).getByText('Needs sign-in')).toBeInTheDocument()
+    expect(within(row('Google Antigravity')).getByText('Needs sign-in')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show all 5 agents' }))
     expect(within(row('Gemini CLI')).getByText('Not installed')).toBeInTheDocument()
     expect(within(row('pi')).getByText('Needs Node.js')).toBeInTheDocument()
-    expect(within(row('pi')).getByText('Install Node.js, then restart Troupe')).toBeInTheDocument()
+    expect(within(row('pi')).getByText('Install Node.js, then restart Karsa')).toBeInTheDocument()
 
     fireEvent.click(within(row('Cursor')).getByRole('button', { name: 'How to install' }))
     expect(
@@ -122,7 +125,7 @@ describe('Onboarding', () => {
       screen.queryByText('Install Claude Code, then put `claude` on your PATH.')
     ).not.toBeInTheDocument()
 
-    fireEvent.click(row('Codex'))
+    fireEvent.click(row('Google Antigravity'))
     expect(row('Claude Code')).toHaveAttribute('aria-selected', 'true')
 
     fireEvent.click(screen.getByRole('button', { name: 'Continue with Claude Code' }))
@@ -147,19 +150,24 @@ describe('Onboarding', () => {
   })
 
   it('installs a row agent from its Install action', async () => {
-    mocks.install.mockResolvedValue({ id: 'acp-registry:gemini' })
+    const installableAgy = agent('antigravity-acp', 'Google Antigravity', {
+      status: 'install-required',
+      install: { kind: 'managed-npm', package: '@google/antigravity' }
+    })
+    mocks.entries = [claude, installableAgy]
+    mocks.install.mockResolvedValue({ id: 'acp-registry:antigravity-acp' })
     render(<Onboarding onClose={vi.fn()} />)
     fireEvent.click(screen.getByRole('button', { name: 'Get started' }))
 
-    fireEvent.click(within(row('Gemini CLI')).getByRole('button', { name: 'Install' }))
+    fireEvent.click(within(row('Google Antigravity')).getByRole('button', { name: 'Install' }))
 
-    expect(within(row('Gemini CLI')).getByText('Installing…')).toBeInTheDocument()
-    await waitFor(() => expect(mocks.install).toHaveBeenCalledWith(gemini))
+    expect(within(row('Google Antigravity')).getByText('Installing…')).toBeInTheDocument()
+    await waitFor(() => expect(mocks.install).toHaveBeenCalledWith(installableAgy))
     await waitFor(() =>
       expect(mocks.log).toHaveBeenCalledWith({
         level: 'info',
         source: 'onboarding',
-        message: 'Installed gemini'
+        message: 'Installed antigravity-acp'
       })
     )
   })
@@ -182,13 +190,33 @@ describe('Onboarding', () => {
   it('keeps the agent pick when the user goes back from the project step', () => {
     render(<Onboarding onClose={vi.fn()} />)
     fireEvent.click(screen.getByRole('button', { name: 'Get started' }))
-    mocks.signIn = { 'claude-acp': 'ready', 'codex-acp': 'ready' }
+    mocks.signIn = { 'claude-acp': 'ready', 'antigravity-acp': 'ready' }
 
     fireEvent.click(row('Claude Code'))
     fireEvent.click(screen.getByRole('button', { name: 'Continue with Claude Code' }))
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
 
     expect(row('Claude Code')).toHaveAttribute('aria-selected', 'true')
-    expect(row('Codex')).toHaveAttribute('aria-selected', 'false')
+    expect(row('Google Antigravity')).toHaveAttribute('aria-selected', 'false')
+  })
+
+  it('distinguishes locally installed agents from on-demand npx agents', () => {
+    const npxClaude = agent('claude-acp', 'Claude Code', { runtimeLauncher: 'npx' })
+    const localAgy = agent('antigravity-acp', 'Google Antigravity', { installedVersion: '1.1.1' })
+    mocks.entries = [localAgy, npxClaude]
+    mocks.signIn = { 'claude-acp': 'ready', 'antigravity-acp': 'ready' }
+
+    render(<Onboarding onClose={vi.fn()} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Get started' }))
+
+    expect(screen.getByText('1 installed locally · 1 ready via npx')).toBeInTheDocument()
+    expect(within(row('Google Antigravity')).getByText('Installed')).toBeInTheDocument()
+    expect(
+      within(row('Google Antigravity')).getByText('Installed locally · v1.1.1')
+    ).toBeInTheDocument()
+    expect(within(row('Claude Code')).getByText('Ready via npx')).toBeInTheDocument()
+    expect(
+      within(row('Claude Code')).getByText('Runs on demand via npx · Not installed locally')
+    ).toBeInTheDocument()
   })
 })

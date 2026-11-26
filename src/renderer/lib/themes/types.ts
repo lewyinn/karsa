@@ -1,6 +1,6 @@
 import type { ThemeComponentTokens } from './component-tokens'
 
-/** OpenCode-compatible desktop theme schema (subset used by Troupe). */
+/** OpenCode-compatible desktop theme schema (subset used by Karsa). */
 
 export interface ThemePalette {
   neutral: string
@@ -105,7 +105,7 @@ export interface ThemeChrome {
 export interface ThemeVariant {
   palette: ThemePalette
   overrides?: ThemeSyntaxOverrides
-  /** Troupe dark and Troupe light. Other themes keep derived surfaces. */
+  /** Karsa dark and Karsa light. Other themes keep derived surfaces. */
   chrome?: ThemeChrome
 }
 

@@ -176,7 +176,7 @@ export function applyClaudeLimitAction(e: ClaudeLimitActionEvent, eventSeq?: num
         if (reportedFailures.has(key)) return
         reportedFailures.add(key)
       }
-      toast.warning('Troupe could not continue the chat', { description: e.reason })
+      toast.warning('Karsa could not continue the chat', { description: e.reason })
       return
     }
     case 'switched':

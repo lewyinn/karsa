@@ -94,6 +94,14 @@ export function isInstallable(entry: SupportedAcpAgentEntry): entry is Installab
   return entry.install !== null
 }
 
+/**
+ * True when a ready agent runs on demand via a package runner (`npx` / `uvx`)
+ * rather than from a locally installed binary or package.
+ */
+export function isOnDemandRuntimeAgent(entry: SupportedAcpAgentEntry): boolean {
+  return !entry.installedVersion && entry.runtimeLauncher !== null
+}
+
 const runningInstalls = new Map<string, Promise<StoredAgentConfig>>()
 
 /**

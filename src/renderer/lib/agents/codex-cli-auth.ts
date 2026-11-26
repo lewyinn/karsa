@@ -33,7 +33,7 @@ export function codexHomeFromConfig(
 }
 
 /**
- * Decide whether a Codex CLI login change should restart the Troupe Codex agent.
+ * Decide whether a Codex CLI login change should restart the Karsa Codex agent.
  * The first sample only records the state. A later change follows `codex login status`.
  */
 export function codexAuthSyncDecision(input: {

@@ -57,7 +57,7 @@ const isLinkOpenMode = (value: string): value is LinkOpenMode =>
   LINK_OPEN_MODE_OPTIONS.some((option) => option.value === value)
 
 /**
- * The Preferences page: how Troupe looks, when it notifies you, where links
+ * The Preferences page: how Karsa looks, when it notifies you, where links
  * open, how files save, and what new projects start with.
  */
 export function PreferencesSection(): React.JSX.Element {

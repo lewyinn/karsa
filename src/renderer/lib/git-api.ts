@@ -1,4 +1,5 @@
 import type {
+  DiscoveredGitRepo,
   GitCommit,
   GitCommitContext,
   GitCommitDetail,
@@ -46,6 +47,14 @@ export const gitApi = {
     isTauriContext()
       ? invoke<GitStatusDetail[]>('git_get_status', { cwd })
       : webServerGit.getStatus(cwd),
+
+  discoverRepos: (cwd: string, maxDepth?: number): Promise<DiscoveredGitRepo[]> =>
+    isTauriContext()
+      ? invoke<DiscoveredGitRepo[]>('git_discover_repos', {
+          cwd,
+          ...(maxDepth !== undefined ? { maxDepth } : {})
+        })
+      : webServerGit.discoverRepos(cwd, maxDepth),
 
   getDiff: (cwd: string, path: string, staged = false) =>
     isTauriContext()

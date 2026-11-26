@@ -8,7 +8,7 @@ interface CanvasChipProps {
   className?: string
 }
 
-/** A canvas mention: layers on the project's Troupe Canvas. */
+/** A canvas mention: layers on the project's Karsa Canvas. */
 export function CanvasChip({ label, count, className }: CanvasChipProps): React.JSX.Element {
   const title = count > 1 ? `${label} (${count} canvas layers)` : `${label} (canvas layer)`
   return (

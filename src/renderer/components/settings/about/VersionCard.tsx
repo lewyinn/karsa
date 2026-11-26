@@ -9,16 +9,16 @@ import { ProgressBar } from '@/components/ui/progress-bar'
 import { Spinner } from '@/components/ui/spinner'
 import { confirmInstallAndRestart } from '@/lib/confirm-install-update'
 import { logFrontendError } from '@/lib/log-api'
-import { AUR_UPDATE_COMMAND } from '@/lib/tauri-updater-api'
+import { APP_UPDATER_DISABLED, AUR_UPDATE_COMMAND } from '@/lib/tauri-updater-api'
 import { cn } from '@/lib/utils'
 import { type UpdaterErrorSource, useUpdaterActions, useUpdaterState } from '@/stores/updater-store'
 
 export const APP_VERSION = `v${import.meta.env.PACKAGE_VERSION || '0.1.0'}`
 
 const ERROR_COPY: Record<UpdaterErrorSource, string> = {
-  check: 'Troupe could not check for updates. Check your connection, then try again.',
-  download: 'Troupe could not download the update. Check your connection, then try again.',
-  install: 'Troupe could not install the update. Try again, or download it from the release page.'
+  check: 'Karsa could not check for updates. Check your connection, then try again.',
+  download: 'Karsa could not download the update. Check your connection, then try again.',
+  install: 'Karsa could not install the update. Try again, or download it from the release page.'
 }
 
 const ERROR_STATUS: Record<UpdaterErrorSource, string> = {
@@ -43,7 +43,7 @@ interface CardState {
 }
 
 /**
- * Your Troupe version and the whole update flow in one card: one action slot
+ * Your Karsa version and the whole update flow in one card: one action slot
  * at the right (Check for updates, Download, Install and restart, Try again,
  * or a disabled button with a spinner while it works) and one detail band
  * under the row. Desktop only; the update toasts read the same store.
@@ -115,6 +115,14 @@ export function VersionCard({ isAurUpdater }: { isAurUpdater: boolean }): React.
   const restLine = lastChecked ? `Up to date · ${lastCheckedLine}` : lastCheckedLine
 
   const state: CardState = (() => {
+    if (APP_UPDATER_DISABLED) {
+      return {
+        dot: null,
+        line: 'Built by lewyinn · Fork of Troupe (MIT)',
+        action: null,
+        band: null
+      }
+    }
     if (error && errorSource) {
       return {
         dot: 'danger',
@@ -171,7 +179,7 @@ export function VersionCard({ isAurUpdater }: { isAurUpdater: boolean }): React.
           dot: 'success',
           line: `Version ${version} is downloaded.`,
           action: primaryButton('Install and restart', install),
-          band: quietBand('Troupe restarts to install it, and running terminal sessions close.')
+          band: quietBand('Karsa restarts to install it, and running terminal sessions close.')
         }
       }
       if (isPreparingDownload) {
@@ -181,7 +189,7 @@ export function VersionCard({ isAurUpdater }: { isAurUpdater: boolean }): React.
           action: busyButton('Preparing…'),
           band: (
             <>
-              {quietBand('Backing up your Troupe data before the download starts.')}
+              {quietBand('Backing up your Karsa data before the download starts.')}
               <ProgressBar label="Preparing the update" />
             </>
           )
@@ -247,7 +255,7 @@ export function VersionCard({ isAurUpdater }: { isAurUpdater: boolean }): React.
       action: checkButton,
       band: skippedVersion ? (
         <p className="text-xs leading-4 text-muted-foreground">
-          You skipped version <span className="font-mono">{skippedVersion}</span>. Troupe offers
+          You skipped version <span className="font-mono">{skippedVersion}</span>. Karsa offers
           updates again when a newer version is out.
         </p>
       ) : null
@@ -274,7 +282,7 @@ export function VersionCard({ isAurUpdater }: { isAurUpdater: boolean }): React.
         />
         <div className="min-w-0 flex-1">
           <p className="flex items-baseline gap-1.5">
-            <span className="text-sm font-medium text-foreground">Troupe</span>
+            <span className="text-sm font-medium text-foreground">Karsa</span>
             <span className="font-mono text-xs text-secondary-foreground">{APP_VERSION}</span>
           </p>
           <p className="flex min-w-0 items-center gap-1.5 text-xs leading-4" aria-live="polite">

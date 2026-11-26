@@ -1,8 +1,8 @@
 {
   "id": "/",
   "lang": "en",
-  "name": "Troupe",
-  "short_name": "Troupe",
+  "name": "Karsa",
+  "short_name": "Karsa",
   "description": "Project-aware terminal that treats workspaces as first-class citizens",
   "start_url": "/",
   "scope": "/",

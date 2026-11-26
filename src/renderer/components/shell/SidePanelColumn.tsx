@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { ShellSkeleton } from '@/layouts/workspace-layout/ShellSkeleton'
+import { useProjectGitRepos } from '@/stores/git-repos-store'
 import { useLastColumnTab } from '@/stores/shell-layout-store'
 import type { Project } from '@/types/project'
 import { ChangesPanel } from './ChangesPanel'
@@ -12,6 +13,14 @@ const FileExplorer = lazy(() =>
 
 const GithubPanel = lazy(() =>
   import('@/components/github/GithubPanel').then((m) => ({ default: m.GithubPanel }))
+)
+
+const RunStackPanel = lazy(() =>
+  import('@/components/stack/RunStackPanel').then((m) => ({ default: m.RunStackPanel }))
+)
+
+const EnvManagerPanel = lazy(() =>
+  import('@/components/env/EnvManagerPanel').then((m) => ({ default: m.EnvManagerPanel }))
 )
 
 interface SidePanelColumnProps {
@@ -30,6 +39,8 @@ export function SidePanelColumn({ activeProject }: SidePanelColumnProps): React.
   const projectId = activeProject.id
   const { cwd } = useColumnWorkingCopy(activeProject)
   const selected = useLastColumnTab(projectId) ?? 'explorer'
+  const { repos, activeRepoPath, githubAllRepos, setSelectedRepo, setGithubAllRepos } =
+    useProjectGitRepos(projectId, cwd)
 
   return (
     <div className="flex h-full min-h-0 w-full min-w-0 flex-col" data-view={selected}>
@@ -38,14 +49,33 @@ export function SidePanelColumn({ activeProject }: SidePanelColumnProps): React.
           <FileExplorer />
         </Suspense>
       )}
-      {selected === 'changes' && <ChangesPanel cwd={cwd} isVisible />}
+      {selected === 'changes' && (
+        <ChangesPanel cwd={activeRepoPath} repos={repos} onSelectRepo={setSelectedRepo} isVisible />
+      )}
       {selected === 'github' && (
         <>
           <SidePanelHeader title="GitHub" />
           <Suspense fallback={<ShellSkeleton />}>
-            <GithubPanel projectId={projectId} cwd={cwd} />
+            <GithubPanel
+              projectId={projectId}
+              cwd={activeRepoPath}
+              repos={repos}
+              allRepos={githubAllRepos}
+              onSelectRepo={setSelectedRepo}
+              onSelectAllRepos={() => setGithubAllRepos(true)}
+            />
           </Suspense>
         </>
+      )}
+      {selected === 'stack' && (
+        <Suspense fallback={<ShellSkeleton />}>
+          <RunStackPanel projectId={projectId} projectRoot={cwd} repos={repos} />
+        </Suspense>
+      )}
+      {selected === 'env' && (
+        <Suspense fallback={<ShellSkeleton />}>
+          <EnvManagerPanel projectRoot={cwd} repos={repos} />
+        </Suspense>
       )}
     </div>
   )

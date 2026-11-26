@@ -18,9 +18,9 @@ use crate::acp::session_persistence::{
     PersistedEventRecord, PersistedSessionStatus, SessionMetadata, UNASSIGNED_PROJECT_ID,
 };
 
-pub const DESCRIPTION: &str = "Read another Troupe chat's conversation by its chat ID, such \
+pub const DESCRIPTION: &str = "Read another Karsa chat's conversation by its chat ID, such \
 as one the user pasted from Copy Chat Reference. Returns the title, project, folder and \
-messages, oldest first, as plain text; page with offset and limit. Any chat on this Troupe \
+messages, oldest first, as plain text; page with offset and limit. Any chat on this Karsa \
 host can be read, in any project.";
 
 pub const DEFAULT_LIMIT: u32 = 50;

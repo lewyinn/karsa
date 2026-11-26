@@ -39,6 +39,14 @@ export interface ChangedFile {
   status: GitDisplayStatus | null
   added: number
   removed: number
+  /** True when the file has staged changes in the git index. */
+  staged?: boolean
+  /** True when the file has unstaged working-tree changes. */
+  hasUnstaged?: boolean
+  /** Owning repository root when aggregated across a multi-repo workspace. */
+  repoRoot?: string
+  /** Owning repository label (e.g. `frontend` / `backend`) in multi-repo mode. */
+  repoLabel?: string
 }
 
 /**
@@ -201,7 +209,10 @@ export function useChatChangedFiles(
     else {
       const sessionPaths = sessionTouchedPaths(toolCalls, cwd)
       files = git.files
-        .map((file) => ({ ...file, path: resolveFilePath(file.path, git.root) }))
+        .map((file) => ({
+          ...file,
+          path: resolveFilePath(file.path, file.repoRoot ?? git.root)
+        }))
         .filter((file) => sessionPaths.has(file.path))
     }
     return {

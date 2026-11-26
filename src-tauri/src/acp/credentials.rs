@@ -6,8 +6,8 @@
 
 use keyring::Entry;
 
-/// One keyring service for all Troupe agent credentials.
-pub(crate) const KEYRING_SERVICE: &str = "com.termul.manager";
+/// One keyring service for all Karsa agent credentials.
+pub(crate) const KEYRING_SERVICE: &str = "com.karsa.app";
 
 /// Open a keyring entry for `account`, rejecting keyring's mock fallback
 /// backend (it accepts writes but never persists them — success would be a

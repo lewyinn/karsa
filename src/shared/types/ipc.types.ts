@@ -320,6 +320,18 @@ export interface GitCommitFileDiff {
   tooLarge: boolean
 }
 
+/** A Git repository discovered inside a project workspace (root or nested subfolder). */
+export interface DiscoveredGitRepo {
+  /** Display label (folder basename for root, relative path for nested sub-repos). */
+  name: string
+  /** Forward-slash relative path from workspace root (`""` when `isRoot` is true). */
+  relativePath: string
+  /** Normalized absolute path to the repository root. */
+  path: string
+  /** `true` when the workspace root itself contains `.git`. */
+  isRoot: boolean
+}
+
 /**
  * Title + favicon for a link written in agent chat. Same shape on both
  * transports: `link_preview_resolve` (Tauri `IpcResult` data) and

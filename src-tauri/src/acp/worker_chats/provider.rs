@@ -1,4 +1,4 @@
-//! The Account providers Troupe manages, and what a worker chat's Account
+//! The Account providers Karsa manages, and what a worker chat's Account
 //! pick reads from and writes to each.
 
 use std::collections::HashMap;

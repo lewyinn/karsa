@@ -148,7 +148,7 @@ export function formatAcpSpawnError(raw: unknown, config?: Pick<AgentConfig, 'co
  * problems use "Model unavailable" (handled by the launcher, not here).
  *
  * - `multi-auth`  the agent advertised more than one auth method and none is a
- *                 single unambiguous default; Troupe never silently picks one.
+ *                 single unambiguous default; Karsa never silently picks one.
  * - `spawn`       the agent binary could not be launched (ENOENT-style).
  * - `transport`   the connection/stream was destroyed or refused; the process
  *                 must be evicted before any retry (it cannot be reused).
@@ -393,7 +393,7 @@ function definiteSpawnRejectionMessage(raw: unknown): string {
 
 /**
  * Thrown when an agent advertises more than one authentication method and none
- * is a single unambiguous default. Troupe must never silently choose a method,
+ * is a single unambiguous default. Karsa must never silently choose a method,
  * so this surfaces as an actionable `multi-auth` failure that lists the method
  * names. Carries a stable `code` so the classifier recognizes it even after the
  * error crosses an async/String boundary.
@@ -406,7 +406,7 @@ export class AmbiguousAuthError extends Error {
     const names = methods.map((m) => m.name).join(', ')
     super(
       `This agent advertises multiple sign-in methods (${names}). ` +
-        'Troupe does not choose one automatically; pick one of the methods below to sign in.'
+        'Karsa does not choose one automatically; pick one of the methods below to sign in.'
     )
     this.name = 'AmbiguousAuthError'
     this.methods = methods

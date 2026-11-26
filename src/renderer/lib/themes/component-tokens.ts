@@ -2,7 +2,7 @@
  * Per-theme component tokens. Each value is a complete CSS value (a color or
  * a shadow list), read as `var(--token)`. The defaults restate what the
  * components drew before these tokens existed, so a theme that sets nothing
- * renders exactly as it did. Troupe themes override them through
+ * renders exactly as it did. Karsa themes override them through
  * `ThemeChrome.tokens`.
  */
 export const COMPONENT_TOKEN_DEFAULTS = {
@@ -70,7 +70,7 @@ export const COMPONENT_TOKEN_DEFAULTS = {
   '--control-fill-hover': 'color-mix(in oklab, oklch(var(--muted)), oklch(var(--foreground)) 5%)',
   /** Secondary and outline button edge and drop: a 0.5px edge and a tight black drop. */
   '--shadow-control': '0 0 0 0.5px var(--popover-edge), 0 1px 2px rgb(0 0 0 / 0.5)',
-  /** Status rail surface: one step above the chat. Troupe Light uses the white container. */
+  /** Status rail surface: one step above the chat. Karsa Light uses the white container. */
   '--rail-fill': 'oklch(var(--muted))',
   /** Status rail edge and dividers: three steps above the rail fill. */
   '--rail-edge': 'color-mix(in oklab, oklch(var(--muted)), oklch(var(--foreground)) 15%)',

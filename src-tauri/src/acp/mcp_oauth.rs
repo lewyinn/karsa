@@ -215,7 +215,7 @@ fn token_file_path(server_url: &str) -> Result<std::path::PathBuf, McpOAuthError
         .or_else(|| std::env::var_os("HOME"))
         .map(std::path::PathBuf::from)
         .ok_or_else(|| McpOAuthError::Keychain("no data dir env var".to_string()))?;
-    let dir = base.join("com.termul-manager.app").join("mcp-oauth");
+    let dir = base.join("com.karsa.app").join("mcp-oauth");
     Ok(dir.join(file))
 }
 
@@ -350,7 +350,7 @@ pub(crate) async fn probe_www_authenticate(
         "params": {
             "protocolVersion": "2024-11-05",
             "capabilities": {},
-            "clientInfo": { "name": "troupe-oauth", "version": "0.1" }
+            "clientInfo": { "name": "karsa-oauth", "version": "0.1" }
         }
     });
     let mut request = client
@@ -402,7 +402,7 @@ pub async fn start_authorization_session(
     headers: &[crate::acp::mcp_probe::McpNameValuePair],
 ) -> Result<AuthorizationSession, McpOAuthError> {
     let manager = discover_authorization_manager(server_url, headers).await?;
-    let request = AuthorizationRequest::new(redirect_uri).with_client_name("Troupe");
+    let request = AuthorizationRequest::new(redirect_uri).with_client_name("Karsa");
     AuthorizationSession::new(manager, request)
         .await
         .map_err(|(_manager, e)| McpOAuthError::RegistrationFailed(e.to_string()))

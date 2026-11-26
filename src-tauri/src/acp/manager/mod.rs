@@ -129,7 +129,11 @@ pub(crate) use worktree_branch::*;
 
 /// How long to wait for the agent to answer `initialize` before treating the
 /// spawn as failed (and tearing the child down).
-const INIT_TIMEOUT: Duration = Duration::from_secs(30);
+///
+/// 180s accommodates cold `npx`/`uvx` package downloads on first launch or
+/// version update (e.g. `@google/gemini-cli`) so Karsa does not kill `npx`
+/// mid-extract and corrupt `~/.npm/_npx/<hash>/package.json`.
+const INIT_TIMEOUT: Duration = Duration::from_secs(180);
 /// How long to wait for `session/new` before returning an error to the caller.
 ///
 /// 60s accommodates agents whose `session/new` handler fetches a model list
@@ -1054,7 +1058,7 @@ impl AcpManager {
             .prepare_managed_launch(config, project_id, chat)
             .await?;
         Ok((
-            claude.host_auth_ready() || codex.applied() || antigravity.applied(),
+            claude.host_auth_ready() || codex.applied() || antigravity.host_auth_ready(),
             claude,
             codex,
             antigravity,

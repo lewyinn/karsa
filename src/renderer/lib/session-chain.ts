@@ -138,7 +138,7 @@ export function membersOf(ix: SessionChainIndex, id: string): string[] {
 }
 
 /**
- * Chain membership of `id` among its own project's Troupe-created sessions,
+ * Chain membership of `id` among its own project's Karsa-created sessions,
  * oldest → newest. The walk runs over that project's entries only, so an edge
  * into another project is never followed and cannot bridge back: in an
  * A → B → C chain spanning projects 1 → 2 → 1, A and C stay separate, exactly

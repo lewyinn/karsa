@@ -1,6 +1,6 @@
-import type { GitStatusDetail } from '@shared/types/ipc.types'
+import type { DiscoveredGitRepo, GitStatusDetail } from '@shared/types/ipc.types'
 import type React from 'react'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { BranchSection } from '@/components/git/BranchSection'
 import { CommitComposer } from '@/components/git/CommitComposer'
 import { GitChangeList } from '@/components/git/GitChangeList'
@@ -11,12 +11,17 @@ import { useGitActions } from '@/components/git/use-git-actions'
 import { useGitPanelModel } from '@/components/git/use-git-panel-model'
 import { useGitSelection } from '@/components/git/use-git-selection'
 import { HistorySection } from '@/components/shell/HistorySection'
+import { RepoSwitcherBar } from '@/components/shell/RepoSwitcherBar'
 import { SidePanelHeader } from '@/components/shell/SidePanelHeader'
+import { useGitStatusStore } from '@/stores/git-status-store'
 import { useWorkspaceActions } from '@/stores/workspace-store/selectors'
 
 interface ChangesPanelProps {
   /** Working copy the panel shows; the caller resolves it. */
   cwd: string
+  /** All Git repos discovered in the active workspace (empty/single root hides the bar). */
+  repos?: readonly DiscoveredGitRepo[]
+  onSelectRepo?: (repoPath: string) => void
   isVisible: boolean
 }
 
@@ -29,8 +34,24 @@ interface ChangesPanelProps {
  * file click opens the Diff tab; the diff itself is not shown here. Draws its
  * own header, like the Explorer, because the header actions need its state.
  */
-export function ChangesPanel({ cwd, isVisible }: ChangesPanelProps): React.JSX.Element {
+export function ChangesPanel({
+  cwd,
+  repos = [],
+  onSelectRepo,
+  isVisible
+}: ChangesPanelProps): React.JSX.Element {
   const { addDiffTab } = useWorkspaceActions()
+
+  // Keep change counts fresh for sibling repos in the switcher dropdown.
+  useEffect(() => {
+    if (!isVisible || repos.length <= 1) return
+    const store = useGitStatusStore.getState()
+    for (const repo of repos) {
+      if (repo.path !== cwd) {
+        void store.refreshStatus(repo.path).catch(() => {})
+      }
+    }
+  }, [isVisible, repos, cwd])
 
   const {
     selectedFile,
@@ -126,6 +147,10 @@ export function ChangesPanel({ cwd, isVisible }: ChangesPanelProps): React.JSX.E
         />
       </SidePanelHeader>
 
+      {onSelectRepo && (
+        <RepoSwitcherBar repos={repos} value={cwd} showCounts onSelectRepo={onSelectRepo} />
+      )}
+
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
         <CommitComposer
           variant="panel"
@@ -140,6 +165,7 @@ export function ChangesPanel({ cwd, isVisible }: ChangesPanelProps): React.JSX.E
           isPushing={isPushing}
           commitContext={commitContext}
           stagedCount={stagedCount}
+          hasUncommittedChanges={hasUncommittedChanges}
           hasUsableAgent={hasUsableAgent}
           canGenerate={canGenerate}
           canCommit={canCommit}

@@ -30,7 +30,7 @@ interface ComposerAddMenuProps {
 }
 
 /**
- * The desktop composer's `+`: attach, mention, slash commands and Troupe's
+ * The desktop composer's `+`: attach, mention, slash commands and Karsa's
  * own tools. The connectors (MCP servers) have their own button in the
  * Composer V2 foot row (`ComposerConnectorsButton`). The phone shell uses
  * `ComposerAddSheet`, which keeps its Connectors row.
@@ -121,7 +121,7 @@ export function ComposerAddMenu({
         <DropdownMenuSub>
           <DropdownMenuSubTrigger disabled={disabled}>
             <Wrench size={14} aria-hidden="true" className={ICON} />
-            Troupe tools
+            Karsa tools
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-64">
             <DropdownMenuLabel>Ask the agent to use</DropdownMenuLabel>

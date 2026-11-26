@@ -1,7 +1,0 @@
-User-agent: *
-Allow: /
-# /testimonial/list is not blocked here on purpose: crawlers must load it to
-# read its noindex. A Disallow would hide the noindex and the URL could still
-# be listed from links.
-
-Sitemap: https://usetroupe.dev/sitemap.xml

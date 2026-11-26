@@ -7,22 +7,15 @@ import { useThemePickerStore } from '@/stores/theme-picker-store'
 interface UseOverlayActionsOptions {
   setIsCommandPaletteOpen: (open: boolean) => void
   setIsShortcutMenuOpen: (open: boolean) => void
-  setIsCreateSnapshotModalOpen: (open: boolean) => void
   setIsCommandHistoryOpen: (open: boolean) => void
 }
 
-/** Open/toggle handlers for the app overlays (snapshot, settings, history, shortcuts, theme picker). */
+/** Open/toggle handlers for the app overlays (settings, history, shortcuts, theme picker). */
 export function useOverlayActions({
   setIsCommandPaletteOpen,
   setIsShortcutMenuOpen,
-  setIsCreateSnapshotModalOpen,
   setIsCommandHistoryOpen
 }: UseOverlayActionsOptions) {
-  const handleOpenSnapshotModal = useCallback(() => {
-    setIsCommandPaletteOpen(false)
-    setIsCreateSnapshotModalOpen(true)
-  }, [setIsCommandPaletteOpen, setIsCreateSnapshotModalOpen])
-
   const handleOpenProjectSettings = useCallback(() => {
     setIsCommandPaletteOpen(false)
     useSettingsModalStore.getState().openProject()
@@ -79,7 +72,6 @@ export function useOverlayActions({
   }, [appearanceMode, closeThemePickerPeerOverlays, colorTheme])
 
   return {
-    handleOpenSnapshotModal,
     handleOpenProjectSettings,
     handleOpenAppPreferences,
     handleOpenCommandHistory,

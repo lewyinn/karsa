@@ -26,7 +26,7 @@ const APP_PREF_CATEGORIES: SettingsCategory[] = [
   {
     id: 'preferences',
     label: 'Preferences',
-    description: 'How Troupe looks, when it notifies you, where links open and how files save.',
+    description: 'How Karsa looks, when it notifies you, where links open and how files save.',
     icon: <Sliders size={RAIL_ICON_SIZE} />
   },
   {
@@ -55,7 +55,7 @@ const APP_PREF_CATEGORIES: SettingsCategory[] = [
     id: 'ai-agents',
     group: 'Agents',
     label: 'Agents',
-    description: 'The agents Troupe can start, and how long their chats may run.',
+    description: 'The agents Karsa can start, and how long their chats may run.',
     icon: <Bot size={RAIL_ICON_SIZE} />
   },
   {
@@ -100,14 +100,14 @@ const APP_PREF_CATEGORIES: SettingsCategory[] = [
     id: 'about',
     group: 'App',
     label: 'About',
-    description: 'Your version, how Troupe updates, logs for bug reports, and a full reset.',
+    description: 'Your version, application logs, and a full reset.',
     icon: <Info size={RAIL_ICON_SIZE} />
   }
 ]
 
 // The web client updates with its server (issue #843) and can reconfigure
 // that server (gh-1105), so About describes a different set of parts there.
-const WEB_ABOUT_DESCRIPTION = 'This Troupe server, logs for bug reports, and a full reset.'
+const WEB_ABOUT_DESCRIPTION = 'This Karsa version, application logs, and a full reset.'
 
 /** Pages for the current runtime. */
 export function appPrefCategories(): SettingsCategory[] {

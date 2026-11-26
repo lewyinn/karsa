@@ -290,6 +290,7 @@ pub fn router(
         .route("/git/branch-list", get(git_api::branch_list))
         .route("/git/branch-switch", post(git_api::branch_switch))
         .route("/git/diff-stat", post(git_diff_stat_api::get_diff_stat))
+        .route("/git/discover-repos", post(git_api::discover_repos))
         // GitHub issues & PRs (spec-github-integration); twins of the
         // desktop `github_*` commands over the shared `GithubService`.
         .route("/github/context", post(github_api::context))
@@ -302,6 +303,7 @@ pub fn router(
         .route("/github/checkout-pr", post(github_api::checkout_pr))
         .route("/github/repo-meta", post(github_api::repo_meta))
         .route("/github/create-label", post(github_api::create_label))
+        .route("/github/create-issue", post(github_api::create_issue))
         .route("/github/edit-item", post(github_api::edit_item))
         .route("/github/item-state", post(github_api::set_item_state))
         // Project icon resolution (spec-project-icon). Mirrors the desktop
@@ -574,6 +576,7 @@ pub fn router_with_static(
         .route("/git/branch-list", get(git_api::branch_list))
         .route("/git/branch-switch", post(git_api::branch_switch))
         .route("/git/diff-stat", post(git_diff_stat_api::get_diff_stat))
+        .route("/git/discover-repos", post(git_api::discover_repos))
         // GitHub issues & PRs (spec-github-integration); twins of the
         // desktop `github_*` commands over the shared `GithubService`.
         .route("/github/context", post(github_api::context))
@@ -586,6 +589,7 @@ pub fn router_with_static(
         .route("/github/checkout-pr", post(github_api::checkout_pr))
         .route("/github/repo-meta", post(github_api::repo_meta))
         .route("/github/create-label", post(github_api::create_label))
+        .route("/github/create-issue", post(github_api::create_issue))
         .route("/github/edit-item", post(github_api::edit_item))
         .route("/github/item-state", post(github_api::set_item_state))
         .route("/project/icon", post(project_icon_api::resolve_icon))

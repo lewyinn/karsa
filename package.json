@@ -1,17 +1,18 @@
 {
-  "name": "termul-manager",
-  "productName": "Troupe",
-  "version": "0.5.0",
-  "description": "Project-aware terminal that treats workspaces as first-class citizens",
-  "author": "gnoviawan",
+  "name": "karsa",
+  "productName": "Karsa",
+  "version": "0.1.0",
+  "description": "Personal AI-assisted multi-repo workspace and terminal manager",
+  "author": "lewyinn",
   "contributors": [
+    "gnoviawan (original Troupe author)",
     "mannnrachman (Tauri port)"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gnoviawan/troupe.git"
+    "url": "git+https://github.com/lewyinn/karsa.git"
   },
-  "homepage": "https://github.com/gnoviawan/troupe",
+  "homepage": "https://github.com/lewyinn/karsa",
   "license": "MIT",
   "private": true,
   "packageManager": "bun@1.3.1",
@@ -56,7 +57,6 @@
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
     "check": "biome check .",
-    "rebrand": "bun scripts/rebrand/rebrand.ts",
     "check:fix": "biome check --write .",
     "ci": "biome ci --diagnostic-level=error .",
     "format": "biome format --write .",
@@ -81,21 +81,10 @@
     "build:frontend:tauri": "vite build --config vite.config.tauri.ts",
     "build:web": "vite build --config vite.config.web.ts",
     "dev:web": "vite --config vite.config.web.ts",
-    "landing:dev": "bun run --cwd landing dev",
-    "landing:build": "bun run --cwd landing build",
-    "landing:preview": "bun run --cwd landing preview",
     "build:agentation": "node scripts/build-agentation.mjs",
     "perf": "node tools/perf/cli.ts",
     "parity": "bun tools/parity/pair.ts",
-    "parity:matrix": "bun tools/parity/run.ts",
-    "docs:dev": "bun run --cwd website-docs dev",
-    "docs:build": "bun run --cwd website-docs build",
-    "docs:lint": "bun run --cwd website-docs lint",
-    "docs:typecheck": "bun run --cwd website-docs types:check",
-    "design:dev": "vite --config design-system/vite.config.ts",
-    "design:build": "vite build --config design-system/vite.config.ts",
-    "typecheck:design": "tsc -p design-system/tsconfig.json --noEmit && tsc -p design-system/smoke/tsconfig.json --noEmit",
-    "test:smoke:canvas": "playwright test -c design-system/smoke/playwright.config.ts"
+    "parity:matrix": "bun tools/parity/run.ts"
   },
   "dependencies": {
     "@blocknote/code-block": "^0.46.2",
@@ -162,7 +151,6 @@
     "@tauri-apps/plugin-process": "^2",
     "@tauri-apps/plugin-shell": "^2.3.5",
     "@tauri-apps/plugin-store": "^2",
-    "@tauri-apps/plugin-updater": "^2",
     "@tiptap/core": "3.27.1",
     "@tiptap/extension-placeholder": "3.27.1",
     "@tiptap/pm": "3.27.1",

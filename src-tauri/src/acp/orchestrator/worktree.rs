@@ -290,7 +290,7 @@ fn snapshot_ref(root: &str) -> Result<Option<Snapshot>, String> {
     let commit = run_git_env_success(
         &[
             "-c",
-            "user.name=Troupe",
+            "user.name=Karsa",
             "-c",
             "user.email=troupe@localhost.invalid",
             "commit-tree",

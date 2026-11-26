@@ -1,9 +1,15 @@
 import type { ShellInfo } from '@shared/types/ipc.types'
 import { useEffect } from 'react'
 import { ConnectionStatusIndicator } from '@/components/ConnectionStatusIndicator'
-import { Folder2, GitBranch, Github, Globe, type TermulIcon } from '@/components/icons'
-import { RemoteAccessPopover } from '@/components/RemoteAccessPopover'
-import { ServerQrPopover } from '@/components/ServerQrPopover'
+import {
+  Folder2,
+  GitBranch,
+  Github,
+  Globe,
+  KeyRound,
+  Layers,
+  type TermulIcon
+} from '@/components/icons'
 import { toolStripButtonId } from '@/components/shell/column-tab-focus'
 import { logShellEvent } from '@/components/shell/shell-log'
 import { useTopRowPlatform } from '@/components/shell/top-row-context'
@@ -12,14 +18,18 @@ import { useShortcutLabel } from '@/components/shell/use-shortcut-label'
 import { CountBadge } from '@/components/ui/count-badge'
 import { useUpdatePanelVisibility } from '@/hooks/use-app-settings'
 import { isTauriContext } from '@/lib/tauri-runtime'
+import { normalizePath } from '@/lib/working-copy'
 import { useFileExplorerVisible } from '@/stores/file-explorer-store'
+import { useProjectGitRepos } from '@/stores/git-repos-store'
 import { selectChangedFileCount, useGitStatusStore } from '@/stores/git-status-store'
 import { useQuickChatOpen } from '@/stores/quick-chat-store'
+import { useRunStackStore } from '@/stores/run-stack-store'
 import {
   type ShellLastColumnTab,
   useLastColumnTab,
   useShellLayoutStore
 } from '@/stores/shell-layout-store'
+import { useTerminalStore } from '@/stores/terminal-store'
 import type { Project } from '@/types/project'
 import { TerminalStripButton } from './TerminalStripButton'
 import { ToolStrip } from './ToolStrip'
@@ -27,7 +37,9 @@ import { ToolStrip } from './ToolStrip'
 const VIEWS: ReadonlyArray<{ id: ShellLastColumnTab; label: string; Icon: TermulIcon }> = [
   { id: 'explorer', label: 'Explorer', Icon: Folder2 },
   { id: 'changes', label: 'Changes', Icon: GitBranch },
-  { id: 'github', label: 'GitHub', Icon: Github }
+  { id: 'github', label: 'GitHub', Icon: Github },
+  { id: 'stack', label: 'Run Stack', Icon: Layers },
+  { id: 'env', label: 'Env', Icon: KeyRound }
 ]
 
 interface ShellToolStripProps {
@@ -63,15 +75,46 @@ export function ShellToolStrip({
   const updatePanelVisibility = useUpdatePanelVisibility()
   const selected = useLastColumnTab(projectId) ?? 'explorer'
   const { cwd } = useColumnWorkingCopy(activeProject)
-  const changedCount = useGitStatusStore(selectChangedFileCount(cwd))
+  const { repos } = useProjectGitRepos(projectId, sshOpen ? '' : cwd)
+  const multiRepoChangedCount = useGitStatusStore((state) => {
+    if (repos.length === 0) return 0
+    let total = 0
+    for (const repo of repos) {
+      const entries = state.statuses[normalizePath(repo.path)]
+      if (entries) total += new Set(entries.map((entry) => entry.path)).size
+    }
+    return total
+  })
+  const singleRepoChangedCount = useGitStatusStore(selectChangedFileCount(cwd))
+  const changedCount = repos.length > 0 ? multiRepoChangedCount : singleRepoChangedCount
+  const terminalByServiceKey = useRunStackStore((state) => state.terminalByServiceKey)
+  const runningStackCount = useTerminalStore((state) => {
+    if (!projectId) return 0
+    const prefix = `${projectId}::`
+    let count = 0
+    for (const [key, terminalId] of Object.entries(terminalByServiceKey)) {
+      if (!key.startsWith(prefix)) continue
+      const term = state.terminals.find((t) => t.id === terminalId)
+      if (term?.ptyId && (term.lastExitCode === null || term.lastExitCode === undefined)) count += 1
+    }
+    return count
+  })
   const terminalShortcut = useShortcutLabel('worktreeOpenTerminal')
   const browserShortcut = useShortcutLabel('newBrowserTab')
 
-  // The Changes count needs the working copy tracked even while the panel is hidden.
+  // Track the working copy (or every nested sub-repo) so the Changes badge stays live.
   const trackedPath = activeProject?.isGitRepo === false || sshOpen ? '' : cwd
   useEffect(() => {
-    if (trackedPath) void useGitStatusStore.getState().refreshWorkingCopy(trackedPath)
-  }, [trackedPath])
+    if (sshOpen) return
+    const store = useGitStatusStore.getState()
+    if (repos.length > 0) {
+      for (const repo of repos) {
+        void store.refreshWorkingCopy(repo.path)
+      }
+      return
+    }
+    if (trackedPath) void store.refreshWorkingCopy(trackedPath)
+  }, [sshOpen, repos, trackedPath])
 
   const hasProject = Boolean(activeProject?.path)
   // In SSH mode only Explorer works: it shows the remote file browser.
@@ -128,6 +171,13 @@ export function ShellToolStrip({
                       data-testid="tool-strip-changes-badge"
                       className="absolute -top-[3px] -right-1 h-4 min-w-4 text-4xs"
                     />
+                  ) : id === 'stack' && runningStackCount > 0 && !sshOpen ? (
+                    <CountBadge
+                      count={runningStackCount}
+                      max={99}
+                      data-testid="tool-strip-stack-badge"
+                      className="absolute -top-[3px] -right-1 h-4 min-w-4 text-4xs"
+                    />
                   ) : undefined
                 }
               />
@@ -156,18 +206,10 @@ export function ShellToolStrip({
             icon={<Globe size={14} aria-hidden />}
           />
         )}
-        {/* The shared-live host is desktop only; a web client shows the
-            standalone server QR popover (when applicable) and its connection
-            health in that slot. */}
-        {desktop ? (
-          <RemoteAccessPopover />
-        ) : (
-          <>
-            <ServerQrPopover />
-            <div className="flex size-8 items-center justify-center">
-              <ConnectionStatusIndicator />
-            </div>
-          </>
+        {!desktop && (
+          <div className="flex size-8 items-center justify-center">
+            <ConnectionStatusIndicator />
+          </div>
         )}
       </ToolStrip.Group>
     </ToolStrip>

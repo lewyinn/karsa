@@ -345,10 +345,6 @@ vi.mock('@/components/NewProjectModal', () => ({
   NewProjectModal: () => null
 }))
 
-vi.mock('@/components/CreateSnapshotModal', () => ({
-  CreateSnapshotModal: () => null
-}))
-
 vi.mock('@/components/CommandPalette', () => ({
   CommandPalette: () => null
 }))

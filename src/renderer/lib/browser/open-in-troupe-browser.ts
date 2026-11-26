@@ -64,13 +64,13 @@ export function browsableUrlForContextMenu(
   return browsableUrlFrom(selectionText)
 }
 
-/** Troupe's browser pane exists only in the desktop app. */
+/** Karsa's browser pane exists only in the desktop app. */
 export function canOpenInTroupeBrowser(): boolean {
   return isTauriContext()
 }
 
 /**
- * Open `url` in a new Troupe browser tab in the active pane. Returns false,
+ * Open `url` in a new Karsa browser tab in the active pane. Returns false,
  * with a log line, when there is no desktop browser or no pane to hold it.
  */
 export function openUrlInTroupeBrowser(url: string): boolean {
@@ -78,7 +78,7 @@ export function openUrlInTroupeBrowser(url: string): boolean {
     void logFrontendError({
       level: 'warn',
       source: LOG_SOURCE,
-      message: 'Skipped opening a link in the Troupe browser: not the desktop app'
+      message: 'Skipped opening a link in the Karsa browser: not the desktop app'
     })
     return false
   }
@@ -87,7 +87,7 @@ export function openUrlInTroupeBrowser(url: string): boolean {
     void logFrontendError({
       level: 'warn',
       source: LOG_SOURCE,
-      message: 'Skipped opening a link in the Troupe browser: no active pane'
+      message: 'Skipped opening a link in the Karsa browser: no active pane'
     })
     return false
   }
@@ -100,7 +100,7 @@ export function openUrlInTroupeBrowser(url: string): boolean {
   void logFrontendError({
     level: 'info',
     source: LOG_SOURCE,
-    message: `Opened ${safeOrigin(url)} in Troupe browser tab ${browserTabId}`
+    message: `Opened ${safeOrigin(url)} in Karsa browser tab ${browserTabId}`
   })
   return true
 }

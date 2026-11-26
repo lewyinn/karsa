@@ -15,6 +15,7 @@ mod commands;
 mod commit_detail;
 mod commit_stamp;
 mod diff_stat;
+mod discover;
 mod git_exec;
 mod polling;
 mod resolve;
@@ -51,6 +52,7 @@ pub use commit_detail::{
     GitCommitFileDiff,
 };
 pub use diff_stat::{git_get_diff_stat, DiffStatError, GitDiffStat};
+pub use discover::{git_discover_repos, DiscoveredGitRepo};
 /// The capped, drained, timeout-and-kill-tree process runner git uses, shared
 /// with the `gh` runner (`crate::github`).
 pub(crate) use git_exec::{spawn_git as spawn_captured, GitWaitError, StdoutCap};
@@ -540,6 +542,8 @@ impl GitTracker {
 mod commit_detail_tests;
 #[cfg(test)]
 mod diff_stat_tests;
+#[cfg(test)]
+mod discover_tests;
 #[cfg(test)]
 mod git_exec_tests;
 #[cfg(test)]

@@ -81,7 +81,7 @@ function normalizeStoredSettings(data: AppSettings): { settings: AppSettings; ch
   let changed = false
 
   // "Open links in" was terminal-only (`terminalUrlOpenMode`, 'termul' for the
-  // Troupe browser) and is now app-wide (`linkOpenMode`). Keep the user's
+  // Karsa browser) and is now app-wide (`linkOpenMode`). Keep the user's
   // choice, then drop the old key.
   const legacyLinkMode = (data as unknown as Record<string, unknown>).terminalUrlOpenMode
   if (legacyLinkMode !== undefined) {

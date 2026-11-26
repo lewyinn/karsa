@@ -345,7 +345,6 @@ vi.mock('@/hooks/use-editor-persistence', () => ({
 }))
 
 vi.mock('@/pages/WorkspaceDashboard', () => ({ default: () => <div>dashboard</div> }))
-vi.mock('@/pages/WorkspaceSnapshots', () => ({ default: () => <div>snapshots</div> }))
 vi.mock('@/pages/AppPreferences', () => ({ AppPreferencesModal: () => <div>preferences</div> }))
 vi.mock('@/pages/ProjectSettings', () => ({
   ProjectSettingsModal: () => <div>project-settings</div>

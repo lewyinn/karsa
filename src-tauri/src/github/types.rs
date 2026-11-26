@@ -582,3 +582,25 @@ pub struct GithubSetItemStateRequest {
 pub struct GithubSetItemStateResult {
     pub number: u64,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct GithubCreateIssueRequest {
+    pub cwd: String,
+    pub repo: GithubRepoSlot,
+    pub title: String,
+    #[serde(default)]
+    pub body: String,
+    #[serde(default)]
+    pub labels: Vec<String>,
+    #[serde(default)]
+    pub assignees: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct GithubCreateIssueResult {
+    pub number: u64,
+    pub url: String,
+    pub title: String,
+}

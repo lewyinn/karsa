@@ -1,6 +1,5 @@
 import type { ShellInfo } from '@shared/types/ipc.types'
 import { lazy, Suspense } from 'react'
-import { CreateSnapshotModal } from '@/components/CreateSnapshotModal'
 import { openNewChat, openNewQuickChat } from '@/components/chat/new-chat/open-new-chat'
 import { NewProjectModal } from '@/components/NewProjectModal'
 import { ProjectBusyDialog } from '@/components/ProjectBusyDialog'
@@ -14,7 +13,6 @@ import {
 } from '@/layouts/workspace-layout/WorkspaceCloseDialogs'
 import { WorktreeCreateModalHost } from '@/layouts/workspace-layout/WorktreeCreateModalHost'
 import { useAppSettingsStore } from '@/stores/app-settings-store'
-import { useReportBugOpen, useReportBugStore } from '@/stores/report-bug-store'
 import { useSettingsModalView } from '@/stores/settings-modal-store'
 import { useThemePickerOpen } from '@/stores/theme-picker-store'
 import type { Project } from '@/types/project'
@@ -37,9 +35,6 @@ const ProjectSettingsModal = lazy(() =>
 const AppPreferencesModal = lazy(() =>
   import('@/pages/AppPreferences').then((m) => ({ default: m.AppPreferencesModal }))
 )
-const ReportBugDialog = lazy(() =>
-  import('@/components/bug-report/ReportBugDialog').then((m) => ({ default: m.ReportBugDialog }))
-)
 
 interface WorkspaceModalsProps extends WorkspaceCloseDialogsProps {
   isMobileWebShell: boolean
@@ -52,8 +47,6 @@ interface WorkspaceModalsProps extends WorkspaceCloseDialogsProps {
   setIsNewProjectModalOpen: (open: boolean) => void
   isCommandPaletteOpen: boolean
   setIsCommandPaletteOpen: (open: boolean) => void
-  isCreateSnapshotModalOpen: boolean
-  setIsCreateSnapshotModalOpen: (open: boolean) => void
   isCommandHistoryOpen: boolean
   setIsCommandHistoryOpen: (open: boolean) => void
   ssh: SSHWorkspaceState
@@ -79,8 +72,6 @@ export function WorkspaceModals({
   setIsNewProjectModalOpen,
   isCommandPaletteOpen,
   setIsCommandPaletteOpen,
-  isCreateSnapshotModalOpen,
-  setIsCreateSnapshotModalOpen,
   isCommandHistoryOpen,
   setIsCommandHistoryOpen,
   ssh,
@@ -101,23 +92,16 @@ export function WorkspaceModals({
   const settingsModalView = useSettingsModalView()
   const isThemePickerOpen = useThemePickerOpen()
   const terminalProfiles = useAppSettingsStore((state) => state.settings.terminalProfiles)
-  const isReportBugOpen = useReportBugOpen()
   const { sshProfiles, handleSSHConnect } = ssh
   const {
-    handleOpenSnapshotModal,
     handleOpenProjectSettings,
     handleOpenAppPreferences,
     handleOpenCommandHistory,
     handleOpenShortcutMenu,
     handleOpenThemePicker
   } = overlayActions
-  const {
-    commandHistory,
-    allCommandHistory,
-    handleCreateSnapshot,
-    handleInsertCommand,
-    handleClearCommandHistory
-  } = paletteData
+  const { commandHistory, allCommandHistory, handleInsertCommand, handleClearCommandHistory } =
+    paletteData
   const { getShortcutLabel, getProjectShortcutLabel } = shortcutLabels
 
   return (
@@ -156,13 +140,11 @@ export function WorkspaceModals({
             onNewBrowserTab={handleNewBrowserTab}
             onOpenCanvas={handleOpenCanvas}
             onNewProject={isMobileWebShell ? () => setIsNewProjectModalOpen(true) : undefined}
-            onSaveSnapshot={handleOpenSnapshotModal}
             onOpenProjectSettings={handleOpenProjectSettings}
             onOpenAppPreferences={handleOpenAppPreferences}
             onOpenCommandHistory={activeProjectId ? handleOpenCommandHistory : undefined}
             onOpenShortcutMenu={handleOpenShortcutMenu}
             onOpenThemePicker={handleOpenThemePicker}
-            onReportBug={() => useReportBugStore.getState().openReport()}
             onSSHConnect={handleSSHConnect}
             sshProfiles={sshProfiles.map((p) => ({
               id: p.id,
@@ -178,12 +160,6 @@ export function WorkspaceModals({
           />
         </Suspense>
       )}
-
-      <CreateSnapshotModal
-        isOpen={isCreateSnapshotModalOpen}
-        onClose={() => setIsCreateSnapshotModalOpen(false)}
-        onCreateSnapshot={handleCreateSnapshot}
-      />
 
       {isCommandHistoryOpen && (
         <Suspense fallback={null}>
@@ -207,15 +183,6 @@ export function WorkspaceModals({
       {settingsModalView === 'app' && (
         <Suspense fallback={null}>
           <AppPreferencesModal />
-        </Suspense>
-      )}
-
-      {/* Report a Bug (spec-bug-report-dialog): one dialog for every
-          entry point — Rail buttons, command palette, mobile ⋯ sheets and
-          the Diagnostics grid all open the shared store. */}
-      {isReportBugOpen && (
-        <Suspense fallback={null}>
-          <ReportBugDialog />
         </Suspense>
       )}
 

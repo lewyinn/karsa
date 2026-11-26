@@ -1,4 +1,4 @@
-//! Host byte filter for Troupe session frames across output chunks.
+//! Host byte filter for Karsa session frames across output chunks.
 
 use super::frame::{self, Frame};
 use super::prompt_spacer::PromptSpacer;

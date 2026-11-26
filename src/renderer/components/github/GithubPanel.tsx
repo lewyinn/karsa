@@ -1,8 +1,10 @@
 import type { GithubListItem, GithubRepoRef } from '@shared/types/github.types'
-import { useEffect } from 'react'
+import type { DiscoveredGitRepo } from '@shared/types/ipc.types'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { AlertTriangle, RefreshCw } from '@/components/icons'
+import { AlertTriangle, Plus, RefreshCw } from '@/components/icons'
+import { ALL_REPOS_VALUE, RepoSwitcherBar } from '@/components/shell/RepoSwitcherBar'
 import { Button } from '@/components/ui/button'
 import { PANEL_ICON_BUTTON_CLASS } from '@/components/ui/panel-styles'
 import {
@@ -23,6 +25,8 @@ import {
   useGithubStore
 } from '@/stores/github-store'
 import { findPaneById, githubItemTabId, useWorkspaceStore } from '@/stores/workspace-store'
+import { AllReposGithubView } from './AllReposGithubView'
+import { type CreatedIssueOutcome, CreateIssueDialog } from './CreateIssueDialog'
 import { GithubFilters } from './GithubFilters'
 import { GithubListRow } from './GithubListRow'
 import { GithubAuthWarning, GithubStatusView, githubBlocker } from './GithubStatusView'
@@ -38,6 +42,12 @@ interface GithubPanelProps {
   projectId: string
   /** The working copy whose repository the list shows. */
   cwd: string
+  /** All Git repos discovered in the active workspace (for multi-repo switching). */
+  repos?: readonly DiscoveredGitRepo[]
+  /** True when the user selected "All repos" in the multi-repo switcher. */
+  allRepos?: boolean
+  onSelectRepo?: (repoPath: string) => void
+  onSelectAllRepos?: () => void
   /** Called after the panel opened a tab (an item, or the sign-in terminal): the phone drawer closes. */
   onNavigate?: () => void
 }
@@ -52,9 +62,19 @@ function repoName(repo: GithubRepoRef): string {
  * filtered list. A failed or rate-limited refresh keeps the last good list on
  * screen with a note. Selecting a row opens its detail as a pane tab.
  */
-export function GithubPanel({ projectId, cwd, onNavigate }: GithubPanelProps): React.JSX.Element {
+export function GithubPanel({
+  projectId,
+  cwd,
+  repos = [],
+  allRepos = false,
+  onSelectRepo,
+  onSelectAllRepos,
+  onNavigate
+}: GithubPanelProps): React.JSX.Element {
   const navigate = useNavigate()
   const pathname = useLocation().pathname
+  const [createOpen, setCreateOpen] = useState(false)
+  const showAllRepos = allRepos && repos.length > 1
   const context = useGithubStore((s) => resourceOf(s.contexts[cwd]))
   const filter = useGithubStore(selectGithubFilter(cwd))
   const list = useGithubStore((s) => resourceOf(s.lists[githubListKey(cwd, filter)]))
@@ -99,16 +119,73 @@ export function GithubPanel({ projectId, cwd, onNavigate }: GithubPanelProps): R
     Boolean(blocker && blocker.kind !== 'not_github')
   )
 
-  const openItem = (item: GithubListItem): void => {
+  const openItemIn = (
+    repoCwd: string,
+    repoSlot: 'origin' | 'upstream',
+    item: GithubListItem
+  ): void => {
     returnToWorkspaceRoute(pathname, navigate)
     useWorkspaceStore.getState().addGithubItemTab({
-      cwd,
-      repo: filter.repo,
+      cwd: repoCwd,
+      repo: repoSlot,
       kind: item.kind,
       number: item.number,
       title: item.title
     })
     onNavigate?.()
+  }
+
+  const openItem = (item: GithubListItem): void => {
+    openItemIn(cwd, filter.repo, item)
+  }
+
+  const handleIssueCreated = (created: CreatedIssueOutcome): void => {
+    void loadList(created.cwd, { refresh: true })
+    returnToWorkspaceRoute(pathname, navigate)
+    useWorkspaceStore.getState().addGithubItemTab({
+      cwd: created.cwd,
+      repo: created.repo,
+      kind: 'issue',
+      number: created.number,
+      title: created.title
+    })
+    onNavigate?.()
+  }
+
+  const switcherBar = onSelectRepo ? (
+    <RepoSwitcherBar
+      repos={repos}
+      value={showAllRepos ? ALL_REPOS_VALUE : cwd}
+      allowAll
+      onSelectRepo={onSelectRepo}
+      onSelectAll={onSelectAllRepos}
+    />
+  ) : null
+
+  const createDialog = (
+    <CreateIssueDialog
+      open={createOpen}
+      onOpenChange={setCreateOpen}
+      defaultCwd={cwd}
+      defaultRepoSlot={showAllRepos ? 'origin' : filter.repo}
+      repos={repos}
+      onCreated={handleIssueCreated}
+    />
+  )
+
+  if (showAllRepos) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        {switcherBar}
+        <AllReposGithubView
+          repos={repos}
+          activeTabId={activeTabId}
+          onOpenItem={(repoCwd, item) => openItemIn(repoCwd, 'origin', item)}
+          onOpenCreateIssue={() => setCreateOpen(true)}
+        />
+        {createDialog}
+      </div>
+    )
   }
 
   const signIn = (loginCommand: string): void => {
@@ -122,25 +199,36 @@ export function GithubPanel({ projectId, cwd, onNavigate }: GithubPanelProps): R
   if (!context.data) {
     if (context.status === 'error') {
       return (
-        <PanelMessage
-          title="Couldn't check GitHub"
-          detail={context.error ?? undefined}
-          onRetry={() => void loadContext(cwd)}
-        />
+        <div className="flex min-h-0 flex-1 flex-col">
+          {switcherBar}
+          <PanelMessage
+            title="Couldn't check GitHub"
+            detail={context.error ?? undefined}
+            onRetry={() => void loadContext(cwd)}
+          />
+        </div>
       )
     }
-    return <ListSkeleton />
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        {switcherBar}
+        <ListSkeleton />
+      </div>
+    )
   }
 
   if (blocker || !resolved) {
     return (
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <GithubStatusView
-          blocker={blocker ?? { kind: 'not_github' }}
-          retrying={context.status === 'loading'}
-          onRetry={() => void loadContext(cwd)}
-          onSignIn={signIn}
-        />
+      <div className="flex min-h-0 flex-1 flex-col">
+        {switcherBar}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <GithubStatusView
+            blocker={blocker ?? { kind: 'not_github' }}
+            retrying={context.status === 'loading'}
+            onRetry={() => void loadContext(cwd)}
+            onSignIn={signIn}
+          />
+        </div>
       </div>
     )
   }
@@ -151,6 +239,7 @@ export function GithubPanel({ projectId, cwd, onNavigate }: GithubPanelProps): R
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      {switcherBar}
       {resolved.upstream && (
         <div className="flex h-8 shrink-0 items-center px-2.5 pointer-coarse:h-11">
           <Select
@@ -177,16 +266,31 @@ export function GithubPanel({ projectId, cwd, onNavigate }: GithubPanelProps): R
         filter={filter}
         onChange={(patch) => setFilter(cwd, patch)}
         action={
-          <button
-            type="button"
-            onClick={() => void loadList(cwd, { refresh: true })}
-            disabled={refreshing}
-            className={cn(PANEL_ICON_BUTTON_CLASS, 'shrink-0 pointer-coarse:size-11')}
-            title="Refresh"
-            aria-label="Refresh"
-          >
-            <RefreshCw size={14} aria-hidden="true" className={cn(refreshing && 'animate-spin')} />
-          </button>
+          <div className="flex shrink-0 items-center gap-0.5">
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              className={cn(PANEL_ICON_BUTTON_CLASS, 'shrink-0 pointer-coarse:size-11')}
+              title="New issue"
+              aria-label="New issue"
+            >
+              <Plus size={14} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => void loadList(cwd, { refresh: true })}
+              disabled={refreshing}
+              className={cn(PANEL_ICON_BUTTON_CLASS, 'shrink-0 pointer-coarse:size-11')}
+              title="Refresh"
+              aria-label="Refresh"
+            >
+              <RefreshCw
+                size={14}
+                aria-hidden="true"
+                className={cn(refreshing && 'animate-spin')}
+              />
+            </button>
+          </div>
         }
       />
 
@@ -238,6 +342,7 @@ export function GithubPanel({ projectId, cwd, onNavigate }: GithubPanelProps): R
           ))}
         </ul>
       )}
+      {createDialog}
     </div>
   )
 }

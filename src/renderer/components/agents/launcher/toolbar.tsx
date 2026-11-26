@@ -92,7 +92,7 @@ const noop = (): void => {}
 
 /**
  * The composer card's bottom row (Composer V2): the + menu (attachments,
- * mentions, commands, Troupe tools), the mode chip and the account chips on
+ * mentions, commands, Karsa tools), the mode chip and the account chips on
  * the left; the update CTA, the agent/model selector (agent, model, effort,
  * Fast, agent options) and the launch button on the right. The connectors
  * are in the tray's foot row. On the phone shell it is the chat composer's row: the + sheet

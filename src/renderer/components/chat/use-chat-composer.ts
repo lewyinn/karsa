@@ -154,7 +154,7 @@ export interface ChatPromptParts {
   hasConversations: boolean
   /** True when the value carries canvas-layer pills (their summaries ride in `contextBlocks`). */
   hasCanvas: boolean
-  /** True when the value carries Troupe tool pills (display keeps the tokens). */
+  /** True when the value carries Karsa tool pills (display keeps the tokens). */
   hasTools: boolean
   contextBlocks: ContentBlock[]
 }

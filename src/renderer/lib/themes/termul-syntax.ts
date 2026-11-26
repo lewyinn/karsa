@@ -1,7 +1,7 @@
 import type { ThemeSyntaxOverrides } from './types'
 
 /**
- * Troupe dark syntax, matched to the Cursor editor.
+ * Karsa dark syntax, matched to the Cursor editor.
  * Colors are the peak values sampled from that theme.
  *
  * Teal is a keyword. Peach is a declared function or type name.

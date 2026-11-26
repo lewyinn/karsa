@@ -57,7 +57,7 @@ export const CHAT_START_INPUT_MAX_HEIGHT = 160
 /**
  * The chat start screen ("Empty chat · V1 Composer in the middle"), shared by
  * the agent launcher (before a session exists) and an empty chat (a session
- * with no messages yet): the Troupe mark, one project question and the
+ * with no messages yet): the Karsa mark, one project question and the
  * composer under it (each surface keeps its own composer). One source of
  * truth for this copy and this spacing (Paper "2.2 New chat / ASCII glow":
  * 56px mark, 20px to a 22/28 heading, 24px to the composer). A quick chat

@@ -157,3 +157,14 @@ pub async fn github_set_item_state(
     })
     .await
 }
+
+#[tauri::command]
+pub async fn github_create_issue(
+    request: GithubCreateIssueRequest,
+) -> Result<IpcResult<GithubCreateIssueResult>, String> {
+    let cwd = request.cwd.clone();
+    run("github_create_issue", &cwd, move |service, cwd| {
+        service.create_issue(&GithubCreateIssueRequest { cwd, ..request })
+    })
+    .await
+}

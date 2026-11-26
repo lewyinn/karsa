@@ -57,7 +57,6 @@ export default function WorkspaceLayout(): React.JSX.Element {
 
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
   const [isShortcutMenuOpen, setIsShortcutMenuOpen] = useState(false)
-  const [isCreateSnapshotModalOpen, setIsCreateSnapshotModalOpen] = useState(false)
   const [isCommandHistoryOpen, setIsCommandHistoryOpen] = useState(false)
   // Mobile-only full-width Sheet rendering GitPanel (single-column mobile
   // branch). Open state + snapshotted cwd live in a store so the chat
@@ -147,7 +146,6 @@ export default function WorkspaceLayout(): React.JSX.Element {
   const overlayActions = useOverlayActions({
     setIsCommandPaletteOpen,
     setIsShortcutMenuOpen,
-    setIsCreateSnapshotModalOpen,
     setIsCommandHistoryOpen
   })
   const { handleOpenThemePicker, handleToggleThemePicker } = overlayActions
@@ -245,8 +243,6 @@ export default function WorkspaceLayout(): React.JSX.Element {
       setIsNewProjectModalOpen={setIsNewProjectModalOpen}
       isCommandPaletteOpen={isCommandPaletteOpen}
       setIsCommandPaletteOpen={setIsCommandPaletteOpen}
-      isCreateSnapshotModalOpen={isCreateSnapshotModalOpen}
-      setIsCreateSnapshotModalOpen={setIsCreateSnapshotModalOpen}
       isCommandHistoryOpen={isCommandHistoryOpen}
       setIsCommandHistoryOpen={setIsCommandHistoryOpen}
       ssh={ssh}

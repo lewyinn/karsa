@@ -641,7 +641,7 @@ impl AcpInstallService {
         self.install(agent, &catalog.host, None, None).await
     }
 
-    /// Install the pinned Claude ACP npm package into Troupe's host cache.
+    /// Install the pinned Claude ACP npm package into Karsa's host cache.
     /// This path is deliberately separate from registry npx launch: package
     /// installation is explicit, version-locked, staged, and atomically
     /// activated. It never installs or modifies the external Claude CLI.
@@ -676,7 +676,7 @@ impl AcpInstallService {
             Some(crate::acp::claude_agent::ClaudeRuntimeBlock::NodeTooOld) => {
                 return Err(InstallError::new(
                     code::NOT_INSTALLABLE,
-                    "Claude Agent ACP requires Node.js 22 or newer. Upgrade Node.js and restart Troupe.",
+                    "Claude Agent ACP requires Node.js 22 or newer. Upgrade Node.js and restart Karsa.",
                 ));
             }
             Some(crate::acp::claude_agent::ClaudeRuntimeBlock::NpmMissing) => {

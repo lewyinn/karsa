@@ -33,7 +33,7 @@ impl HostPlanServer {
         let target = redact_session_id(&input.chat_id);
         let Some(persistence) = self.persistence.as_ref() else {
             log::warn!("[host-mcp] read_chat by session {caller} of chat {target} refused: no chat history");
-            return FrameReply::err("chat history is not available on this Troupe host");
+            return FrameReply::err("chat history is not available on this Karsa host");
         };
         match load(persistence, &input.chat_id).await {
             Ok(first) => {
@@ -153,7 +153,7 @@ impl HostPlanServer {
             Err(SessionPersistenceError::SessionNotFound) => {
                 log::info!("[host-mcp] read_chat by session {caller} of chat {target}: not found");
                 FrameReply::err(format!(
-                    "No chat with ID {} on this Troupe host.",
+                    "No chat with ID {} on this Karsa host.",
                     input.chat_id
                 ))
             }

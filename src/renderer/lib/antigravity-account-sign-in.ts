@@ -15,6 +15,7 @@ import type { AgentConfig } from '@/lib/acp-api'
 import { antigravityAccountsApi } from '@/lib/antigravity-accounts-api'
 import { logFrontendError } from '@/lib/log-api'
 import { useAcpStore } from '@/stores/acp-store'
+import { refreshAntigravityAfterSettingsSignIn } from '@/stores/acp-store/post-auth-refresh'
 
 export const ANTIGRAVITY_SIGN_IN_METHODS = [
   { id: ANTIGRAVITY_GOOGLE_METHOD, label: 'Log in with Google' },
@@ -65,8 +66,10 @@ export async function signInAntigravityAccount(accountId: string, methodId: stri
     },
     agentStatus: { ...state.agentStatus, [result.agentId]: 'connected' }
   }))
+  let signedIn = false
   try {
     await useAcpStore.getState().authenticateAgent(result.agentId, methodId)
+    signedIn = true
     void logFrontendError({
       level: 'info',
       source: 'antigravityAccounts.signIn',
@@ -77,5 +80,10 @@ export async function signInAntigravityAccount(accountId: string, methodId: stri
       .getState()
       .killAgent(result.agentId)
       .catch(() => undefined)
+  }
+  if (signedIn) {
+    // Trigger `session/new` on the active/failed Antigravity workspaces so the
+    // model list populates immediately without requiring an app restart.
+    void refreshAntigravityAfterSettingsSignIn(useAcpStore.getState)
   }
 }

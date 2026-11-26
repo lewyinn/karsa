@@ -13,7 +13,7 @@ use std::time::Duration;
 pub const SHARED_DIRS: &[&str] = &["sessions", "archived_sessions"];
 
 /// Shared directories that are linked only when the shared home already has
-/// them. Troupe does not create these.
+/// them. Karsa does not create these.
 pub const OPTIONAL_DIRS: &[&str] = &["prompts", "skills", "rules"];
 
 /// Shared files. A missing one is skipped: a link to a missing target would

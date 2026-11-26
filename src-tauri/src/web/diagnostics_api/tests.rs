@@ -351,7 +351,7 @@ fn log_path_candidates_follow_the_deployment_mode() {
         assert!(
             desktop[0]
                 .to_string_lossy()
-                .contains("com.termul-manager.app"),
+                .contains("com.karsa.app"),
             "desktop candidate must be the app_log_dir layout: {desktop:?}"
         );
     }

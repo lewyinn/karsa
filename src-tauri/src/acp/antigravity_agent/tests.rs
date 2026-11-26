@@ -490,3 +490,11 @@ async fn a_codex_or_claude_config_is_never_given_a_gemini_home() {
         assert!(!config.env.contains_key(FORCE_FILE_STORAGE_ENV));
     }
 }
+
+#[test]
+fn host_auth_ready_is_false_for_unverified_builtin_account_and_true_for_verified_homes() {
+    assert!(!AntigravityLaunchAuth::Unmanaged.host_auth_ready());
+    assert!(!AntigravityLaunchAuth::Account("default".to_string()).host_auth_ready());
+    assert!(AntigravityLaunchAuth::Account("work".to_string()).host_auth_ready());
+    assert!(AntigravityLaunchAuth::Fixed.host_auth_ready());
+}

@@ -1,5 +1,5 @@
 /**
- * Read the project's Troupe Canvas for composer mentions: what the @ menu
+ * Read the project's Karsa Canvas for composer mentions: what the @ menu
  * lists (the current selection and the current page's top-level layers), and
  * the layer summaries a send carries for each canvas pill.
  *

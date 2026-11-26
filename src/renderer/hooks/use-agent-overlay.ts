@@ -10,7 +10,7 @@ const RELOAD_INTERVAL_MS = 60 * 60 * 1000
  */
 const RETRY_AFTER_FAILURE_MS = 60 * 1000
 
-/** Load Troupe's registry overlay on mount, then hourly. Both roots. */
+/** Load Karsa's registry overlay on mount, then hourly. Both roots. */
 export function useAgentOverlayLoader(): void {
   useEffect(() => {
     let cancelled = false

@@ -400,6 +400,35 @@ export const Square = forwardRef<SVGSVGElement, TermulIconProps>(function Square
   )
 })
 
+export const Play = forwardRef<SVGSVGElement, TermulIconProps>(function Play(
+  { size = 24, strokeWidth, children: _children, ...props },
+  ref
+) {
+  const requestedStrokeWidth = Number(strokeWidth ?? 1.5)
+  const safeStrokeWidth = Number.isFinite(requestedStrokeWidth) ? requestedStrokeWidth : 1.5
+
+  return (
+    // biome-ignore lint/a11y/noSvgWithoutTitle: aria-hidden is set unless the caller passes aria-label
+    <svg
+      ref={ref}
+      aria-hidden={props['aria-label'] ? undefined : true}
+      focusable="false"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={safeStrokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      data-termul-icon="Play"
+      {...props}
+    >
+      <polygon points="6 4 20 12 6 20 6 4" />
+    </svg>
+  )
+})
+
 export const ChevronDownIcon = ChevronDown
 export const Clock3 = Clock
 export const FilePen = FileEdit

@@ -22,6 +22,7 @@ import { accountReadiness } from './account-status'
 import { ClaudeAccountActions } from './ClaudeAccountActions'
 import { ClaudeAccountRow, isAccountSignedOut } from './ClaudeAccountRow'
 import { LinkSignInDialog } from './LinkSignInDialog'
+import { ProviderAgentRuntimeBanner, useProviderAgentRuntime } from './ProviderAgentRuntimeBanner'
 import { oldestCheck, ProviderGroupHeader } from './ProviderGroupHeader'
 
 const errorText = (error: unknown): string =>
@@ -57,6 +58,7 @@ export function ProviderSettings(): React.JSX.Element {
     useClaudeAccounts()
   const flow = claudeAccountsApi.signInFlow()
   const canManage = useServerAdmitsRemoteWrites()
+  const runtime = useProviderAgentRuntime('claude-acp')
   const projects = useProjectStore((s) => s.projects)
   const [addOpen, setAddOpen] = useState(false)
   const [renaming, setRenaming] = useState<ClaudeAccountView | null>(null)
@@ -169,11 +171,14 @@ export function ProviderSettings(): React.JSX.Element {
               : `${accounts.length} accounts`
             : undefined
         }
+        status={runtime.badge}
         lastChecked={failed ? null : oldestCheck(usage)}
         refreshing={refreshingUsage}
         onRefresh={failed ? undefined : () => void refreshUsage(true)}
         action={addButton}
       />
+
+      <ProviderAgentRuntimeBanner runtime={runtime} canManage={canManage} />
 
       {loading && (
         <div>
@@ -250,15 +255,7 @@ export function ProviderSettings(): React.JSX.Element {
       {!loading && !failed && !canManage && (
         <p className="flex flex-wrap items-center gap-1.5 pt-2 text-2xs text-muted-foreground">
           <Monitor size={12} className="shrink-0" />
-          {READ_ONLY_SERVER_REASON} To add or sign in to an account, use the desktop app, or run
-          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-3xs text-secondary-foreground">
-            troupe-server claude account
-          </code>
-          on the host (
-          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-3xs text-secondary-foreground">
-            termul-server claude account
-          </code>
-          on a server installed before 0.5).
+          {READ_ONLY_SERVER_REASON} Sign in from the Karsa desktop app to manage accounts.
         </p>
       )}
 

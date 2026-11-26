@@ -1,18 +1,28 @@
-import type { GitDiffStat, GitStatusDetail } from '@shared/types/ipc.types'
+import type { DiscoveredGitRepo, GitDiffStat, GitStatusDetail } from '@shared/types/ipc.types'
 import { useEffect, useMemo, useRef } from 'react'
 import type { GitDisplayStatus } from '@/lib/git-status-display'
 import { logFrontendError } from '@/lib/log-api'
 import { normalizePath } from '@/lib/working-copy'
+import { isMultiRepoWorkspace, useGitReposStore } from '@/stores/git-repos-store'
 import { selectGitDiffStat, useGitStatusStore } from '@/stores/git-status-store'
 
 export const GIT_CHANGES_REFRESH_DEBOUNCE_MS = 500
+const EMPTY_REPOS: DiscoveredGitRepo[] = []
 
-/** One uncommitted file of the checkout. `path` is repository-root relative. */
+/** One uncommitted file of the checkout. `path` is repository-root relative (or absolute when `repoRoot` is set). */
 export interface GitChangedFile {
   path: string
   status: GitDisplayStatus
   added: number
   removed: number
+  /** True when the file has staged changes in the index. */
+  staged?: boolean
+  /** True when the file has unstaged working-tree changes. */
+  hasUnstaged?: boolean
+  /** Repository root path when aggregated across multiple nested repos. */
+  repoRoot?: string
+  /** Display label of the owning repository in a multi-repo workspace. */
+  repoLabel?: string
 }
 
 /**
@@ -54,7 +64,9 @@ export function gitChangedFiles(
     path,
     status: displayStatus(entries),
     added: counts.get(path)?.added ?? 0,
-    removed: counts.get(path)?.removed ?? 0
+    removed: counts.get(path)?.removed ?? 0,
+    staged: entries.some((entry) => entry.staged),
+    hasUnstaged: entries.some((entry) => !entry.staged)
   }))
 }
 
@@ -74,45 +86,105 @@ export function useGitChangedFiles(
   turnActive: boolean
 ): GitChangedFiles {
   const key = cwd ? normalizePath(cwd) : ''
-  const statuses = useGitStatusStore((state) => (key ? state.statuses[key] : undefined))
-  const statusError = useGitStatusStore((state) => (key ? state.errors[key]?.status : undefined))
-  const diffStatError = useGitStatusStore((state) =>
-    key ? state.errors[key]?.diffStat : undefined
+  const discoveredRepos = useGitReposStore((state) =>
+    key ? (state.reposByRoot[key] ?? EMPTY_REPOS) : EMPTY_REPOS
   )
-  const stat = useGitStatusStore(selectGitDiffStat(cwd))
+  const multiRepo = isMultiRepoWorkspace(discoveredRepos)
+
+  useEffect(() => {
+    if (!cwd) return
+    void useGitReposStore.getState().discover(cwd)
+  }, [cwd])
+
+  const allStatuses = useGitStatusStore((state) => (multiRepo ? state.statuses : null))
+  const allDiffStats = useGitStatusStore((state) => (multiRepo ? state.diffStats : null))
+  const statuses = useGitStatusStore((state) =>
+    key && !multiRepo ? state.statuses[key] : undefined
+  )
+  const statusError = useGitStatusStore((state) =>
+    key && !multiRepo ? state.errors[key]?.status : undefined
+  )
+  const diffStatError = useGitStatusStore((state) =>
+    key && !multiRepo ? state.errors[key]?.diffStat : undefined
+  )
+  const stat = useGitStatusStore(selectGitDiffStat(multiRepo ? '' : cwd))
 
   // Declared before the refresh effect: an unwatched key skips the diff stat.
   useEffect(() => {
     if (!cwd) return
-    return useGitStatusStore.getState().watchDiffStat(cwd)
-  }, [cwd])
+    const store = useGitStatusStore.getState()
+    if (multiRepo) {
+      const cleanups = discoveredRepos.map((repo) => store.watchDiffStat(repo.path))
+      return () => {
+        for (const cleanup of cleanups) cleanup()
+      }
+    }
+    return store.watchDiffStat(cwd)
+  }, [cwd, multiRepo, discoveredRepos])
 
-  const refreshedCwd = useRef<string | null>(null)
+  const refreshedTarget = useRef<string | null>(null)
+  const targetKey = multiRepo ? `${cwd}|${discoveredRepos.map((r) => r.path).join('|')}` : cwd
   // biome-ignore lint/correctness/useExhaustiveDependencies: toolCalls and turnActive are refresh triggers only
   useEffect(() => {
     if (!cwd) return
     const refresh = () => {
       const store = useGitStatusStore.getState()
-      // Failures are stored in `errors` and logged by the store.
-      void store.refreshStatus(cwd).catch(() => {})
-      void store.refreshDiffStat(cwd)
+      const targets = multiRepo ? discoveredRepos.map((r) => r.path) : [cwd]
+      for (const target of targets) {
+        // Failures are stored in `errors` and logged by the store.
+        void store.refreshStatus(target).catch(() => {})
+        void store.refreshDiffStat(target)
+      }
     }
-    if (refreshedCwd.current !== cwd) {
-      refreshedCwd.current = cwd
+    if (refreshedTarget.current !== targetKey) {
+      refreshedTarget.current = targetKey
       refresh()
       return
     }
     const timer = setTimeout(refresh, GIT_CHANGES_REFRESH_DEBOUNCE_MS)
     return () => clearTimeout(timer)
-  }, [cwd, toolCalls, turnActive])
+  }, [cwd, targetKey, multiRepo, discoveredRepos, toolCalls, turnActive])
 
   const result = useMemo<GitChangedFiles>(() => {
     if (!key) return UNAVAILABLE
+    if (multiRepo && allStatuses && allDiffStats) {
+      const merged: GitChangedFile[] = []
+      let anyReady = false
+      for (const repo of discoveredRepos) {
+        const repoKey = normalizePath(repo.path)
+        const repoStatuses = allStatuses[repoKey]
+        if (!repoStatuses) continue
+        anyReady = true
+        const repoStat = allDiffStats[repoKey] ?? null
+        const repoRoot = repoStat?.root || repo.path
+        const repoLabel = repo.isRoot ? repo.name : repo.relativePath
+        for (const file of gitChangedFiles(repoStatuses, repoStat)) {
+          merged.push({
+            ...file,
+            repoRoot,
+            repoLabel
+          })
+        }
+      }
+      if (!anyReady) return LOADING
+      return { state: 'ready', root: cwd, files: merged }
+    }
     if (!statuses) return statusError === undefined ? LOADING : UNAVAILABLE
     if (!stat && diffStatError === undefined) return LOADING
     const root = stat?.root || cwd
     return { state: 'ready', root, files: gitChangedFiles(statuses, stat) }
-  }, [key, cwd, statuses, stat, statusError, diffStatError])
+  }, [
+    key,
+    cwd,
+    multiRepo,
+    discoveredRepos,
+    allStatuses,
+    allDiffStats,
+    statuses,
+    stat,
+    statusError,
+    diffStatError
+  ])
 
   const loggedUnavailableFor = useRef<string | null>(null)
   useEffect(() => {

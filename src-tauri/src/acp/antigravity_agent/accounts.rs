@@ -17,7 +17,7 @@ use crate::acp::config::AgentConfig;
 
 /// What `troupe-server antigravity account login` prints: there is no
 /// terminal sign-in for Antigravity.
-pub const CLI_LOGIN_UNSUPPORTED: &str = "Antigravity has no terminal sign-in. Sign in to this account from Settings → Provider → Antigravity in the Troupe app or the Troupe web UI.";
+pub const CLI_LOGIN_UNSUPPORTED: &str = "Antigravity has no terminal sign-in. Sign in to this account from Settings → Provider → Antigravity in the Karsa app or the Karsa web UI.";
 
 /// Whether choosing an Account first checks that its login is confirmed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -299,7 +299,7 @@ impl AntigravityAgentService {
         if !self.has_account(id)? {
             return Err("That Antigravity account does not exist".to_string());
         }
-        log::info!("[antigravity-accounts] terminal login refused: sign-in runs in the Troupe UI");
+        log::info!("[antigravity-accounts] terminal login refused: sign-in runs in the Karsa UI");
         Err(CLI_LOGIN_UNSUPPORTED.to_string())
     }
 

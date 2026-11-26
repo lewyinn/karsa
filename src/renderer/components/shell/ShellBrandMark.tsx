@@ -1,7 +1,7 @@
 import { TermulMark } from '@/components/TermulMark'
 
 /**
- * Troupe mark at the start of the window top row. Brand only: not a button
+ * Karsa mark at the start of the window top row. Brand only: not a button
  * and hidden from assistive technology. On desktop it is part of the window
  * drag region.
  */

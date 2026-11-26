@@ -250,7 +250,7 @@ pub fn window_name(kind: Option<&str>) -> &'static str {
 #[must_use]
 pub fn switch_notice(from: &str, to: &str, window: &str) -> String {
     format!(
-        "Troupe moved this chat from Codex account {from} to {to} because {from} reached its \
+        "Karsa moved this chat from Codex account {from} to {to} because {from} reached its \
          {window} limit. Continue the task you were working on. Subagents and background \
          commands that were running before the switch were stopped; restart the ones that are \
          still needed."
@@ -260,7 +260,7 @@ pub fn switch_notice(from: &str, to: &str, window: &str) -> String {
 #[must_use]
 pub fn resume_notice(account: &str, window: &str, reset: &str) -> String {
     format!(
-        "Troupe continued this chat because the {window} limit of Codex account {account} \
+        "Karsa continued this chat because the {window} limit of Codex account {account} \
          reset at {reset}. Continue the task you were working on. Subagents and background \
          commands that were running when the limit was reached may have stopped; restart the \
          ones that are still needed."

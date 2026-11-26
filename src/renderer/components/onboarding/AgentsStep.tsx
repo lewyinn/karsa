@@ -5,7 +5,7 @@ import { StatusWord } from '@/components/settings/StatusWord'
 import { Button } from '@/components/ui/button'
 import { useProviderSignIn } from '@/hooks/use-provider-sign-in'
 import { useSupportedAcpAgentCatalog } from '@/hooks/use-resolved-supported-acp-agents'
-import { agentSetupStatus, featuredAgents } from '@/lib/agents/agent-setup'
+import { agentSetupStatus, featuredAgents, isOnDemandRuntimeAgent } from '@/lib/agents/agent-setup'
 import {
   entryServesConfigId,
   pickDefaultSupportedAgent,
@@ -34,6 +34,22 @@ function moveOptionFocus(event: React.KeyboardEvent<HTMLDivElement>): void {
   event.preventDefault()
   const next = event.key === 'ArrowDown' ? index + 1 : index - 1
   options[(next + options.length) % options.length]?.focus()
+}
+
+function readySummaryTitle(ready: readonly SupportedAcpAgentEntry[]): string {
+  if (ready.length === 0) return 'No agents ready yet'
+  const onDemand = ready.filter(isOnDemandRuntimeAgent)
+  const installedCount = ready.length - onDemand.length
+  const launchers = new Set(onDemand.map((entry) => entry.runtimeLauncher).filter(Boolean))
+  const launcherLabel = launchers.size === 1 ? [...launchers][0] : 'npx/uvx'
+
+  if (installedCount > 0 && onDemand.length > 0) {
+    return `${installedCount} installed locally · ${onDemand.length} ready via ${launcherLabel}`
+  }
+  if (installedCount > 0) {
+    return `${installedCount} installed locally`
+  }
+  return `${onDemand.length} ready via ${launcherLabel} (none installed locally)`
 }
 
 export function AgentsStep({
@@ -65,7 +81,7 @@ export function AgentsStep({
       step="agents"
       wide
       title="Check your agents"
-      body="Troupe runs the coding agents you already use. Pick the one new chats start with. You can add more later."
+      body="Karsa runs the coding agents you already use. Pick the one new chats start with. You can add more later."
       footer={
         <>
           <Button variant="ghost" size="sm" className={TOUCH_TARGET_CLASS} onClick={onBack}>
@@ -101,7 +117,7 @@ export function AgentsStep({
       }
     >
       <SettingsGroup
-        title={loading ? 'Looking for agents…' : `Found ${ready.length} ready on this computer`}
+        title={loading ? 'Looking for agents…' : readySummaryTitle(ready)}
         actions={
           <Button
             size="xs"

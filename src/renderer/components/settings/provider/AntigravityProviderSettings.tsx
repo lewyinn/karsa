@@ -30,6 +30,7 @@ import {
   antigravityAccountReadiness
 } from './antigravity-account-status'
 import { AccountAvatar, DefaultPill } from './ClaudeAccountRow'
+import { ProviderAgentRuntimeBanner, useProviderAgentRuntime } from './ProviderAgentRuntimeBanner'
 import { ProviderGroupHeader } from './ProviderGroupHeader'
 
 const errorText = (error: unknown): string =>
@@ -53,6 +54,7 @@ export function AntigravityProviderSettings(): React.JSX.Element {
     checkUsage
   } = useAntigravityAccounts({ usage: true })
   const canManage = useServerAdmitsRemoteWrites()
+  const runtime = useProviderAgentRuntime('antigravity-acp')
   const projects = useProjectStore((s) => s.projects)
   const [addOpen, setAddOpen] = useState(false)
   const [renaming, setRenaming] = useState<AntigravityAccountView | null>(null)
@@ -142,6 +144,7 @@ export function AntigravityProviderSettings(): React.JSX.Element {
               : `${accounts.length} accounts`
             : undefined
         }
+        status={runtime.badge}
         lastChecked={null}
         refreshing={refreshingUsage}
         action={
@@ -154,6 +157,8 @@ export function AntigravityProviderSettings(): React.JSX.Element {
           )
         }
       />
+
+      <ProviderAgentRuntimeBanner runtime={runtime} canManage={canManage} />
 
       {loading && (
         <div className="py-4 text-xs text-muted-foreground" aria-busy="true">
@@ -257,11 +262,7 @@ export function AntigravityProviderSettings(): React.JSX.Element {
       {!loading && !failed && !canManage && (
         <p className="flex flex-wrap items-center gap-1.5 pt-2 text-2xs text-muted-foreground">
           <Monitor size={12} className="shrink-0" />
-          {READ_ONLY_SERVER_REASON} To add an account, run
-          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-3xs text-secondary-foreground">
-            troupe-server antigravity account
-          </code>
-          on the host. Sign in from the desktop app, or from a browser that can make changes.
+          {READ_ONLY_SERVER_REASON} Sign in from the Karsa desktop app to manage accounts.
         </p>
       )}
 

@@ -30,6 +30,7 @@ interface CommitComposerProps {
   isPushing: boolean
   commitContext: GitCommitContext | null
   stagedCount: number
+  hasUncommittedChanges?: boolean
   hasUsableAgent: boolean
   canGenerate: boolean
   canCommit: boolean
@@ -51,6 +52,7 @@ export function CommitComposer({
   isPushing,
   commitContext,
   stagedCount,
+  hasUncommittedChanges = false,
   hasUsableAgent,
   canGenerate,
   canCommit,
@@ -96,11 +98,13 @@ export function CommitComposer({
             type="button"
             aria-label="Generate commit message"
             title={
-              stagedCount === 0
-                ? 'Stage files to generate a commit message'
+              stagedCount === 0 && !hasUncommittedChanges
+                ? 'No changes to generate a commit message from'
                 : !hasUsableAgent
                   ? 'Configure and select an ACP agent'
-                  : 'Generate a commit message from staged changes'
+                  : stagedCount > 0
+                    ? 'Generate a Conventional Commit message from staged changes'
+                    : 'Generate a Conventional Commit message from unstaged changes'
             }
             onClick={() => void onGenerateMessage()}
             disabled={!canGenerate}
@@ -298,11 +302,13 @@ export function CommitComposer({
           onClick={() => void onGenerateMessage()}
           disabled={!canGenerate}
           title={
-            stagedCount === 0
-              ? 'Stage files to generate a commit message'
+            stagedCount === 0 && !hasUncommittedChanges
+              ? 'No changes to generate a commit message from'
               : !hasUsableAgent
                 ? 'Configure and select an ACP agent'
-                : 'Generate a commit message from staged changes'
+                : stagedCount > 0
+                  ? 'Generate a Conventional Commit message from staged changes'
+                  : 'Generate a Conventional Commit message from unstaged changes'
           }
         >
           <Sparkles size={12} className={cn(isGenerating && 'animate-pulse')} />

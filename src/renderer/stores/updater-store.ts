@@ -8,6 +8,7 @@ import {
   setUpdateChannel as tauriSetUpdateChannel
 } from '@/lib/tauri-update-channel'
 import {
+  APP_UPDATER_DISABLED,
   clearPendingUpdate,
   DEFAULT_UPDATE_CHANNEL,
   isUpdateDownloaded,
@@ -116,7 +117,7 @@ export const useUpdaterStore = create<UpdaterStoreState>((set, get) => ({
   error: null,
   errorSource: null,
   lastChecked: null,
-  autoUpdateEnabled: true,
+  autoUpdateEnabled: !APP_UPDATER_DISABLED,
   releaseNotes: null,
   hasActiveTerminals: false,
   isManualUpdateMode: false,
@@ -126,6 +127,7 @@ export const useUpdaterStore = create<UpdaterStoreState>((set, get) => ({
    * Check for available updates via the Tauri updater plugin
    */
   checkForUpdates: async (): Promise<void> => {
+    if (APP_UPDATER_DISABLED) return
     const { isChecking, updateChannel } = get()
     if (isChecking) return
 
@@ -382,6 +384,10 @@ export const useUpdaterStore = create<UpdaterStoreState>((set, get) => ({
   },
 
   initializeUpdater: async (options?: { autoCheck?: boolean }): Promise<void> => {
+    if (APP_UPDATER_DISABLED) {
+      set({ autoUpdateEnabled: false })
+      return
+    }
     const currentGeneration = updaterLifecycleGeneration
 
     // #843: the desktop updater has no web transport — registering its event

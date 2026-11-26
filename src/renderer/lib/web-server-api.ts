@@ -270,6 +270,18 @@ export const webServerGit = {
     return res.data
   },
 
+  async discoverRepos(
+    cwd: string,
+    maxDepth?: number
+  ): Promise<import('@shared/types/ipc.types').DiscoveredGitRepo[]> {
+    const res = await postJson<import('@shared/types/ipc.types').DiscoveredGitRepo[]>(
+      '/git/discover-repos',
+      { cwd, ...(maxDepth !== undefined ? { maxDepth } : {}) }
+    )
+    if (!res.success) throw new Error(res.error)
+    return res.data
+  },
+
   /** Working-tree `+added -removed` stat via `POST /git/diff-stat` (read route). */
   async getDiffStat(cwd: string): Promise<GitDiffStat> {
     const res = await postJson<GitDiffStat>('/git/diff-stat', { cwd })

@@ -179,7 +179,7 @@ export function McpServerDetail({
               </Button>
             }
           >
-            Troupe could not reach this server. Check the command, URL and environment values, then
+            Karsa could not reach this server. Check the command, URL and environment values, then
             try again.
             {probeError ? (
               <span className="mt-1 block break-words font-mono text-muted-foreground">
@@ -300,7 +300,7 @@ function ToolsGroup({
       : probeStatus === 'authRequired'
         ? "Sign in to see this server's tools."
         : probeStatus === 'disconnected'
-          ? 'Tools show once Troupe can reach the server.'
+          ? 'Tools show once Karsa can reach the server.'
           : tools && tools.length === 0
             ? 'The server answered but offers no tools.'
             : 'Loading tools…'

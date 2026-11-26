@@ -3,7 +3,7 @@ use crate::acp::destructive_guard::{ensure_no_active_turn_in_checkout, start_ref
 use crate::acp::AcpManager;
 use crate::trackers::git_tracker::{CommitDetailError, GitCommitDetail, GitCommitFileDiff};
 use crate::trackers::git_tracker::{CommitFailure, CommitStamp};
-use crate::trackers::git_tracker::{DiffStatError, GitDiffStat};
+use crate::trackers::git_tracker::{DiffStatError, DiscoveredGitRepo, GitDiffStat};
 use crate::trackers::{GitCommit, GitStatusDetail};
 use crate::web::command_ledger::{
     fingerprint_of, no_entity, run_domain, run_domain_released, DomainRan, PRECONDITION_FAILED_PREFIX,
@@ -23,6 +23,22 @@ pub async fn git_get_status(cwd: String) -> Result<Vec<GitStatusDetail>, String>
     tokio::task::spawn_blocking(move || crate::trackers::git_tracker::git_get_status_detail(&cwd))
         .await
         .map_err(|e| format!("git status task failed: {e}"))?
+}
+
+/// Discover Git repositories at `cwd` and nested subdirectories (up to `max_depth`).
+#[tauri::command]
+pub async fn git_discover_repos(
+    cwd: String,
+    max_depth: Option<usize>,
+) -> Result<Vec<DiscoveredGitRepo>, String> {
+    let cwd = validate_project_path(&cwd)?
+        .to_string_lossy()
+        .into_owned();
+    tokio::task::spawn_blocking(move || {
+        crate::trackers::git_tracker::git_discover_repos(&cwd, max_depth)
+    })
+    .await
+    .map_err(|e| format!("git discover repos task failed: {e}"))?
 }
 
 /// Get git diff for a file. `staged` selects the index-vs-HEAD diff

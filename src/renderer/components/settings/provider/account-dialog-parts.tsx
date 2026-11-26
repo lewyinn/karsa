@@ -90,7 +90,7 @@ export function AccountNameStep({
           Add {/^[aeiou]/i.test(provider) ? 'an' : 'a'} {provider} account
         </DialogTitle>
         <DialogDescription>
-          Give it a short name. Troupe shows this name, never the email.
+          Give it a short name. Karsa shows this name, never the email.
         </DialogDescription>
       </DialogHeader>
       <form

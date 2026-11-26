@@ -29,7 +29,7 @@ export function useSSHWorkspace() {
     (profileId: string) => {
       if (!isTauriContext()) {
         selectProfile(profileId)
-        toast.info('SSH connections run in the Troupe desktop app.')
+        toast.info('SSH connections run in the Karsa desktop app.')
         return
       }
       openSSHSession(profileId)

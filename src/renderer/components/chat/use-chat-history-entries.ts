@@ -79,7 +79,7 @@ export interface ChatHistoryEntries {
 
 /**
  * The chat history derivation shared by the desktop `ChatHistoryTab` and the
- * mobile Recents list: ADR 0002 scoping, Troupe-created sessions only, query
+ * mobile Recents list: ADR 0002 scoping, Karsa-created sessions only, query
  * filter, newest-first sort, the settled-count announcement, the Active group
  * (mobile), the lazy window with its sentinel observer, recency groups, and
  * the open/delete actions.
@@ -145,8 +145,8 @@ export function useChatHistoryEntries({
     [sessionIndex, activeProjectId, activeCwd, worktreePaths, quickIds, olderIds]
   )
 
-  // Troupe-created sessions only. The host-owned `discovered` flag is `false`
-  // for sessions Troupe created (`register_session`) and `true` for external
+  // Karsa-created sessions only. The host-owned `discovered` flag is `false`
+  // for sessions Karsa created (`register_session`) and `true` for external
   // `session/list` mirrors — filter hides CLI/other-client chats.
   // CAP-8 (spec-in-chat-agent-switch): a switched chat is ONE conversation —
   // fold every `continuedFrom` chain to its terminal session before rows are

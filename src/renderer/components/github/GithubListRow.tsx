@@ -15,6 +15,8 @@ const MAX_ROW_LABELS = 3
 
 interface GithubListRowProps {
   item: GithubListItem
+  /** Optional repository badge shown in multi-repo "All repos" view. */
+  repoBadge?: string
   /** This item's tab is the one on screen. */
   isActive: boolean
   onOpen: (item: GithubListItem) => void
@@ -24,7 +26,12 @@ interface GithubListRowProps {
  * One issue or PR: state glyph, title, then `#n · author · updated` with the
  * comment count and the PR's check rollup, then its labels.
  */
-export function GithubListRow({ item, isActive, onOpen }: GithubListRowProps): React.JSX.Element {
+export function GithubListRow({
+  item,
+  repoBadge,
+  isActive,
+  onOpen
+}: GithubListRowProps): React.JSX.Element {
   const updated = formatRelativeTime(item.updatedAt)
   const stateWord = itemStateLook(item.kind, item.state).label
   const kindWord = item.kind === 'pr' ? 'pull request' : 'issue'
@@ -63,6 +70,11 @@ export function GithubListRow({ item, isActive, onOpen }: GithubListRowProps): R
             {item.title}
           </span>
           <span className="flex min-w-0 items-center gap-1.5 text-2xs text-muted-foreground">
+            {repoBadge && (
+              <span className="shrink-0 rounded bg-muted px-1.5 py-px font-mono text-3xs text-secondary-foreground">
+                {repoBadge}
+              </span>
+            )}
             <span className="shrink-0 tabular-nums">#{item.number}</span>
             <span aria-hidden="true">·</span>
             <span className="min-w-0 truncate">{item.author}</span>

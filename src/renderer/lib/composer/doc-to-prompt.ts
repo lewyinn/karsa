@@ -79,7 +79,7 @@ export const CONTEXT_PILL_NODE = 'contextPill'
 
 export const CONVERSATION_PILL_NODE = 'conversationPill'
 
-/** A Troupe tool pill. Its token (`\uE00C…\uE00D`) is owned by `tool-tokens.ts`. */
+/** A Karsa tool pill. Its token (`\uE00C…\uE00D`) is owned by `tool-tokens.ts`. */
 export const TOOL_PILL_NODE = 'toolPill'
 
 /** A canvas-layer mention. Its token (`\uE00E…\uE00F`) is owned by `canvas-tokens.ts`. */

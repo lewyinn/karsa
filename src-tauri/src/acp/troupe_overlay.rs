@@ -1,4 +1,4 @@
-//! Troupe's own ACP registry overlay (`troupe.json`, published from the
+//! Karsa's own ACP registry overlay (`troupe.json`, published from the
 //! `troupe-acp-registry` repository).
 //!
 //! The official ACP registry stays the source of agents, versions and launch

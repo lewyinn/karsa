@@ -205,7 +205,7 @@ function SessionOptions({
  * Model picker v2: the same state as `SelectorPanel` (one hook) in a denser
  * layout. Glyph tabs with an underline, a Favorites section, 28px rows, and
  * an Edit flyout on the active model for Thinking, Context and Fast mode.
- * Visual direction after volt (MIT, github.com/LeulAria/volt), on Troupe
+ * Visual direction after volt (MIT, github.com/LeulAria/volt), on Karsa
  * tokens.
  */
 export function SelectorPanelV2(props: SelectorPanelV2Props): React.JSX.Element {

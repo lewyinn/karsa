@@ -22,12 +22,12 @@ use crate::acp::host_mcp::child::ChildConfig;
 /// the server `instructions` to the model, and upstream's descriptions call
 /// the editor "FigCraft", so without this an agent cannot tell that
 /// `create_node` or `run_command` draw on the project's canvas.
-pub const DESCRIPTION_TAG: &str = "Troupe Canvas (this project's design canvas, a .figcraft \
+pub const DESCRIPTION_TAG: &str = "Karsa Canvas (this project's design canvas, a .figcraft \
 document; change it only through these tools, never by editing files): ";
 
 /// The canvas section of the session `instructions`, followed by figcraft's
 /// own guide to its tools.
-const CANVAS_GUIDE: &str = "Design canvas: this project has a design canvas, Troupe Canvas, a \
+const CANVAS_GUIDE: &str = "Design canvas: this project has a design canvas, Karsa Canvas, a \
 Figma-class editor. Its document is the project's .figcraft file (design.figcraft by default). \
 When the user asks for a design, mockup, wireframe, screen or anything \"on the canvas\", build it \
 with this server's canvas tools: create_node, set_properties, list_commands, run_command, batch, \
@@ -36,10 +36,10 @@ type_text and inspect_ui drive the editor UI and need the canvas on screen). wai
 returns new comment events only (layer edits are not reported, so a `document` topic never wakes \
 it) and waits up to `timeoutMs` (20 s by default, 25 s at most); pass the `cursor` it returns as \
 `after` on your next call. save_file saves the document; \
-Troupe chooses the file and ignores any path you pass. Do not create or edit .figcraft, .pen or \
+Karsa chooses the file and ignores any path you pass. Do not create or edit .figcraft, .pen or \
 .op files on disk, do not call open_file, and do not look for other design tools, MCP servers or \
 canvas apps: these tools are the canvas. Agents cannot open the canvas. A CANVAS_CLOSED error \
-means it is not open, so ask the user to open it with the Canvas button in Troupe's left rail, \
+means it is not open, so ask the user to open it with the Canvas button in Karsa's left rail, \
 then retry. Before your first canvas edit in a session, call read_canvas_guide with no topic to \
 read the troupe-canvas skill index (SKILL.md), then call it again for the required topics \
 canvas-basics and working-protocol and for the guide that fits the request. When the user \
@@ -53,22 +53,22 @@ pub fn instructions() -> String {
     format!("{CANVAS_GUIDE}\n\n{}", figcraft_mcp::INSTRUCTIONS)
 }
 
-/// What figcraft's `export` description says about `path`, and what Troupe
+/// What figcraft's `export` description says about `path`, and what Karsa
 /// does with it instead.
 const EXPORT_PATH_UPSTREAM: &str = "(absolute path recommended)";
 const EXPORT_PATH_TERMUL: &str =
-    "(a path relative to the project; Troupe writes only inside the project and may replace a file there)";
+    "(a path relative to the project; Karsa writes only inside the project and may replace a file there)";
 
-/// Troupe's canvas holds one document, so the multi-document `document`
+/// Karsa's canvas holds one document, so the multi-document `document`
 /// argument is neither advertised nor forwarded: an agent that copies
 /// `inspect_document`'s `name` into it would get "no open document".
 const DOCUMENT_ARGUMENT: &str = "document";
 
 /// figcraft's tools as rmcp definitions, each description prefixed with
 /// [`DESCRIPTION_TAG`]. figcraft marks `export` read-only, but with a `path`
-/// Troupe writes (and may replace) a project file, so it is advertised as
+/// Karsa writes (and may replace) a project file, so it is advertised as
 /// destructive, and its description no longer asks for an absolute path,
-/// which Troupe refuses.
+/// which Karsa refuses.
 #[must_use]
 pub fn tools() -> Vec<Tool> {
     figcraft_mcp::tool_definitions()

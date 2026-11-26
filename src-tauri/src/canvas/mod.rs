@@ -1,7 +1,7 @@
-//! Canvas mode: the figcraft editor embedded in a Troupe tab.
+//! Canvas mode: the figcraft editor embedded in a Karsa tab.
 //!
-//! The editor is a prebuilt web bundle (pinned by [`pin`]) that Troupe serves
-//! at `/canvas/<id>/` and drives over a control protocol; Troupe owns the
+//! The editor is a prebuilt web bundle (pinned by [`pin`]) that Karsa serves
+//! at `/canvas/<id>/` and drives over a control protocol; Karsa owns the
 //! document file, never the editor. Everything here is **Tauri-free** so the
 //! desktop (`lib.rs`) and the standalone `termul-server` share one
 //! implementation. Boundary logging uses the `log` crate (desktop seam

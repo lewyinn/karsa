@@ -27,12 +27,10 @@
 use std::cmp::Ordering;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
-use std::time::Duration;
 
 use anyhow::{anyhow, bail, Context, Result};
 use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
 use base64::Engine as _;
-use futures::StreamExt;
 use minisign_verify::{PublicKey, Signature};
 use serde::Deserialize;
 
@@ -286,26 +284,6 @@ const ALLOWED_BINARY_URL_PREFIXES: [&str; 2] = [
     "https://github.com/gnoviawan/troupe/",
 ];
 
-/// Cap on a downloaded server binary so a manifest endpoint that lies about
-/// Content-Length (or omits it) can't exhaust memory. 200 MiB is generous for
-/// the standalone `troupe-server` binary (a stripped release build is tens of
-/// MiB) while bounding the exposure.
-const MAX_BINARY_BYTES: usize = 200 * 1024 * 1024;
-
-/// Shared reqwest client (constructed once): sets a `User-Agent` so GitHub's
-/// anonymous request gate doesn't 403, and a total request timeout so a hung
-/// manifest/binary endpoint can't stall the periodic loop indefinitely.
-fn http_client() -> &'static reqwest::Client {
-    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
-    CLIENT.get_or_init(|| {
-        reqwest::Client::builder()
-            .user_agent("troupe-server-updater")
-            .timeout(Duration::from_secs(120))
-            .build()
-            .unwrap_or_else(|_| reqwest::Client::new())
-    })
-}
-
 /// Reject a server-binary download URL outside the project's GitHub origin.
 /// The prefix is matched against the parsed URL, whose path has `..` and
 /// `%2e%2e` segments resolved, so a dot segment cannot climb out of the repo.
@@ -325,57 +303,17 @@ pub fn validate_binary_url(url: &str) -> Result<()> {
 }
 
 /// Fetch + parse the per-channel manifest.
+/// Disabled in custom Karsa builds so upstream Karsa binaries never overwrite local builds.
 pub async fn fetch_manifest(channel: UpdateChannel) -> Result<Manifest> {
-    let url = channel.manifest_url();
-    let response = http_client()
-        .get(url)
-        .send()
-        .await
-        .with_context(|| format!("failed to fetch channel manifest from {url}"))?;
-    if !response.status().is_success() {
-        bail!("channel manifest {url} returned HTTP {}", response.status());
-    }
-    let manifest: Manifest = response
-        .json()
-        .await
-        .with_context(|| format!("failed to decode channel manifest from {url}"))?;
-    Ok(manifest)
+    let _ = channel;
+    bail!("self-update from upstream gnoviawan/troupe is disabled in custom Karsa builds")
 }
 
-/// Download the signed server binary bytes for a platform record. Rejects URLs
-/// outside the project's GitHub origin, and caps the body at [`MAX_BINARY_BYTES`]
-/// (checked against Content-Length up front AND enforced mid-stream so a server
-/// that lies about the length can't exhaust memory).
+/// Download the signed server binary bytes for a platform record.
+/// Disabled in custom Karsa builds so upstream Karsa binaries never overwrite local builds.
 pub async fn download_binary(url: &str) -> Result<Vec<u8>> {
     validate_binary_url(url)?;
-    let response = http_client()
-        .get(url)
-        .send()
-        .await
-        .with_context(|| format!("failed to download server binary from {url}"))?;
-    if !response.status().is_success() {
-        bail!("server binary {url} returned HTTP {}", response.status());
-    }
-    if let Some(len) = response.content_length() {
-        if len > MAX_BINARY_BYTES as u64 {
-            bail!(
-                "server binary {url} content-length {len} exceeds the {MAX_BINARY_BYTES}-byte cap"
-            );
-        }
-    }
-    // Stream + cap so a server that omits/under-reports Content-Length still
-    // can't push an unbounded body.
-    let mut buf = Vec::new();
-    let mut stream = response.bytes_stream();
-    while let Some(chunk) = stream.next().await {
-        let chunk =
-            chunk.with_context(|| format!("failed to read server binary body from {url}"))?;
-        if buf.len() + chunk.len() > MAX_BINARY_BYTES {
-            bail!("server binary {url} exceeded the {MAX_BINARY_BYTES}-byte cap mid-stream");
-        }
-        buf.extend_from_slice(&chunk);
-    }
-    Ok(buf)
+    bail!("self-update from upstream gnoviawan/troupe is disabled in custom Karsa builds")
 }
 
 // ---------------------------------------------------------------------------

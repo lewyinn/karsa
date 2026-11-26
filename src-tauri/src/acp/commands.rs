@@ -193,7 +193,7 @@ pub(crate) async fn codex_logout(codex_home: Option<String>) -> Result<(), Strin
 }
 
 /// ChatGPT device login in the caller's terminal (`troupe-server codex account
-/// login`). The CLI prints the code itself; Troupe never reads it.
+/// login`). The CLI prints the code itself; Karsa never reads it.
 pub(crate) fn run_codex_device_login(codex_home: Option<&std::path::Path>) -> Result<(), String> {
     let home = match codex_home {
         Some(dir) => Some(dir.to_str().ok_or_else(|| {
@@ -372,7 +372,7 @@ pub async fn acp_mcp_oauth_start(
     //    store when present so tenant-scoped servers return the same challenge
     //    as `mcp_probe`.
     let (target_url, configured_headers) = app
-        .try_state::<crate::remote::SharedLiveData>()
+        .try_state::<crate::DesktopStoreState>()
         .and_then(|shared| {
             crate::web::mcp_oauth_api::authorized_mcp_server(
                 Some(shared.store.as_ref()),

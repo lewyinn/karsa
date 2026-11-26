@@ -377,6 +377,21 @@ export interface GithubSetItemStateResult {
   number: number
 }
 
+export interface GithubCreateIssueRequest {
+  cwd: string
+  repo: GithubRepoSlot
+  title: string
+  body?: string
+  labels?: string[]
+  assignees?: string[]
+}
+
+export interface GithubCreateIssueResult {
+  number: number
+  url: string
+  title: string
+}
+
 /**
  * `IpcResult` failure codes the GitHub host ops return beyond
  * `PATH_VALIDATION_FAILED` / transport codes.

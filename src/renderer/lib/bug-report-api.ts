@@ -142,7 +142,7 @@ export function buildIssueMarkdown(
   lines.push('')
   lines.push('### Environment')
   lines.push('')
-  lines.push(`- **Troupe:** ${context.appVersion} (${context.channel})`)
+  lines.push(`- **Karsa:** ${context.appVersion} (${context.channel})`)
   lines.push(`- **OS:** ${context.os} (${context.arch})`)
   lines.push(`- **Run ID:** ${context.runId}`)
   lines.push(`- **Collected:** ${context.collectedAt}`)
@@ -210,7 +210,7 @@ function shortIssueBody(context: BugReportContext, copied: boolean): string {
     '',
     '### Environment',
     '',
-    `- **Troupe:** ${context.appVersion} (${context.channel})`,
+    `- **Karsa:** ${context.appVersion} (${context.channel})`,
     `- **OS:** ${context.os} (${context.arch})`,
     `- **Run ID:** ${context.runId}`,
     `- **Collected:** ${context.collectedAt}`

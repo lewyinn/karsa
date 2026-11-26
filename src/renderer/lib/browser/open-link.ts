@@ -5,9 +5,9 @@ import { canOpenInTroupeBrowser, openUrlInTroupeBrowser } from './open-in-troupe
 const WEB_PAGE = /^https?:\/\//i
 
 /**
- * Open a link where the "Open links in" setting says: a Troupe browser tab
+ * Open a link where the "Open links in" setting says: a Karsa browser tab
  * (desktop app, http and https only) or the system's default browser. A link
- * the Troupe browser cannot take (mailto, the web client, no pane) falls back
+ * the Karsa browser cannot take (mailto, the web client, no pane) falls back
  * to the default browser. Throws when the default browser refuses the link.
  *
  * Callers ask for confirmation first where they did before (chat, Markdown

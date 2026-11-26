@@ -3,7 +3,7 @@
  *
  * Reads the bundled offline-first snapshot
  * (`assets/agent-icons/acp/agents.json` — a frozen, trusted baseline) plus
- * the agents of the bundled Troupe overlay (`troupe.json`), and derives a runnable `AgentConfig` from each agent's `distribution` for the
+ * the agents of the bundled Karsa overlay (`troupe.json`), and derives a runnable `AgentConfig` from each agent's `distribution` for the
  * current OS/arch. No runtime network.
  */
 
@@ -141,9 +141,9 @@ const AGENT_POLICIES: Record<string, AgentPolicy> = {
         'claude-agent-acp'
       ],
       needsRuntimeOldNodeReason:
-        'Claude Agent ACP requires Node.js 22 or newer. Install or upgrade Node.js, then restart Troupe.',
+        'Claude Agent ACP requires Node.js 22 or newer. Install or upgrade Node.js, then restart Karsa.',
       needsRuntimeNoNpmReason:
-        'Claude Agent ACP requires npm. Install npm alongside Node.js 22 or newer, then restart Troupe.',
+        'Claude Agent ACP requires npm. Install npm alongside Node.js 22 or newer, then restart Karsa.',
       manualInstallReason:
         'Install Claude Code CLI from Anthropic, then run `claude auth login` in a terminal.'
     },
@@ -191,6 +191,9 @@ export function registryOsFromHostOs(hostOs: string): string {
   return hostOs === 'macos' ? 'darwin' : hostOs
 }
 
+/** Agents enabled in Karsa's curated catalog (bundled + remote CDN sync). */
+export const KARSA_ALLOWED_AGENT_IDS = new Set(['claude-acp', 'antigravity-acp'])
+
 /**
  * Normalize the untrusted JSON snapshot into well-formed entries: require a
  * usable `id`, `name`, and `distribution`; default missing strings; and drop
@@ -204,7 +207,7 @@ function normalizeSnapshot(raw: unknown): RegistryAgent[] {
     if (!entry || typeof entry !== 'object') continue
     const e = entry as Partial<RegistryAgent>
     const id = typeof e.id === 'string' ? e.id : ''
-    if (!id || seen.has(id) || isLegacyAgentId(id)) continue
+    if (!id || seen.has(id) || isLegacyAgentId(id) || !KARSA_ALLOWED_AGENT_IDS.has(id)) continue
     if (!e.distribution || typeof e.distribution !== 'object') continue
     seen.add(id)
     out.push({
@@ -219,7 +222,7 @@ function normalizeSnapshot(raw: unknown): RegistryAgent[] {
 }
 
 /**
- * The bundled registry catalog, then the bundled Troupe overlay agents. The
+ * The bundled registry catalog, then the bundled Karsa overlay agents. The
  * first entry of an id wins, so an overlay agent never replaces an upstream one.
  */
 export const REGISTRY_AGENTS: readonly RegistryAgent[] = normalizeSnapshot([

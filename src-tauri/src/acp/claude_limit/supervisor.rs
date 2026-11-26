@@ -287,7 +287,7 @@ impl Supervisor {
                         self.acp.keep_launch_recipe(&session_id.0, false);
                     }
                     return Err(
-                        "This chat does not run on a Claude account Troupe manages.".to_string()
+                        "This chat does not run on a Claude account Karsa manages.".to_string()
                     );
                 };
                 if recipe.launch.config.config_id.as_deref() != Some(CLAUDE_CONFIG_ID) {
@@ -295,7 +295,7 @@ impl Supervisor {
                         self.acp.keep_launch_recipe(&session_id.0, false);
                     }
                     return Err(
-                        "This chat does not run on a Claude account Troupe manages.".to_string()
+                        "This chat does not run on a Claude account Karsa manages.".to_string()
                     );
                 }
                 let account_id = account_id.clone();

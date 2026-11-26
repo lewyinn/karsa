@@ -18,7 +18,7 @@ export const DEFAULT_TOC_SETTINGS: TocSettings = {
   width: 240
 }
 
-/** Where a link opens: the system's default browser or a Troupe browser tab. */
+/** Where a link opens: the system's default browser or a Karsa browser tab. */
 export type LinkOpenMode = 'system' | 'troupe'
 
 /** Which interface the remote terminal HTTP server binds to when started. */
@@ -158,13 +158,13 @@ export const TERMINAL_RENDERER_OPTIONS = [
   { value: 'dom', label: 'DOM' }
 ]
 
-// Where links open. The Troupe browser exists only in the desktop app.
+// Where links open. The Karsa browser exists only in the desktop app.
 export const LINK_OPEN_MODE_OPTIONS: Array<{
   value: LinkOpenMode
   label: string
 }> = [
   { value: 'system', label: 'Default browser' },
-  { value: 'troupe', label: 'Troupe browser' }
+  { value: 'troupe', label: 'Karsa browser' }
 ]
 
 export const REMOTE_BIND_MODE_OPTIONS: Array<{

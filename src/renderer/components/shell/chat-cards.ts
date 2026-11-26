@@ -52,7 +52,7 @@ interface BuildChatCardsInput {
   agentNames: ReadonlyMap<string, string>
 }
 
-/** The project's Troupe-created chats, and those in the picked scope. */
+/** The project's Karsa-created chats, and those in the picked scope. */
 function projectChatScope({
   sessionIndex,
   project,
@@ -78,7 +78,7 @@ export function hasChatCards(input: Omit<BuildChatCardsInput, 'agentNames'>): bo
 }
 
 /**
- * Cards for the active project: Troupe-created chats only, scoped by the pick
+ * Cards for the active project: Karsa-created chats only, scoped by the pick
  * (a picked worktree keeps its own chats; Workspace keeps all of them), newest
  * activity first with the id as the tie-break.
  */

@@ -115,10 +115,10 @@ impl WorkerChatError {
     #[must_use]
     pub fn message(&self) -> String {
         match self {
-            Self::Unavailable => "Worker chats are not available on this Troupe host.".to_string(),
-            Self::NoRecipe => "Troupe cannot start a chat from this one: the host did not launch \
+            Self::Unavailable => "Worker chats are not available on this Karsa host.".to_string(),
+            Self::NoRecipe => "Karsa cannot start a chat from this one: the host did not launch \
                 this chat's agent for a client, so it has nothing to start the new chat with. \
-                Reopen this chat in Troupe, then try again."
+                Reopen this chat in Karsa, then try again."
                 .to_string(),
             Self::Grandchild => "This chat was started by another chat, so it cannot start chats \
                 of its own. Report back to the chat that started you instead."
@@ -131,7 +131,7 @@ impl WorkerChatError {
                  with send_to_chat."
             ),
             Self::UnknownAccount(provider, id) => format!(
-                "Troupe has no {} account with ID {id}. Pass \"auto\" to use the account \
+                "Karsa has no {} account with ID {id}. Pass \"auto\" to use the account \
                  with the most room.",
                 provider.name()
             ),
@@ -184,7 +184,7 @@ impl FollowReason {
     fn note(self) -> String {
         match self {
             Self::Unmanaged => "This chat does not run on a Claude, Codex or Antigravity account \
-                Troupe manages, so the new chat uses its project's agent setup and `account` was \
+                Karsa manages, so the new chat uses its project's agent setup and `account` was \
                 ignored."
                 .to_string(),
             Self::AutoSwitchOff(provider) => format!(
@@ -484,7 +484,7 @@ impl WorkerChats {
                         redact_session_id(&child.0)
                     );
                     note = Some(
-                        "The chat runs on this account now, but Troupe could not save it as the \
+                        "The chat runs on this account now, but Karsa could not save it as the \
                          chat's account."
                             .to_string(),
                     );

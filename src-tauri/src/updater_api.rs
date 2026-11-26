@@ -11,45 +11,8 @@
 //! reused (not duplicated) so the desktop command, the standalone server, and
 //! the renderer error messages never drift.
 
-use std::sync::OnceLock;
-use std::time::Duration;
-
 use crate::commands::IpcResult;
 use crate::server_update::UpdateChannel;
-
-/// Desktop-specific User-Agent so GitHub's anonymous request gate doesn't 403.
-/// Distinct from `server_update.rs`'s `termul-server-updater` so access logs
-/// can attribute requests to the desktop manager vs. the standalone server.
-const USER_AGENT: &str = "termul-manager-updater";
-
-/// Total request timeout — caps a hung manifest endpoint so the periodic
-/// check cannot stall indefinitely. Mirrors `server_update.rs`'s 120s cap.
-const REQUEST_TIMEOUT_SECS: u64 = 120;
-
-/// Shared reqwest client (constructed once): sets a `User-Agent` so GitHub's
-/// anonymous request gate doesn't 403, and a total request timeout so a hung
-/// manifest endpoint can't stall the check indefinitely. Mirrors the
-/// `embedded_public_key()` `OnceLock<Result<T>>` pattern in `server_update.rs`.
-///
-/// Returns `Result` so a `ClientBuilder::build()` failure (TLS init, resolver
-/// config) propagates as an `Err` that `fetch_channel_manifest` maps to
-/// `NETWORK_ERROR` — NOT a panic. (`reqwest::Client::new()` internally
-/// `expect`s the build result, so the previous `unwrap_or_else` fallback could
-/// unwind the periodic check on a TLS-init failure instead of surfacing an
-/// error.)
-fn http_client() -> Result<&'static reqwest::Client, String> {
-    static CLIENT: OnceLock<Result<reqwest::Client, String>> = OnceLock::new();
-    CLIENT
-        .get_or_init(|| {
-            reqwest::Client::builder()
-                .user_agent(USER_AGENT)
-                .timeout(Duration::from_secs(REQUEST_TIMEOUT_SECS))
-                .build()
-                .map_err(|e| format!("network error: failed to build updater HTTP client: {e}"))
-        })
-        .as_ref()
-        .map_err(|e| e.to_string())
-}
 
 /// Fetch + parse the per-channel manifest.
 ///
@@ -61,54 +24,12 @@ fn http_client() -> Result<&'static reqwest::Client, String> {
 ///
 /// No live network is exercised for an unknown channel — the parse fails first.
 pub async fn fetch_channel_manifest(channel: &str) -> Result<serde_json::Value, String> {
-    let parsed = UpdateChannel::parse(channel)
+    let _parsed = UpdateChannel::parse(channel)
         .ok_or_else(|| format!("unknown update channel: {channel}"))?;
-    let url = parsed.manifest_url();
     log::info!(
-        "[updater] fetching channel manifest channel={} url={}",
-        channel,
-        url
+        "[updater] auto-updater is disabled in custom Karsa builds; skipping manifest fetch (channel={channel})"
     );
-
-    let response = http_client()?
-        .get(url)
-        .header("Accept", "application/json")
-        .send()
-        .await
-        .map_err(|e| format!("network error fetching channel manifest from {url}: {e}"))?;
-
-    let status = response.status();
-    if !status.is_success() {
-        log::warn!(
-            "[updater] channel manifest fetch failed channel={} url={} status={}",
-            channel,
-            url,
-            status
-        );
-        return Err(format!("channel manifest {url} returned HTTP {status}"));
-    }
-
-    let body: serde_json::Value = response
-        .json()
-        .await
-        .map_err(|e| format!("failed to decode channel manifest from {url}: {e}"))?;
-
-    if !body.is_object() {
-        log::warn!(
-            "[updater] channel manifest is not a JSON object channel={} url={}",
-            channel,
-            url
-        );
-        return Err(format!("channel manifest {url} is not a JSON object"));
-    }
-
-    log::info!(
-        "[updater] channel manifest fetch ok channel={} url={} status={}",
-        channel,
-        url,
-        status
-    );
-    Ok(body)
+    Err("auto-updates are disabled in custom Karsa builds".to_string())
 }
 
 /// Desktop command: fetch the per-channel update manifest server-side (where
@@ -174,6 +95,7 @@ pub fn resolve_signed_channel(channel: &str) -> Result<UpdateChannel, String> {
 /// order. A stable install switching to Nightly is offered the next nightly
 /// of its own minor, and a nightly install is offered the next stable minor
 /// once it ships.
+#[allow(dead_code)]
 pub fn accepts_channel_update(
     channel: UpdateChannel,
     current: &semver::Version,
@@ -220,55 +142,16 @@ pub async fn updater_check_channel<R: tauri::Runtime>(
     result
 }
 
+#[allow(clippy::unused_async)]
 async fn check_signed_channel<R: tauri::Runtime>(
-    webview: &tauri::Webview<R>,
+    _webview: &tauri::Webview<R>,
     channel: &str,
 ) -> Result<Option<SignedUpdateMetadata>, String> {
-    use tauri::Manager;
-    use tauri_plugin_updater::UpdaterExt;
-
-    let parsed = resolve_signed_channel(channel)?;
-    let url = signed_channel_endpoint(parsed)
-        .ok_or_else(|| format!("no signed endpoint for update channel {channel}"))?;
-    let endpoint = url::Url::parse(url).map_err(|e| format!("invalid manifest url {url}: {e}"))?;
-    log::info!("[updater] signed channel check channel={channel} url={url}");
-
-    let update = webview
-        .updater_builder()
-        .endpoints(vec![endpoint])
-        .map_err(|e| format!("failed to configure updater endpoint {url}: {e}"))?
-        .timeout(Duration::from_secs(REQUEST_TIMEOUT_SECS))
-        .version_comparator(move |current, remote| {
-            accepts_channel_update(parsed, &current, &remote.version)
-        })
-        .build()
-        .map_err(|e| format!("failed to build updater for {url}: {e}"))?
-        .check()
-        .await
-        .map_err(|e| format!("signed update check failed for {url}: {e}"))?;
-
-    let Some(update) = update else {
-        log::info!("[updater] signed channel check channel={channel}: up to date");
-        return Ok(None);
-    };
+    let _parsed = resolve_signed_channel(channel)?;
     log::info!(
-        "[updater] signed channel check channel={channel}: {} -> {}",
-        update.current_version,
-        update.version
+        "[updater] auto-updater is disabled in custom Karsa builds; skipping signed channel check (channel={channel})"
     );
-    let date = update
-        .raw_json
-        .get("pub_date")
-        .and_then(serde_json::Value::as_str)
-        .map(str::to_owned);
-    Ok(Some(SignedUpdateMetadata {
-        current_version: update.current_version.clone(),
-        version: update.version.clone(),
-        date,
-        body: update.body.clone(),
-        raw_json: update.raw_json.clone(),
-        rid: webview.resources_table().add(update),
-    }))
+    Ok(None)
 }
 
 #[cfg(test)]

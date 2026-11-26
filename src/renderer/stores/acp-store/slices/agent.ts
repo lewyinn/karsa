@@ -39,6 +39,10 @@ import {
   liveInlineKeyAuthPolicy
 } from '../helpers'
 import { useAcpStore } from '../index'
+import {
+  isOAuthPersonalRefreshTarget,
+  refreshSessionsAfterOAuthPersonal
+} from '../post-auth-refresh'
 import { isAdapterPlanLimit, rejectedRateLimit, withRateLimit } from '../rate-limit'
 import { sessionAgentConfigId } from '../session-agent-config'
 import {
@@ -881,6 +885,18 @@ export const createAgentSlice: StateCreator<AcpState, [], [], AgentSliceState> =
       // Auth succeeded — a pending browser-open request for this agent is
       // resolved; drop it so the dialog dismisses.
       get().clearPendingSignIn(agentId)
+      // Automatically re-run `session/new` to load the model catalog after
+      // `oauth-personal` / Antigravity sign-in so users never need to restart
+      // the app (and so closing the model-selector popover during browser OAuth
+      // cannot drop the re-prepare).
+      if (configId && isOAuthPersonalRefreshTarget(configId, normalizedMethodId)) {
+        await refreshSessionsAfterOAuthPersonal(get, {
+          agentId,
+          configId,
+          methodId: normalizedMethodId,
+          evictAgent: (id) => evictAgentForTransport(get, id)
+        })
+      }
       return true
     })().finally(() => {
       // Identity guard (see `authenticateBeforeSession`): a late cleanup must

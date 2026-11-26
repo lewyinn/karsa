@@ -1,5 +1,5 @@
 //! GitHub issues & PRs through the host's `gh` CLI (spec-github-integration,
-//! CAP-1 to CAP-4 and CAP-9). Troupe holds no GitHub token: every read and
+//! CAP-1 to CAP-4 and CAP-9). Karsa holds no GitHub token: every read and
 //! write runs `gh`, so the UI, the web/phone client and the user's agents
 //! share one login.
 //!
@@ -11,6 +11,7 @@ mod cache;
 mod checkout;
 mod checks;
 mod comment;
+mod create_issue;
 mod detail;
 mod edit;
 mod error;
@@ -33,6 +34,8 @@ mod checkout_tests;
 mod checks_tests;
 #[cfg(test)]
 mod comment_tests;
+#[cfg(test)]
+mod create_issue_tests;
 #[cfg(test)]
 mod detail_tests;
 #[cfg(test)]

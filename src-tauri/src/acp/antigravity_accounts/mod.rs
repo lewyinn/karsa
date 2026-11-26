@@ -4,7 +4,7 @@
 //!
 //! The built-in Account uses the shared Antigravity home itself
 //! (`~/.gemini`, or the host's `GEMINI_HOME`). Every other Account has a
-//! Troupe-owned directory under `<state dir>/antigravity-accounts/<id>` whose shared
+//! Karsa-owned directory under `<state dir>/antigravity-accounts/<id>` whose shared
 //! entries link back to the shared home. Each Project uses one Account;
 //! a Project without a choice uses the Default Account. A chat can run on
 //! its own Account; a chat without a choice uses its Project's.
@@ -613,7 +613,7 @@ impl AntigravityAccountStore {
         self.account_dir(id)
     }
 
-    /// The directory of a non-built-in Account. The id is a Troupe-generated
+    /// The directory of a non-built-in Account. The id is a Karsa-generated
     /// hex string; anything else never maps to a path.
     fn account_dir(&self, id: &str) -> Option<PathBuf> {
         if id == BUILTIN_ACCOUNT_ID || id.is_empty() || !id.chars().all(|c| c.is_ascii_hexdigit()) {
@@ -694,7 +694,7 @@ impl AntigravityAccountStore {
                 "[antigravity-accounts] store version {} is newer than {SCHEMA_VERSION}",
                 file.version
             );
-            return Err("The Antigravity account list is from a newer Troupe version".to_string());
+            return Err("The Antigravity account list is from a newer Karsa version".to_string());
         }
         file.normalize();
         Ok(file)

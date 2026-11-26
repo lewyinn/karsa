@@ -24,14 +24,7 @@ import { logFrontendError } from '@/lib/log-api'
 const REGISTRY_AGENT_IDS = new Set(REGISTRY_AGENTS.map((agent) => agent.id))
 
 /** Preferred default when no last-selected agent is persisted. */
-export const PREFERRED_DEFAULT_ACP_AGENT_IDS = [
-  'codex-acp',
-  'claude-acp',
-  'gemini',
-  'cursor',
-  'opencode',
-  'pi-acp'
-] as const
+export const PREFERRED_DEFAULT_ACP_AGENT_IDS = ['claude-acp', 'antigravity-acp'] as const
 
 export function pickDefaultSupportedAgent(
   entries: readonly SupportedAcpAgentEntry[]

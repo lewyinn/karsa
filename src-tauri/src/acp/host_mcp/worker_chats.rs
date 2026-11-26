@@ -3,9 +3,9 @@
 use rmcp::schemars;
 use serde::{Deserialize, Serialize};
 
-pub const START_CHAT_DESCRIPTION: &str = "Start a new Troupe chat that works in parallel with \
+pub const START_CHAT_DESCRIPTION: &str = "Start a new Karsa chat that works in parallel with \
 this one, in the same project and folder, and send it `prompt` as its first message. When this \
-chat runs on a Claude, Codex or Antigravity account Troupe manages and the user allows automatic \
+chat runs on a Claude, Codex or Antigravity account Karsa manages and the user allows automatic \
 account switching for that provider, the new chat runs on the signed-in account of the same \
 provider with the most room; otherwise it uses the project's account. It is a normal chat the \
 user can open. It does not see this conversation: put the whole task and every detail it needs \
@@ -17,7 +17,7 @@ pub const LIST_STARTED_CHATS_DESCRIPTION: &str = "List the chats this chat start
 start_chat, newest first: chat ID, title, and status (working, idle or stopped).";
 
 /// What the agent reads when `start_chat` outlives its wait.
-pub const START_CHAT_LATE: &str = "The Troupe host did not answer in time. The new chat may \
+pub const START_CHAT_LATE: &str = "The Karsa host did not answer in time. The new chat may \
 still start: call list_started_chats to find it, then read it with read_chat, before you start \
 it again.";
 
@@ -36,8 +36,8 @@ pub struct StartChatInput {
     pub title: Option<String>,
     /// `auto` (the default) picks the signed-in account with the most room,
     /// of this chat's provider (Claude, Codex or Antigravity); or an account
-    /// ID of that provider from Troupe. Ignored when this chat does not run
-    /// on an account Troupe manages.
+    /// ID of that provider from Karsa. Ignored when this chat does not run
+    /// on an account Karsa manages.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub account: Option<String>,
 }

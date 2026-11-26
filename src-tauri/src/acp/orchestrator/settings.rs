@@ -284,8 +284,8 @@ impl SettingsStore {
         let _writer = self.writer.lock();
         if let Some(found) = self.newer_schema {
             return Err(format!(
-                "the sub-agent settings were saved by a newer Troupe (schema {found}, this build \
-                 understands {SCHEMA_VERSION}); upgrade Troupe to change them"
+                "the sub-agent settings were saved by a newer Karsa (schema {found}, this build \
+                 understands {SCHEMA_VERSION}); upgrade Karsa to change them"
             ));
         }
         let mut next = self.get();

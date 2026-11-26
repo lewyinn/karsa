@@ -595,7 +595,7 @@ impl BrowserTabManager {
     }
 
     /// Send a structured annotation control command to the host-controlled
-    /// Troupe annotation overlay inside a user browser tab.
+    /// Karsa annotation overlay inside a user browser tab.
     pub fn send_annotation_command(&self, tab_id: &str, command_json: &str) -> Result<(), String> {
         if !crate::host_perimeter::agentation_allowed(tab_id) {
             return Err("Annotation overlay is not available in agent tabs".to_string());

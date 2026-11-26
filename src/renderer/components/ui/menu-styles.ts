@@ -4,9 +4,9 @@
  * composer slash/mention menu).
  *
  * Rows sit on `bg-popover`, so the highlight is a foreground wash, not
- * `bg-secondary`: in Troupe Dark `secondary` and `popover` resolve to the
+ * `bg-secondary`: in Karsa Dark `secondary` and `popover` resolve to the
  * same colour and the highlight disappears. A foreground wash also reads in
- * Troupe Light (ink on paper) without the maroon `--accent` fill.
+ * Karsa Light (ink on paper) without the maroon `--accent` fill.
  * See docs/design/overlays.md (Menus).
  */
 

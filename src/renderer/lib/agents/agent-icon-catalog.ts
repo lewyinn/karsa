@@ -7,7 +7,7 @@ import { type CSSProperties, useSyncExternalStore } from 'react'
  * 1. ACP Registry (acp/*.svg, frozen bundled snapshot)
  * 2. Generic category icons (terminal, dev, robot, sparkles, code, brain, zap)
  *
- * Troupe's registry overlay (`agent-overlay.ts`) goes first: its logo, name
+ * Karsa's registry overlay (`agent-overlay.ts`) goes first: its logo, name
  * and brand colour replace the bundled ones, and it can add a logo for an
  * agent the bundle has none for. The catalog is rebuilt when the overlay
  * changes, so read it through `useAgentIconCatalog` in components.

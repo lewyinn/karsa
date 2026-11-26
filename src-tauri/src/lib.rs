@@ -43,7 +43,6 @@ mod link_preview;
 mod process_util;
 mod project_icon;
 mod pty;
-mod remote;
 mod secure_storage;
 // Opt-in `termul-server` self-update subsystem. The library module itself is
 // intentionally NOT feature-gated so its full test suite — including signature
@@ -78,7 +77,6 @@ mod worktree;
 #[cfg(target_os = "windows")]
 use crate::shell_paths::git_bash_paths;
 use migrations::MigrationManager;
-use remote::RemoteServerState;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::path::Path;
@@ -93,7 +91,12 @@ use tauri_plugin_store::StoreExt;
 #[cfg(not(target_os = "linux"))]
 use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 
-const MENU_ID_CHECK_FOR_UPDATES: &str = "check-for-updates";
+/// Desktop-owned `WebStore` state shared across MCP OAuth, Automations, and
+/// the local `/ws` channel carrier.
+pub(crate) struct DesktopStoreState {
+    pub store: Arc<web::store::WebStore>,
+}
+
 const MENU_ID_RELOAD: &str = "view-reload";
 const MENU_ID_TOGGLE_DEVTOOLS: &str = "view-toggle-devtools";
 const MENU_ID_ZOOM_RESET: &str = "view-zoom-reset";
@@ -107,7 +110,6 @@ const MENU_ID_COPY_LOG_CONTENTS: &str = "help-copy-log-contents";
 const MENU_ID_EXPORT_LOG_DEFAULT: &str = "help-export-log-default";
 const MENU_ID_CLOSE_TAB: &str = "window-close-tab";
 const MENU_EVENT_CLOSE_TAB: &str = "menu:close-tab";
-const MENU_EVENT_CHECK_FOR_UPDATES_TRIGGERED: &str = "updater:check-for-updates-triggered";
 
 // Tray menu IDs
 const TRAY_ID: &str = "termul-tray";
@@ -828,10 +830,6 @@ fn build_app_menu<R: tauri::Runtime>(
         .close_window()
         .build()?;
 
-    let check_for_updates =
-        MenuItemBuilder::with_id(MENU_ID_CHECK_FOR_UPDATES, "Check for Updates...")
-            .accelerator("CmdOrCtrl+Shift+U")
-            .build(app)?;
     let learn_more = MenuItemBuilder::with_id(MENU_ID_LEARN_MORE, "Learn More").build(app)?;
     let reveal_logs =
         MenuItemBuilder::with_id(MENU_ID_REVEAL_LOGS, "Reveal Log File").build(app)?;
@@ -846,8 +844,6 @@ fn build_app_menu<R: tauri::Runtime>(
     .build(app)?;
 
     let help_menu = SubmenuBuilder::new(app, "Help")
-        .item(&check_for_updates)
-        .separator()
         .item(&reveal_logs)
         .item(&export_log_file)
         .item(&copy_log_contents)
@@ -889,11 +885,7 @@ fn build_app_menu<R: tauri::Runtime>(
 }
 
 fn handle_menu_event<R: tauri::Runtime>(app: &tauri::AppHandle<R>, event: tauri::menu::MenuEvent) {
-    if event.id() == MENU_ID_CHECK_FOR_UPDATES {
-        if let Err(error) = app.emit(MENU_EVENT_CHECK_FOR_UPDATES_TRIGGERED, ()) {
-            log::error!("Failed to emit updater menu event: {}", error);
-        }
-    } else if event.id() == MENU_ID_RELOAD {
+    if event.id() == MENU_ID_RELOAD {
         if let Err(error) = reload_main_window(app) {
             log::error!("Failed to reload main window from menu: {}", error);
         }
@@ -973,8 +965,8 @@ fn show_log_action_error<R: tauri::Runtime>(app: &tauri::AppHandle<R>, message: 
         .show(|_| {});
 }
 
-/// AD-14 / AD-18 startup refusal: another Troupe host owns the data directory,
-/// or a store was written by a newer Troupe. Nothing else may open that data,
+/// AD-14 / AD-18 startup refusal: another Karsa host owns the data directory,
+/// or a store was written by a newer Karsa. Nothing else may open that data,
 /// so hide the (still empty) windows, show a native error dialog and exit
 /// non-zero once the user acknowledges it. `setup` returns right after this,
 /// so no store, agent or terminal is ever started.
@@ -985,7 +977,7 @@ fn refuse_startup<R: tauri::Runtime>(app: &tauri::AppHandle<R>, message: &str) {
     }
     app.dialog()
         .message(message)
-        .title("Troupe cannot start")
+        .title("Karsa cannot start")
         .kind(MessageDialogKind::Error)
         .show(|_| std::process::exit(1));
 }
@@ -1256,7 +1248,6 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_clipboard_manager::init())
-        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
@@ -1380,9 +1371,8 @@ pub fn run() {
                     // desktop carrier (renamed afterwards).
                     let store = store
                         .with_desktop_legacy(web::store::desktop_legacy_file(&app_data_dir));
-                    app.manage(remote::SharedLiveData {
+                    app.manage(DesktopStoreState {
                         store: Arc::new(store),
-                        data_dir: app_data_dir.clone(),
                     });
                 }
                 Err(error) => {
@@ -1429,7 +1419,7 @@ pub fn run() {
                     handle
                         .dialog()
                         .message(format!(
-                            "Troupe could not read its saved project list ({error}). {dialog_note}"
+                            "Karsa could not read its saved project list ({error}). {dialog_note}"
                         ))
                         .title("Project list unavailable")
                         .kind(MessageDialogKind::Error)
@@ -1885,7 +1875,7 @@ pub fn run() {
                 tauri::async_runtime::handle().inner().clone(),
             );
             // `mcp_tool` nodes call the host's one MCP server list.
-            let mcp_store = handle.state::<remote::SharedLiveData>().store.clone();
+            let mcp_store = handle.state::<DesktopStoreState>().store.clone();
             crate::acp::host_mcp::mcp_install::install_live(Arc::clone(&mcp_store));
             let mcp_servers = automation::mcp::store_servers(mcp_store);
             match automation::service::AutomationService::open(
@@ -2009,7 +1999,7 @@ pub fn run() {
                     registry: Arc::clone(&project_registry),
                     acp_catalog: acp_catalog_service.clone(),
                     acp_install: acp_install_service.clone(),
-                    store: handle.state::<remote::SharedLiveData>().store.clone(),
+                    store: handle.state::<DesktopStoreState>().store.clone(),
                 }),
             ));
 
@@ -2031,10 +2021,6 @@ pub fn run() {
             // Create Migration Manager
             let migration_manager = Arc::new(MigrationManager::new(handle.clone()));
             app.manage(migration_manager.clone());
-
-            // Create Remote Server State
-            let remote_state = Arc::new(RemoteServerState::new());
-            app.manage(remote_state);
 
             // Register default migrations
             register_default_migrations(migration_manager.as_ref());
@@ -2089,9 +2075,9 @@ pub fn run() {
                 use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem};
                 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 
-                let show_item = MenuItemBuilder::with_id(TRAY_MENU_SHOW, "Show Troupe")
+                let show_item = MenuItemBuilder::with_id(TRAY_MENU_SHOW, "Show Karsa")
                     .build(app)?;
-                let quit_item = MenuItemBuilder::with_id(TRAY_MENU_QUIT, "Quit Troupe")
+                let quit_item = MenuItemBuilder::with_id(TRAY_MENU_QUIT, "Quit Karsa")
                     .build(app)?;
                 let separator = PredefinedMenuItem::separator(app)?;
 
@@ -2102,7 +2088,7 @@ pub fn run() {
                     .build()?;
 
                 let _tray = TrayIconBuilder::with_id(TRAY_ID)
-                    .tooltip("Troupe")
+                    .tooltip("Karsa")
                     .icon(app.default_window_icon().cloned().unwrap())
                     .menu(&tray_menu)
                     .show_menu_on_left_click(false)
@@ -2313,6 +2299,7 @@ pub fn run() {
             commands::data_migration_rollback,
             // Git commands
             commands::git_get_status,
+            commands::git_discover_repos,
             commands::git_get_diff,
             commands::git_get_diff_stat,
             commands::github_get_context,
@@ -2325,6 +2312,7 @@ pub fn run() {
             commands::github_checkout_pr,
             commands::github_repo_meta,
             commands::github_create_label,
+            commands::github_create_issue,
             commands::github_edit_item,
             commands::github_set_item_state,
             commands::git_stage,
@@ -2401,12 +2389,8 @@ pub fn run() {
             skills::commands::list_agent_skills_cmd,
             skills::commands::read_agent_skill_cmd,
             skills::commands::list_skill_files_cmd,
-            // Remote server commands
-            commands::remote_server_start,
-            commands::remote_server_stop,
-            commands::remote_server_status,
+            // Project registry legacy import
             commands::project_registry_import,
-            commands::remote_sync_chat_history,
             // Desktop ACP renderer-history storage
             commands::acp_history_list,
             commands::acp_history_get,
@@ -2486,9 +2470,6 @@ pub fn run() {
             let ssh_manager = app_handle
                 .try_state::<Arc<ssh::SSHManager>>()
                 .map(|state| state.inner().clone());
-            let remote_state = app_handle
-                .try_state::<Arc<RemoteServerState>>()
-                .map(|state| state.inner().clone());
 
             let acp_manager = app_handle
                 .try_state::<Arc<AcpManager>>()
@@ -2516,9 +2497,6 @@ pub fn run() {
                 crate::canvas::static_server::close_all_canvases_bounded().await;
                 if let Some(ssh_manager) = ssh_manager {
                     ssh_manager.shutdown().await;
-                }
-                if let Some(remote_state) = remote_state {
-                    let _ = remote_state.stop().await;
                 }
                 if let Some(ws_channel_host) = &ws_channel_host {
                     ws_channel_host.drain().await;
