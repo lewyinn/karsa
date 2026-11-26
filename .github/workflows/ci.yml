@@ -1,0 +1,48 @@
+name: Karsa CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: karsa-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend-check:
+    name: Typecheck, Tests & Frontend Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.5
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck (web & node)
+        run: |
+          bun run typecheck:web
+          bun run typecheck:node
+
+      - name: Run Karsa unit tests
+        run: >-
+          bun run test
+          src/renderer/components/github/CreateIssueDialog.test.tsx
+          src/renderer/components/chat/ChangedFilesCard.test.tsx
+          src/renderer/components/stack/RunStackPanel.test.tsx
+          src/renderer/components/env/EnvManagerPanel.test.tsx
+          src/renderer/lib/stack-discovery.test.ts
+          src/renderer/lib/env-file-manager.test.ts
+          src/renderer/components/git/GitPanel.test.tsx
+          src/renderer/components/shell/SidePanelColumn.test.tsx
+          src/renderer/components/shell/tool-strip/ShellToolStrip.test.tsx
+
+      - name: Build Tauri frontend bundle
+        run: bun run build:frontend:tauri
