@@ -604,3 +604,25 @@ pub struct GithubCreateIssueResult {
     pub url: String,
     pub title: String,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct GithubCreatePrRequest {
+    pub cwd: String,
+    pub repo: GithubRepoSlot,
+    pub title: String,
+    #[serde(default)]
+    pub body: String,
+    pub head: String,
+    pub base: String,
+    #[serde(default)]
+    pub draft: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct GithubCreatePrResult {
+    pub number: u64,
+    pub url: String,
+    pub title: String,
+}

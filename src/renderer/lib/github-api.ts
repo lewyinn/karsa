@@ -21,6 +21,8 @@ import type {
   GithubCreateIssueResult,
   GithubCreateLabelRequest,
   GithubCreateLabelResult,
+  GithubCreatePrRequest,
+  GithubCreatePrResult,
   GithubEditItemRequest,
   GithubEditItemResult,
   GithubItemDetail,
@@ -97,6 +99,10 @@ export const githubApi = {
 
   createIssue(request: GithubCreateIssueRequest): Promise<IpcResult<GithubCreateIssueResult>> {
     return call('github_create_issue', '/github/create-issue', request)
+  },
+
+  createPr(request: GithubCreatePrRequest): Promise<IpcResult<GithubCreatePrResult>> {
+    return call('github_create_pr', '/github/create-pr', request)
   },
 
   editItem(request: GithubEditItemRequest): Promise<IpcResult<GithubEditItemResult>> {

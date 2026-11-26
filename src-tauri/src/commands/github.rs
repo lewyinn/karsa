@@ -168,3 +168,14 @@ pub async fn github_create_issue(
     })
     .await
 }
+
+#[tauri::command]
+pub async fn github_create_pr(
+    request: GithubCreatePrRequest,
+) -> Result<IpcResult<GithubCreatePrResult>, String> {
+    let cwd = request.cwd.clone();
+    run("github_create_pr", &cwd, move |service, cwd| {
+        service.create_pr(&GithubCreatePrRequest { cwd, ..request })
+    })
+    .await
+}

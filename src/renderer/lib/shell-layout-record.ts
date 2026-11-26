@@ -18,7 +18,14 @@
 export const SHELL_LAYOUT_VERSION = 3
 
 /** Views the right panel remembers per project. SSH is a mode, never a last view. */
-export const SHELL_LAST_COLUMN_TABS = ['explorer', 'changes', 'github', 'stack', 'env'] as const
+export const SHELL_LAST_COLUMN_TABS = [
+  'explorer',
+  'changes',
+  'github',
+  'stack',
+  'env',
+  'usage'
+] as const
 export type ShellLastColumnTab = (typeof SHELL_LAST_COLUMN_TABS)[number]
 
 export interface ShellLayoutBounds {

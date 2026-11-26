@@ -15,6 +15,7 @@ use super::checkout;
 use super::checks::{self, CHECK_FIELDS, LOG_READ_BYTES};
 use super::comment;
 use super::create_issue;
+use super::create_pr;
 use super::detail::{self, MergeState};
 use super::edit;
 use super::error::GithubError;
@@ -632,6 +633,31 @@ impl GithubService {
             let created = create_issue::parse_created_issue(&stdout)?;
             log::info!(
                 "[github] create_issue ok repo={repo} number={}",
+                created.number
+            );
+            Ok(created)
+        })
+    }
+
+    pub(crate) fn create_pr(
+        &self,
+        request: &GithubCreatePrRequest,
+    ) -> Result<GithubCreatePrResult, GithubError> {
+        let checked = create_pr::checked_pr(request).inspect_err(|error| {
+            log::warn!("[github] create_pr refused code={}", error.code());
+        })?;
+        self.run_op("create_pr", &request.cwd, request.repo, |repo| {
+            let call = GhCall::new(Some(&repo.host), create_pr::create_pr_args(repo))
+                .with_stdin(create_pr::create_pr_payload(&checked));
+            let result = self.runner.stdout(&call).map_err(|error| match error {
+                GithubError::Timeout => edit::maybe_applied("gh did not respond in time"),
+                other => other,
+            });
+            self.cache.invalidate_repo(repo);
+            let stdout = result?;
+            let created = create_pr::parse_created_pr(&stdout)?;
+            log::info!(
+                "[github] create_pr ok repo={repo} number={}",
                 created.number
             );
             Ok(created)

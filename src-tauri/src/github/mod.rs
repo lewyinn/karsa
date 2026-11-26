@@ -12,6 +12,7 @@ mod checkout;
 mod checks;
 mod comment;
 mod create_issue;
+mod create_pr;
 mod detail;
 mod edit;
 mod error;
@@ -36,6 +37,8 @@ mod checks_tests;
 mod comment_tests;
 #[cfg(test)]
 mod create_issue_tests;
+#[cfg(test)]
+mod create_pr_tests;
 #[cfg(test)]
 mod detail_tests;
 #[cfg(test)]

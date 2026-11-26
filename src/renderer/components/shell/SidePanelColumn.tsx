@@ -23,6 +23,12 @@ const EnvManagerPanel = lazy(() =>
   import('@/components/env/EnvManagerPanel').then((m) => ({ default: m.EnvManagerPanel }))
 )
 
+const UsageDashboardPanel = lazy(() =>
+  import('@/components/usage/UsageDashboardPanel').then((m) => ({
+    default: m.UsageDashboardPanel
+  }))
+)
+
 interface SidePanelColumnProps {
   activeProject: Project
 }
@@ -75,6 +81,11 @@ export function SidePanelColumn({ activeProject }: SidePanelColumnProps): React.
       {selected === 'env' && (
         <Suspense fallback={<ShellSkeleton />}>
           <EnvManagerPanel projectRoot={cwd} repos={repos} />
+        </Suspense>
+      )}
+      {selected === 'usage' && (
+        <Suspense fallback={<ShellSkeleton />}>
+          <UsageDashboardPanel />
         </Suspense>
       )}
     </div>

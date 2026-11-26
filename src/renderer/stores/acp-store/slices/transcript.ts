@@ -31,6 +31,8 @@ import { splitReadOnlyGuard } from '@/lib/github-handoff/read-only-guard'
 import { logFrontendError } from '@/lib/log-api'
 import { markPlanTool, planEventHasList, plansAfterToolCall } from '@/lib/plan-session'
 import { wireBlocksToDisplay } from '@/lib/skills-wire-reverse'
+import { useProjectStore } from '@/stores/project-store'
+import { useUsageHistoryStore } from '@/stores/usage-history-store'
 import { dismissSettledChildApprovals } from '../child-approvals'
 import { forgetComposerSession, persistComposerOptions } from '../composer-options'
 import {
@@ -1804,6 +1806,26 @@ export const createTranscriptSlice: StateCreator<AcpState, [], [], TranscriptSli
       }
       const rateLimit = reportedLimit ?? prev?.rateLimit
       if (rateLimit) next.rateLimit = rateLimit
+      const indexEntry = s.sessionIndex.find((entry) => entry.id === e.sessionId)
+      const sessionMeta = s.sessions[e.sessionId]
+      const projectId = indexEntry?.projectId ?? ''
+      const project = projectId
+        ? useProjectStore.getState().projects.find((p) => p.id === projectId)
+        : undefined
+      const agentConfig = indexEntry?.agentConfigId
+        ? s.agentConfigs.find((c) => c.id === indexEntry.agentConfigId)
+        : undefined
+      useUsageHistoryStore.getState().recordSample({
+        sessionId: e.sessionId,
+        title: indexEntry?.title ?? sessionMeta?.title ?? undefined,
+        projectId,
+        projectName: project?.name,
+        agentName: agentConfig?.name ?? undefined,
+        modelId: sessionMeta?.models?.currentModelId ?? indexEntry?.modelId ?? undefined,
+        tokensUsed: next.used,
+        contextSize: next.size,
+        reportedCostUsd: next.cost?.amount ?? null
+      })
       return {
         sessionUsage: { ...s.sessionUsage, [e.sessionId]: next }
       }

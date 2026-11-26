@@ -3,7 +3,7 @@ import type { DiscoveredGitRepo } from '@shared/types/ipc.types'
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { AlertTriangle, Plus, RefreshCw } from '@/components/icons'
+import { AlertTriangle, GitPullRequest, Plus, RefreshCw } from '@/components/icons'
 import { ALL_REPOS_VALUE, RepoSwitcherBar } from '@/components/shell/RepoSwitcherBar'
 import { Button } from '@/components/ui/button'
 import { PANEL_ICON_BUTTON_CLASS } from '@/components/ui/panel-styles'
@@ -27,6 +27,7 @@ import {
 import { findPaneById, githubItemTabId, useWorkspaceStore } from '@/stores/workspace-store'
 import { AllReposGithubView } from './AllReposGithubView'
 import { type CreatedIssueOutcome, CreateIssueDialog } from './CreateIssueDialog'
+import { type CreatedPrOutcome, CreatePrDialog } from './CreatePrDialog'
 import { GithubFilters } from './GithubFilters'
 import { GithubListRow } from './GithubListRow'
 import { GithubAuthWarning, GithubStatusView, githubBlocker } from './GithubStatusView'
@@ -74,6 +75,7 @@ export function GithubPanel({
   const navigate = useNavigate()
   const pathname = useLocation().pathname
   const [createOpen, setCreateOpen] = useState(false)
+  const [createPrOpen, setCreatePrOpen] = useState(false)
   const showAllRepos = allRepos && repos.length > 1
   const context = useGithubStore((s) => resourceOf(s.contexts[cwd]))
   const filter = useGithubStore(selectGithubFilter(cwd))
@@ -152,6 +154,19 @@ export function GithubPanel({
     onNavigate?.()
   }
 
+  const handlePrCreated = (created: CreatedPrOutcome): void => {
+    void loadList(created.cwd, { refresh: true })
+    returnToWorkspaceRoute(pathname, navigate)
+    useWorkspaceStore.getState().addGithubItemTab({
+      cwd: created.cwd,
+      repo: created.repo,
+      kind: 'pr',
+      number: created.number,
+      title: created.title
+    })
+    onNavigate?.()
+  }
+
   const switcherBar = onSelectRepo ? (
     <RepoSwitcherBar
       repos={repos}
@@ -163,14 +178,24 @@ export function GithubPanel({
   ) : null
 
   const createDialog = (
-    <CreateIssueDialog
-      open={createOpen}
-      onOpenChange={setCreateOpen}
-      defaultCwd={cwd}
-      defaultRepoSlot={showAllRepos ? 'origin' : filter.repo}
-      repos={repos}
-      onCreated={handleIssueCreated}
-    />
+    <>
+      <CreateIssueDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        defaultCwd={cwd}
+        defaultRepoSlot={showAllRepos ? 'origin' : filter.repo}
+        repos={repos}
+        onCreated={handleIssueCreated}
+      />
+      <CreatePrDialog
+        open={createPrOpen}
+        onOpenChange={setCreatePrOpen}
+        defaultCwd={cwd}
+        defaultRepoSlot={showAllRepos ? 'origin' : filter.repo}
+        repos={repos}
+        onCreated={handlePrCreated}
+      />
+    </>
   )
 
   if (showAllRepos) {
@@ -182,6 +207,7 @@ export function GithubPanel({
           activeTabId={activeTabId}
           onOpenItem={(repoCwd, item) => openItemIn(repoCwd, 'origin', item)}
           onOpenCreateIssue={() => setCreateOpen(true)}
+          onOpenCreatePr={() => setCreatePrOpen(true)}
         />
         {createDialog}
       </div>
@@ -275,6 +301,15 @@ export function GithubPanel({
               aria-label="New issue"
             >
               <Plus size={14} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setCreatePrOpen(true)}
+              className={cn(PANEL_ICON_BUTTON_CLASS, 'shrink-0 pointer-coarse:size-11')}
+              title="New pull request"
+              aria-label="New pull request"
+            >
+              <GitPullRequest size={14} aria-hidden="true" />
             </button>
             <button
               type="button"

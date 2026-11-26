@@ -106,7 +106,7 @@ describe('ShellToolStrip', () => {
       within(top)
         .getAllByRole('button')
         .map((b) => b.getAttribute('aria-label'))
-    ).toEqual(['Explorer', 'Changes', 'GitHub', 'Run Stack', 'Env'])
+    ).toEqual(['Explorer', 'Changes', 'GitHub', 'Run Stack', 'Env', 'AI Usage'])
     expect(
       within(bottom)
         .getAllByRole('button')

@@ -429,6 +429,38 @@ export const Play = forwardRef<SVGSVGElement, TermulIconProps>(function Play(
   )
 })
 
+export const BarChart3 = forwardRef<SVGSVGElement, TermulIconProps>(function BarChart3(
+  { size = 24, strokeWidth, children: _children, ...props },
+  ref
+) {
+  const requestedStrokeWidth = Number(strokeWidth ?? 1.5)
+  const safeStrokeWidth = Number.isFinite(requestedStrokeWidth) ? requestedStrokeWidth : 1.5
+
+  return (
+    // biome-ignore lint/a11y/noSvgWithoutTitle: aria-hidden is set unless the caller passes aria-label
+    <svg
+      ref={ref}
+      aria-hidden={props['aria-label'] ? undefined : true}
+      focusable="false"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={safeStrokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      data-termul-icon="BarChart3"
+      {...props}
+    >
+      <path d="M3 3v18h18" />
+      <path d="M18 17V9" />
+      <path d="M13 17V5" />
+      <path d="M8 17v-3" />
+    </svg>
+  )
+})
+
 export const ChevronDownIcon = ChevronDown
 export const Clock3 = Clock
 export const FilePen = FileEdit

@@ -2,6 +2,7 @@ import type { ShellInfo } from '@shared/types/ipc.types'
 import { useEffect } from 'react'
 import { ConnectionStatusIndicator } from '@/components/ConnectionStatusIndicator'
 import {
+  BarChart3,
   Folder2,
   GitBranch,
   Github,
@@ -39,7 +40,8 @@ const VIEWS: ReadonlyArray<{ id: ShellLastColumnTab; label: string; Icon: Termul
   { id: 'changes', label: 'Changes', Icon: GitBranch },
   { id: 'github', label: 'GitHub', Icon: Github },
   { id: 'stack', label: 'Run Stack', Icon: Layers },
-  { id: 'env', label: 'Env', Icon: KeyRound }
+  { id: 'env', label: 'Env', Icon: KeyRound },
+  { id: 'usage', label: 'AI Usage', Icon: BarChart3 }
 ]
 
 interface ShellToolStripProps {

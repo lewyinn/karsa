@@ -19,6 +19,7 @@ import { useProjectStore } from '@/stores/project-store'
 import { GithubChecksList } from './GithubChecksList'
 import { GithubCommentComposer } from './GithubCommentComposer'
 import { GithubHandoffBar } from './GithubHandoffBar'
+import { GithubIssueDevelopment } from './GithubIssueDevelopment'
 import { GithubItemHeader } from './GithubItemHeader'
 import { GithubItemMeta, type GithubMetaEditor } from './GithubItemMeta'
 import { GithubLinkedChats, useGithubLinkedChats } from './GithubLinkedChats'
@@ -233,6 +234,14 @@ export function GithubItemPanel({
               // Fix CI acts on the current head's failures only.
               checks={checksStale ? null : checks.data}
             />
+            {!isPr && (
+              <GithubIssueDevelopment
+                cwd={cwd}
+                repo={repo}
+                issueNumber={number}
+                onPostProgressComment={postComment}
+              />
+            )}
 
             {detail.status === 'error' && (
               <p

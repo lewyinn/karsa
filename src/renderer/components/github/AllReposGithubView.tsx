@@ -1,7 +1,7 @@
 import type { GithubListFilter, GithubListItem } from '@shared/types/github.types'
 import type { DiscoveredGitRepo } from '@shared/types/ipc.types'
 import { useEffect, useMemo } from 'react'
-import { Plus, RefreshCw } from '@/components/icons'
+import { GitPullRequest, Plus, RefreshCw } from '@/components/icons'
 import { PANEL_ICON_BUTTON_CLASS } from '@/components/ui/panel-styles'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
@@ -25,6 +25,7 @@ interface AllReposGithubViewProps {
   activeTabId: string | null
   onOpenItem: (repoCwd: string, item: GithubListItem) => void
   onOpenCreateIssue: () => void
+  onOpenCreatePr: () => void
 }
 
 /**
@@ -35,7 +36,8 @@ export function AllReposGithubView({
   repos,
   activeTabId,
   onOpenItem,
-  onOpenCreateIssue
+  onOpenCreateIssue,
+  onOpenCreatePr
 }: AllReposGithubViewProps): React.JSX.Element {
   const primaryCwd = repos[0]?.path ?? ''
   const contexts = useGithubStore((s) => s.contexts)
@@ -124,6 +126,15 @@ export function AllReposGithubView({
               aria-label="New issue"
             >
               <Plus size={14} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={onOpenCreatePr}
+              className={cn(PANEL_ICON_BUTTON_CLASS, 'shrink-0 pointer-coarse:size-11')}
+              title="New pull request"
+              aria-label="New pull request"
+            >
+              <GitPullRequest size={14} aria-hidden="true" />
             </button>
             <button
               type="button"

@@ -2313,6 +2313,7 @@ pub fn run() {
             commands::github_repo_meta,
             commands::github_create_label,
             commands::github_create_issue,
+            commands::github_create_pr,
             commands::github_edit_item,
             commands::github_set_item_state,
             commands::git_stage,

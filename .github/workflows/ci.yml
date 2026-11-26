@@ -34,7 +34,13 @@ jobs:
       - name: Run Karsa unit tests
         run: >-
           bun run test
+          src/renderer/lib/model-pricing.test.ts
+          src/renderer/stores/usage-history-store.test.ts
+          src/renderer/components/usage/UsageDashboardPanel.test.tsx
           src/renderer/components/github/CreateIssueDialog.test.tsx
+          src/renderer/components/github/CreatePrDialog.test.tsx
+          src/renderer/components/github/StartIssueBranchDialog.test.tsx
+          src/renderer/components/github/GithubIssueDevelopment.test.tsx
           src/renderer/components/chat/ChangedFilesCard.test.tsx
           src/renderer/components/stack/RunStackPanel.test.tsx
           src/renderer/components/env/EnvManagerPanel.test.tsx

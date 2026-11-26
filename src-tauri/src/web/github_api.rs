@@ -240,5 +240,20 @@ pub async fn create_issue(
     .await
 }
 
+pub async fn create_pr(
+    State(state): State<AppState>,
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
+    Json(req): Json<GithubCreatePrRequest>,
+) -> Reply<GithubCreatePrResult> {
+    if let Some(refused) = write_refused(&state, peer, "/github/create-pr") {
+        return refused;
+    }
+    let cwd = req.cwd.clone();
+    run(&state, "create_pr", &cwd, move |service, cwd| {
+        service.create_pr(&GithubCreatePrRequest { cwd, ..req })
+    })
+    .await
+}
+
 #[cfg(test)]
 mod tests;

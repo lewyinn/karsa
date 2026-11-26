@@ -4,7 +4,7 @@ import type {
   GithubReviewThread
 } from '@shared/types/github.types'
 import { useState } from 'react'
-import { Bot, Comment, Eye, MessageQuestion, Wrench } from '@/components/icons'
+import { Bot, Comment, Eye, GitBranch, MessageQuestion, Wrench } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -24,6 +24,7 @@ import { useActiveProject } from '@/stores/project-store'
 import { type GithubHandoffRequest, runGithubHandoff } from './github-handoff'
 import { handoffActions } from './handoff-actions'
 import { plainPreview } from './plain-preview'
+import { StartIssueBranchDialog } from './StartIssueBranchDialog'
 
 const ICONS: Record<GithubHandoffAction, typeof Bot> = {
   start: Bot,
@@ -62,6 +63,7 @@ export function GithubHandoffBar({
   const isMobileShell = useMobileWebShell()
   const [running, setRunning] = useState<GithubHandoffAction | null>(null)
   const [picking, setPicking] = useState(false)
+  const [startBranchOpen, setStartBranchOpen] = useState(false)
   if (!project) return null
 
   const actions = handoffActions(detail, checks, Boolean(project.isGitRepo))
@@ -94,6 +96,21 @@ export function GithubHandoffBar({
         // One row that scrolls sideways: on a phone the actions never push the page down.
         className="-mx-4 flex min-w-0 flex-nowrap items-center gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0"
       >
+        {detail.item.kind === 'issue' && (
+          <WriteGate gated={!admitsWrites}>
+            <Button
+              variant="default"
+              size={isMobileShell ? 'touch' : 'xs'}
+              className={isMobileShell ? 'shrink-0 px-3' : 'shrink-0'}
+              disabled={!admitsWrites || running !== null}
+              title="Create a new branch in this repo and open an AI Chat with the issue context"
+              onClick={() => setStartBranchOpen(true)}
+            >
+              <GitBranch size={14} aria-hidden="true" />
+              Start Branch
+            </Button>
+          </WriteGate>
+        )}
         {actions.map(({ action, label, writes, blockedReason }) => {
           const Icon = ICONS[action]
           const gated = writes && !admitsWrites
@@ -127,6 +144,15 @@ export function GithubHandoffBar({
             setPicking(false)
             void run({ action: 'resolve_comments', threads })
           }}
+        />
+      )}
+      {detail.item.kind === 'issue' && (
+        <StartIssueBranchDialog
+          open={startBranchOpen}
+          onOpenChange={setStartBranchOpen}
+          projectId={project.id}
+          itemRef={itemRef}
+          detail={detail}
         />
       )}
     </div>

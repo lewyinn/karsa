@@ -304,6 +304,7 @@ pub fn router(
         .route("/github/repo-meta", post(github_api::repo_meta))
         .route("/github/create-label", post(github_api::create_label))
         .route("/github/create-issue", post(github_api::create_issue))
+        .route("/github/create-pr", post(github_api::create_pr))
         .route("/github/edit-item", post(github_api::edit_item))
         .route("/github/item-state", post(github_api::set_item_state))
         // Project icon resolution (spec-project-icon). Mirrors the desktop
@@ -590,6 +591,7 @@ pub fn router_with_static(
         .route("/github/repo-meta", post(github_api::repo_meta))
         .route("/github/create-label", post(github_api::create_label))
         .route("/github/create-issue", post(github_api::create_issue))
+        .route("/github/create-pr", post(github_api::create_pr))
         .route("/github/edit-item", post(github_api::edit_item))
         .route("/github/item-state", post(github_api::set_item_state))
         .route("/project/icon", post(project_icon_api::resolve_icon))
