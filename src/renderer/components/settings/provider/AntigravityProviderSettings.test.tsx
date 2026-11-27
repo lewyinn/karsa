@@ -345,9 +345,8 @@ describe('AntigravityProviderSettings', () => {
       checkedAt,
       message: 'Overage: Disabled'
     })
-    await waitFor(() =>
-      expect(personal).toHaveTextContent('Gemini Models · Weekly Limit Remaining')
-    )
+    await waitFor(() => expect(personal).toHaveTextContent('Gemini Models · Weekly Limit'))
+    expect(personal).toHaveTextContent('9% used')
     expect(personal).toHaveTextContent('Google AI Pro')
     expect(personal).toHaveTextContent('Overage: Disabled')
     expect(personal).toHaveTextContent(formatAntigravityChecked(checkedAt))

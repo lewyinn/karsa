@@ -403,12 +403,7 @@ describe('ShellRail', () => {
       const names = within(footer)
         .getAllByRole('button')
         .map((button) => button.getAttribute('aria-label'))
-      expect(names).toEqual([
-        'Settings',
-        'Report a bug',
-        'Color themes',
-        'Open keyboard shortcuts menu'
-      ])
+      expect(names).toEqual(['Settings', 'Color themes', 'Open keyboard shortcuts menu'])
       expect(
         within(footer).queryByRole('button', { name: 'Expand or collapse projects' })
       ).toBeNull()
@@ -545,13 +540,11 @@ describe('ShellRail', () => {
         'New chat',
         'Search',
         'Open canvas',
-        'Open automations',
         'Project: Alpha (active)',
         'Chat a',
         'Project: Beta',
         'Chat b',
         'Settings',
-        'Report a bug',
         'Color themes',
         'Open keyboard shortcuts menu'
       ])

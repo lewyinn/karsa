@@ -23,7 +23,9 @@ export interface UsageSessionRecord {
   updatedAt: number
 }
 
-export type UsageRange = '7d' | '30d' | 'all'
+export type UsageRange = '24h' | '7d' | '30d' | '90d' | 'all'
+
+export type UsageProviderKey = 'antigravity' | 'claude' | 'codex' | 'other'
 
 export interface DailyUsagePoint {
   dayKey: string
@@ -31,6 +33,48 @@ export interface DailyUsagePoint {
   tokens: number
   costUsd: number
   sessions: number
+}
+
+export interface DailyProviderPoint extends DailyUsagePoint {
+  antigravityTokens: number
+  claudeTokens: number
+  codexTokens: number
+  otherTokens: number
+  antigravityCost: number
+  claudeCost: number
+  codexCost: number
+  otherCost: number
+}
+
+export interface ProviderUsageRow {
+  provider: UsageProviderKey
+  sessions: number
+  tokens: number
+  costUsd: number
+  tokenShare: number
+  costShare: number
+}
+
+export interface ModelUsageRow {
+  modelId: string
+  provider: UsageProviderKey
+  sessions: number
+  tokens: number
+  costUsd: number
+  tokenShare: number
+  costShare: number
+}
+
+export function providerKeyOf(agentName: string, modelId?: string | null): UsageProviderKey {
+  const agent = agentName.toLowerCase()
+  if (agent.includes('antigravity') || agent.includes('gemini')) return 'antigravity'
+  if (agent.includes('claude')) return 'claude'
+  if (agent.includes('codex') || agent.includes('openai')) return 'codex'
+  const model = (modelId ?? '').toLowerCase()
+  if (model.includes('gemini')) return 'antigravity'
+  if (model.includes('claude')) return 'claude'
+  if (model.includes('gpt') || model.includes('codex') || /^o[134]/.test(model)) return 'codex'
+  return 'other'
 }
 
 export interface ProjectUsageRow {
@@ -120,9 +164,41 @@ export function filterSessionsByRange(
   now = Date.now()
 ): UsageSessionRecord[] {
   if (range === 'all') return [...sessions]
-  const days = range === '7d' ? 7 : 30
-  const cutoff = now - days * 24 * 60 * 60 * 1000
+  const ms =
+    range === '24h'
+      ? 24 * 60 * 60 * 1000
+      : range === '7d'
+        ? 7 * 24 * 60 * 60 * 1000
+        : range === '30d'
+          ? 30 * 24 * 60 * 60 * 1000
+          : 90 * 24 * 60 * 60 * 1000
+  const cutoff = now - ms
   return sessions.filter((s) => s.updatedAt >= cutoff)
+}
+
+const SHORT_MONTHS = [
+  'JAN',
+  'FEB',
+  'MAR',
+  'APR',
+  'MAY',
+  'JUN',
+  'JUL',
+  'AUG',
+  'SEP',
+  'OCT',
+  'NOV',
+  'DEC'
+] as const
+
+function formatChartDayLabel(dayKey: string): string {
+  const parts = dayKey.split('-')
+  const monthIdx = Number(parts[1]) - 1
+  const day = Number(parts[2])
+  if (monthIdx >= 0 && monthIdx < 12 && Number.isFinite(day)) {
+    return `${SHORT_MONTHS[monthIdx]} ${day}`
+  }
+  return dayKey.slice(5)
 }
 
 export function aggregateDailyUsage(
@@ -157,7 +233,7 @@ export function aggregateDailyUsage(
     })
   }
 
-  const days = range === '7d' ? 7 : 30
+  const days = range === '24h' ? 2 : range === '7d' ? 7 : range === '30d' ? 30 : 90
   const points: DailyUsagePoint[] = []
   for (let i = days - 1; i >= 0; i -= 1) {
     const ts = now - i * 24 * 60 * 60 * 1000
@@ -172,6 +248,180 @@ export function aggregateDailyUsage(
     })
   }
   return points
+}
+
+function emptyProviderPoint(dayKey: string, label: string): DailyProviderPoint {
+  return {
+    dayKey,
+    label,
+    tokens: 0,
+    costUsd: 0,
+    sessions: 0,
+    antigravityTokens: 0,
+    claudeTokens: 0,
+    codexTokens: 0,
+    otherTokens: 0,
+    antigravityCost: 0,
+    claudeCost: 0,
+    codexCost: 0,
+    otherCost: 0
+  }
+}
+
+function addSessionToPoint(
+  point: DailyProviderPoint,
+  item: UsageSessionRecord,
+  cost: number
+): void {
+  point.tokens += item.tokensUsed
+  point.costUsd = Number((point.costUsd + cost).toFixed(4))
+  point.sessions += 1
+  const p = providerKeyOf(item.agentName, item.modelId)
+  if (p === 'antigravity') {
+    point.antigravityTokens += item.tokensUsed
+    point.antigravityCost = Number((point.antigravityCost + cost).toFixed(4))
+  } else if (p === 'claude') {
+    point.claudeTokens += item.tokensUsed
+    point.claudeCost = Number((point.claudeCost + cost).toFixed(4))
+  } else if (p === 'codex') {
+    point.codexTokens += item.tokensUsed
+    point.codexCost = Number((point.codexCost + cost).toFixed(4))
+  } else {
+    point.otherTokens += item.tokensUsed
+    point.otherCost = Number((point.otherCost + cost).toFixed(4))
+  }
+}
+
+export function aggregateDailyProviderUsage(
+  sessions: readonly UsageSessionRecord[],
+  models: Record<string, ModelTokenPricing>,
+  range: UsageRange,
+  now = Date.now()
+): DailyProviderPoint[] {
+  const filtered = filterSessionsByRange(sessions, range, now)
+
+  if (range === '24h') {
+    const byHour = new Map<string, DailyProviderPoint>()
+    const hourKeys: string[] = []
+    for (let i = 23; i >= 0; i -= 1) {
+      const d = new Date(now - i * 60 * 60 * 1000)
+      const key = `${localDayKey(d.getTime())}-${String(d.getHours()).padStart(2, '0')}`
+      const label = `${String(d.getHours()).padStart(2, '0')}:00`
+      hourKeys.push(key)
+      byHour.set(key, emptyProviderPoint(key, label))
+    }
+    for (const item of filtered) {
+      const d = new Date(item.updatedAt)
+      const key = `${localDayKey(d.getTime())}-${String(d.getHours()).padStart(2, '0')}`
+      const bucket = byHour.get(key)
+      if (!bucket) continue
+      addSessionToPoint(bucket, item, effectiveSessionCost(item, models).costUsd)
+    }
+    return hourKeys.map((k) => byHour.get(k)!)
+  }
+
+  const byDay = new Map<string, DailyProviderPoint>()
+  for (const item of filtered) {
+    const bucket =
+      byDay.get(item.dayKey) ?? emptyProviderPoint(item.dayKey, formatChartDayLabel(item.dayKey))
+    addSessionToPoint(bucket, item, effectiveSessionCost(item, models).costUsd)
+    byDay.set(item.dayKey, bucket)
+  }
+
+  if (range === 'all') {
+    return [...byDay.keys()].sort().map((k) => byDay.get(k)!)
+  }
+
+  const days = range === '7d' ? 7 : range === '30d' ? 30 : 90
+  const points: DailyProviderPoint[] = []
+  for (let i = days - 1; i >= 0; i -= 1) {
+    const ts = now - i * 24 * 60 * 60 * 1000
+    const dayKey = localDayKey(ts)
+    points.push(byDay.get(dayKey) ?? emptyProviderPoint(dayKey, formatChartDayLabel(dayKey)))
+  }
+  return points
+}
+
+export function aggregateProviderUsage(
+  sessions: readonly UsageSessionRecord[],
+  models: Record<string, ModelTokenPricing>
+): ProviderUsageRow[] {
+  const byProvider = new Map<
+    UsageProviderKey,
+    { sessions: number; tokens: number; costUsd: number }
+  >()
+  let totalTokens = 0
+  let totalCost = 0
+
+  for (const item of sessions) {
+    const provider = providerKeyOf(item.agentName, item.modelId)
+    const cost = effectiveSessionCost(item, models).costUsd
+    totalTokens += item.tokensUsed
+    totalCost += cost
+    const bucket = byProvider.get(provider) ?? { sessions: 0, tokens: 0, costUsd: 0 }
+    bucket.sessions += 1
+    bucket.tokens += item.tokensUsed
+    bucket.costUsd += cost
+    byProvider.set(provider, bucket)
+  }
+
+  return [...byProvider.entries()]
+    .map(([provider, b]) => ({
+      provider,
+      sessions: b.sessions,
+      tokens: b.tokens,
+      costUsd: b.costUsd,
+      tokenShare: totalTokens > 0 ? (b.tokens / totalTokens) * 100 : 0,
+      costShare: totalCost > 0 ? (b.costUsd / totalCost) * 100 : 0
+    }))
+    .sort((a, b) => b.tokens - a.tokens)
+}
+
+export function aggregateModelUsage(
+  sessions: readonly UsageSessionRecord[],
+  models: Record<string, ModelTokenPricing>,
+  sortBy: 'cost' | 'tokens' = 'cost'
+): ModelUsageRow[] {
+  const byModel = new Map<
+    string,
+    {
+      modelId: string
+      provider: UsageProviderKey
+      sessions: number
+      tokens: number
+      costUsd: number
+    }
+  >()
+  let totalTokens = 0
+  let totalCost = 0
+
+  for (const item of sessions) {
+    const modelId = item.modelId?.trim() || item.agentName || 'Unknown model'
+    const provider = providerKeyOf(item.agentName, item.modelId)
+    const cost = effectiveSessionCost(item, models).costUsd
+    totalTokens += item.tokensUsed
+    totalCost += cost
+    const key = `${provider}:${modelId}`
+    const bucket = byModel.get(key) ?? {
+      modelId,
+      provider,
+      sessions: 0,
+      tokens: 0,
+      costUsd: 0
+    }
+    bucket.sessions += 1
+    bucket.tokens += item.tokensUsed
+    bucket.costUsd += cost
+    byModel.set(key, bucket)
+  }
+
+  return [...byModel.values()]
+    .map((b) => ({
+      ...b,
+      tokenShare: totalTokens > 0 ? (b.tokens / totalTokens) * 100 : 0,
+      costShare: totalCost > 0 ? (b.costUsd / totalCost) * 100 : 0
+    }))
+    .sort((a, b) => (sortBy === 'cost' ? b.costUsd - a.costUsd : b.tokens - a.tokens))
 }
 
 export function aggregateProjectUsage(

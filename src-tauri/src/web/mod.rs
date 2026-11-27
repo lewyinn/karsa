@@ -32,6 +32,7 @@ pub mod chat_reads;
 pub mod command_ledger;
 pub mod config;
 pub mod connection_runtime;
+pub mod custom_api;
 pub mod diagnostics_api;
 pub mod fs_api;
 pub mod fs_watcher;

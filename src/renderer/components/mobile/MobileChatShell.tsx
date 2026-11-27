@@ -337,13 +337,6 @@ export function MobileChatShell({
         returnToWorkspace()
       }
     : undefined
-  const automationsProjectId = activeProject?.id
-  const openAutomations = automationsProjectId
-    ? (): void => {
-        useWorkspaceStore.getState().addAutomationsTab(automationsProjectId)
-        returnToWorkspace()
-      }
-    : undefined
 
   // Browse files (the drawer's Editors pill) opens the Files sheet; focus
   // returns to ☰, else the shell title.
@@ -495,7 +488,6 @@ export function MobileChatShell({
         onRenameTerminal={onRenameTerminal}
         onCloseEditorTab={onCloseEditorTab}
         onOpenGitHistory={openGitHistory}
-        onOpenAutomations={openAutomations}
         onOpenProjects={openProjectSheet}
         onOpenFiles={openFilesFrom ? () => openFilesFrom(menuButtonRef.current) : undefined}
       />

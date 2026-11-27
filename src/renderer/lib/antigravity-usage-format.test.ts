@@ -30,11 +30,14 @@ const model = (
 })
 
 describe('antigravity usage format', () => {
-  it('names a window after its model, else its id', () => {
+  it('names a window after its model, else its id, stripping misleading Remaining suffixes', () => {
     expect(antigravityWindowLabel(model('gemini-3-pro', 1, null, 'Gemini 3 Pro'))).toBe(
       'Gemini 3 Pro'
     )
     expect(antigravityWindowLabel(model('gemini-3-flash', 1))).toBe('gemini-3-flash')
+    expect(
+      antigravityWindowLabel(model('weekly', 0, null, 'Gemini Models · Weekly Limit Remaining'))
+    ).toBe('Gemini Models · Weekly Limit')
   })
 
   it('picks the most used model', () => {

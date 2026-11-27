@@ -169,5 +169,25 @@ export function useComposerDraft({
     }
   }, [draftKey, seedNonce, canPersistDraft])
 
+  // Listen for editor "Send Selection to AI Chat" (Ctrl+L) snippets targeting
+  // this mounted composer (or any mounted composer when sessionId is null).
+  useEffect(() => {
+    const handler = (event: Event): void => {
+      const detail = (
+        event as CustomEvent<{ projectId: string | null; sessionId: string | null; text: string }>
+      ).detail
+      if (!detail?.text) return
+      if (detail.sessionId && sessionId && detail.sessionId !== sessionId) return
+      hydratedRef.current = true
+      pendingSeedRef.current = null
+      setValue((prev) => {
+        const trimmed = prev.trimEnd()
+        return trimmed ? `${trimmed}\n\n${detail.text}` : detail.text
+      })
+    }
+    window.addEventListener('karsa:append-composer-draft', handler)
+    return () => window.removeEventListener('karsa:append-composer-draft', handler)
+  }, [sessionId])
+
   return [value, setValue, hydrated]
 }

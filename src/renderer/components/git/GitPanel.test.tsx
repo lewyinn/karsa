@@ -49,6 +49,8 @@ const { getDiff, generateCommitMessage, commit, toastError, acpState, gitState }
         fetchCommitContext: vi.fn(),
         commit,
         push: vi.fn(),
+        pull: vi.fn(),
+        fetchRemote: vi.fn(),
         stashes: {},
         branches: {},
         fetchStashes: vi.fn(),
@@ -234,6 +236,49 @@ describe('GitPanel commit message generation', () => {
     expect(getDiff).toHaveBeenCalledTimes(1)
     expect(getDiff).toHaveBeenCalledWith('/work', 'src/index.ts', true)
     expect(generateCommitMessage.mock.calls[0][1]).toContain('[lockfile/generated diff omitted')
+  })
+
+  it('auto-stages all unstaged changes when committing with 0 staged files', async () => {
+    gitState.stageFiles.mockResolvedValue(undefined)
+    commit.mockResolvedValue(undefined)
+    gitState.statuses['/work'] = [
+      { path: 'src/a.ts', staged: false, status: 'modified' },
+      { path: 'src/b.ts', staged: false, status: 'untracked' }
+    ]
+    gitState.commitContexts['/work'].stagedCount = 0
+    render(<GitPanel cwd="/work" isVisible={false} />)
+
+    fireEvent.change(screen.getByLabelText('Commit summary'), {
+      target: { value: 'fix: commit unstaged directly' }
+    })
+    const commitBtn = screen.getByRole('button', { name: /Commit all to dev/i })
+    expect(commitBtn).toBeEnabled()
+    fireEvent.click(commitBtn)
+
+    await waitFor(() => expect(commit).toHaveBeenCalledTimes(1))
+    expect(gitState.stageFiles).toHaveBeenCalledWith('/work', ['src/a.ts', 'src/b.ts'])
+    expect(commit).toHaveBeenCalledWith('/work', 'fix: commit unstaged directly', '', false)
+  })
+
+  it('commits and pushes in one click when clicking & Push', async () => {
+    gitState.stageFiles.mockResolvedValue(undefined)
+    commit.mockResolvedValue(undefined)
+    gitState.push.mockResolvedValue(undefined)
+    gitState.statuses['/work'] = [{ path: 'src/a.ts', staged: false, status: 'modified' }]
+    gitState.commitContexts['/work'].stagedCount = 0
+    render(<GitPanel cwd="/work" isVisible={false} />)
+
+    fireEvent.change(screen.getByLabelText('Commit summary'), {
+      target: { value: 'feat: one-click commit and push' }
+    })
+    const commitAndPushBtn = screen.getByRole('button', { name: 'Commit and push' })
+    expect(commitAndPushBtn).toBeEnabled()
+    fireEvent.click(commitAndPushBtn)
+
+    await waitFor(() => expect(gitState.push).toHaveBeenCalledTimes(1))
+    expect(gitState.stageFiles).toHaveBeenCalledWith('/work', ['src/a.ts'])
+    expect(commit).toHaveBeenCalledWith('/work', 'feat: one-click commit and push', '', false)
+    expect(gitState.push).toHaveBeenCalledWith('/work')
   })
 })
 

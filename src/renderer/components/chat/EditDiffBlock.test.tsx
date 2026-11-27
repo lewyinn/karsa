@@ -76,7 +76,27 @@ describe('EditDiffBlock', () => {
     expect(onOpenFile).toHaveBeenCalledWith('/repo/src/lib.rs', 10)
   })
 
-  it('keeps the header static without an open handler', () => {
+  it('toggles the diff body closed and open from the header', () => {
+    const { container } = render(<EditDiffBlock diff={editAt(9)} />)
+    const toggle = screen.getByRole('button', { name: 'Collapse diff for lib.rs' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(container.querySelector('[data-diff-block]')).toHaveAttribute('data-diff-open', 'true')
+
+    fireEvent.click(toggle)
+    expect(screen.getByRole('button', { name: 'Expand diff for lib.rs' })).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    )
+    expect(container.querySelector('[data-diff-block]')).toHaveAttribute('data-diff-open', 'false')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand diff for lib.rs' }))
+    expect(screen.getByRole('button', { name: 'Collapse diff for lib.rs' })).toHaveAttribute(
+      'aria-expanded',
+      'true'
+    )
+  })
+
+  it('omits the open button without an open handler', () => {
     render(<EditDiffBlock diff={editAt(9)} />)
 
     expect(screen.queryByRole('button', { name: /^open/i })).not.toBeInTheDocument()

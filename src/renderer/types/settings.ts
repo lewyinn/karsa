@@ -286,7 +286,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   uiZoomLevel: UI_ZOOM_DEFAULT,
   translucentRail: false,
   acpTurnTimeoutSecs: null,
-  editorAutoSave: false,
+  editorAutoSave: true,
   editorAutoSaveDelayMs: 1000,
   canvasAutosaveMs: 1500,
   canvasAutosaveMaxMs: 10000,

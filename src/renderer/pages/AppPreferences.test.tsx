@@ -77,6 +77,7 @@ vi.mock('@/lib/web-setup-api', () => ({
 }))
 
 vi.mock('@/lib/tauri-updater-api', () => ({
+  APP_UPDATER_DISABLED: false,
   isAurUpdateMode: () => false
 }))
 
@@ -244,7 +245,7 @@ describe('AppPreferences editor auto-save controls (GH-539)', () => {
     goTo('Preferences')
 
     const select = await screen.findByLabelText('Auto save')
-    expect(select).toHaveValue('off')
+    expect(select).toHaveValue('1000')
 
     fireEvent.change(select, { target: { value: '2000' } })
     await waitFor(() => {
@@ -420,10 +421,8 @@ describe('AppPreferences web honesty gates (Story 8)', () => {
     expect(screen.queryByText('Release channel')).not.toBeInTheDocument()
 
     goTo('About')
-    expect(await screen.findByText(/^termul-server v/)).toBeInTheDocument()
-    expect(
-      screen.getByText(/web client is served by the termul-server and updates together with it/i)
-    ).toBeInTheDocument()
+    expect(await screen.findByText(/^Karsa /)).toBeInTheDocument()
+    expect(screen.getByText(/Running in browser mode/i)).toBeInTheDocument()
   })
 
   it('hides the log folder and file exports on web', async () => {

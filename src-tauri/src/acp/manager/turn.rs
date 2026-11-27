@@ -45,7 +45,7 @@ pub(super) fn emit_turn_terminator(
 /// reports the failure), then the session-scoped terminator — the ACP stop
 /// reason, or `timeout` (typed [`events::AcpErrorDetail::timed_out`] marker)
 /// / `error`.
-pub(super) fn emit_turn_outcome(
+pub(crate) fn emit_turn_outcome(
     sinks: &[Arc<dyn EventSink>],
     agent_id: &AgentId,
     session_id: &SessionId,

@@ -31,7 +31,8 @@ const TAURI_STUB_ALIASES: Record<string, string> = {
   '@tauri-apps/plugin-fs': stub('plugin-fs'),
   '@tauri-apps/plugin-store': stub('plugin-store'),
   '@tauri-apps/plugin-notification': stub('plugin-notification'),
-  '@tauri-apps/plugin-process': stub('plugin-process')
+  '@tauri-apps/plugin-process': stub('plugin-process'),
+  '@tauri-apps/plugin-updater': stub('plugin-updater')
 }
 
 /**
@@ -95,7 +96,8 @@ export default defineConfig({
       '@tauri-apps/plugin-fs',
       '@tauri-apps/plugin-store',
       '@tauri-apps/plugin-notification',
-      '@tauri-apps/plugin-process'
+      '@tauri-apps/plugin-process',
+      '@tauri-apps/plugin-updater'
     ]
   },
 

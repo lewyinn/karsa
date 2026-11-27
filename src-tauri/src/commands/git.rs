@@ -338,6 +338,26 @@ pub async fn git_push(cwd: String) -> Result<(), String> {
     .map_err(|e| format!("git push task failed: {e}"))?
 }
 
+/// Pull latest commits for the current branch from remote.
+#[tauri::command]
+pub async fn git_pull(cwd: String) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::trackers::git_tracker::git_pull_current(&cwd)
+    })
+    .await
+    .map_err(|e| format!("git pull task failed: {e}"))?
+}
+
+/// Fetch remote refs quietly so ahead/behind status stays up to date.
+#[tauri::command]
+pub async fn git_fetch(cwd: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::trackers::git_tracker::git_fetch_remote(&cwd)
+    })
+    .await
+    .map_err(|e| format!("git fetch task failed: {e}"))?
+}
+
 /// Get commit-footer context: branch, upstream, ahead/behind, staged count,
 /// and the last commit's subject/body (for prefilling an amend).
 #[tauri::command]

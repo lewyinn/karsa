@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/core'
 import { motion, useReducedMotion } from 'framer-motion'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { AntigravityAccountChip } from '@/components/chat/antigravity-account/AntigravityAccountChip'
 import { AntigravityLimitWarning } from '@/components/chat/antigravity-account/AntigravityLimitWarning'
@@ -75,6 +75,7 @@ import { buildComposerSend } from './composer-send-blocks'
 import { FileMentionMenu } from './FileMentionMenu'
 import { PermissionPrompt } from './PermissionPrompt'
 import { PromptQueuePanel } from './PromptQueuePanel'
+import { resetSessionContext } from './reset-session-context'
 import { SlashCommandMenu, type SlashMenuHandle } from './SlashCommandMenu'
 import { SkillFilesProvider } from './skill-file-links'
 import { useChatComposer } from './use-chat-composer'
@@ -257,6 +258,18 @@ export function ChatInputBar({
     () => (hasCompactCommand ? () => onSend('/compact') : undefined),
     [hasCompactCommand, onSend]
   )
+  const [resettingContext, setResettingContext] = useState(false)
+  const onResetContext = useCallback(async () => {
+    if (resettingContext || session.activeTurn || session.status !== 'active') return
+    setResettingContext(true)
+    try {
+      await resetSessionContext({ session, commands, onSend })
+    } catch (err) {
+      toast.error(`Failed to reset context: ${err instanceof Error ? err.message : String(err)}`)
+    } finally {
+      setResettingContext(false)
+    }
+  }, [resettingContext, session, commands, onSend])
   const compactSignals = useMemo(
     () => ({
       connected: session.status === 'active',
@@ -755,6 +768,8 @@ export function ChatInputBar({
                       messages={messages}
                       className="-mr-2 -my-[3px]"
                       onCompact={onCompact}
+                      onResetContext={onResetContext}
+                      resetting={resettingContext}
                       compactSignals={compactSignals}
                     />
                   )}
@@ -787,6 +802,8 @@ export function ChatInputBar({
                         usage={sessionUsage}
                         messages={messages}
                         onCompact={onCompact}
+                        onResetContext={onResetContext}
+                        resetting={resettingContext}
                         compactSignals={compactSignals}
                       />
                       {sendButton}

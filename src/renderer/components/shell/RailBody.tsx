@@ -1,4 +1,4 @@
-import { CalendarClock, Canvas, ChatEdit, SearchList } from '@/components/icons'
+import { Canvas, ChatEdit, SearchList } from '@/components/icons'
 import { ProjectSidebar } from '@/components/ProjectSidebar'
 import { RailFooter } from '@/components/shell/RailFooter'
 import { RailHeader } from '@/components/shell/RailHeader'
@@ -9,7 +9,6 @@ import { logRailEvent } from '@/components/shell/shell-log'
 import { useNewChat } from '@/components/shell/use-new-chat'
 import { useShortcutLabel } from '@/components/shell/use-shortcut-label'
 import { useProjectActions } from '@/stores/project-store'
-import { useWorkspaceStore } from '@/stores/workspace-store'
 import type { Project } from '@/types/project'
 
 interface RailBodyProps {
@@ -94,14 +93,6 @@ export function RailBody({
           icon={<Canvas />}
           disabled={!canOpenCanvas}
           onClick={onOpenCanvas}
-        />
-        <RailNavRow
-          label="Automations"
-          name="Open automations"
-          hint={activeProjectId ? undefined : NEED_PROJECT}
-          icon={<CalendarClock />}
-          disabled={!activeProjectId}
-          onClick={() => useWorkspaceStore.getState().addAutomationsTab(activeProjectId)}
         />
       </RailNav>
 

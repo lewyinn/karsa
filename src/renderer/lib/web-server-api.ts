@@ -378,6 +378,17 @@ export const webServerGit = {
     if (!res.success) throw new Error(res.error)
   },
 
+  async pull(cwd: string): Promise<string> {
+    const res = await postJson<string>('/git/pull', { cwd })
+    if (!res.success) throw new Error(res.error)
+    return res.data
+  },
+
+  async fetch(cwd: string): Promise<void> {
+    const res = await postJson<void>('/git/fetch', { cwd })
+    if (!res.success) throw new Error(res.error)
+  },
+
   async getCommitContext(cwd: string): Promise<GitCommitContext> {
     const res = await postJson<GitCommitContext>('/git/commit-context', { cwd })
     if (!res.success) throw new Error(res.error)

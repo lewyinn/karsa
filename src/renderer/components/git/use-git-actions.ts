@@ -49,6 +49,7 @@ export function useGitActions({ cwd, setSelectedStaged, clearSelection }: UseGit
   const commitContexts = useGitStatusStore((state) => state.commitContexts)
   const commit = useGitStatusStore((state) => state.commit)
   const push = useGitStatusStore((state) => state.push)
+  const pull = useGitStatusStore((state) => state.pull)
   const stashSave = useGitStatusStore((state) => state.stashSave)
   const stashApply = useGitStatusStore((state) => state.stashApply)
   const stashPop = useGitStatusStore((state) => state.stashPop)
@@ -92,6 +93,7 @@ export function useGitActions({ cwd, setSelectedStaged, clearSelection }: UseGit
   const [isCommitting, setIsCommitting] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isPushing, setIsPushing] = useState(false)
+  const [isPulling, setIsPulling] = useState(false)
   const [confirmAmendOpen, setConfirmAmendOpen] = useState(false)
   // Synchronous in-flight guard so a same-tick double-click cannot dispatch two
   // commits before the isCommitting state has re-rendered.
@@ -303,7 +305,8 @@ export function useGitActions({ cwd, setSelectedStaged, clearSelection }: UseGit
     !isCommitting &&
     !isGenerating &&
     !isPushing &&
-    (amend ? !!commitContext?.hasHead : stagedCount > 0)
+    !isPulling &&
+    (amend ? !!commitContext?.hasHead : stagedCount > 0 || hasUncommittedChanges)
 
   const handleGenerateMessage = async () => {
     if (
@@ -415,20 +418,56 @@ export function useGitActions({ cwd, setSelectedStaged, clearSelection }: UseGit
     }
   }
 
-  const runCommit = async () => {
+  const runCommit = async (andPush = false) => {
     if (commitInFlight.current || generationInFlight.current) return
     commitInFlight.current = true
     setIsCommitting(true)
+    if (andPush) setIsPushing(true)
+    let committed = false
     try {
+      const autoStage = !amend && stagedCount === 0 && hasUncommittedChanges
+      if (autoStage) {
+        const unstagedPaths = Array.from(
+          new Set(
+            (currentStatuses.current[normalizePath(cwd)] ?? [])
+              .filter((file) => !file.staged)
+              .map((file) => file.path)
+          )
+        )
+        if (unstagedPaths.length === 0) {
+          throw new Error('No changes to commit')
+        }
+        await stageFiles(cwd, unstagedPaths)
+      }
       await commit(cwd, summary, description, amend)
+      committed = true
       setSummary('')
       setDescription('')
       setAmend(false)
-      toast.success(amend ? 'Commit amended' : 'Changes committed')
+
+      if (andPush) {
+        await push(cwd)
+        toast.success(
+          autoStage ? 'Staged all, committed & pushed to remote' : 'Committed & pushed to remote'
+        )
+      } else {
+        toast.success(
+          amend
+            ? 'Commit amended'
+            : autoStage
+              ? 'Staged all changes and committed'
+              : 'Changes committed'
+        )
+      }
     } catch (error) {
-      toast.error(`Failed to commit: ${String(error)}`)
+      if (committed && andPush) {
+        toast.error(`Committed locally, but push failed: ${String(error)}`)
+      } else {
+        toast.error(`Failed to commit: ${String(error)}`)
+      }
     } finally {
       setIsCommitting(false)
+      if (andPush) setIsPushing(false)
       setConfirmAmendOpen(false)
       commitInFlight.current = false
     }
@@ -442,11 +481,20 @@ export function useGitActions({ cwd, setSelectedStaged, clearSelection }: UseGit
       setConfirmAmendOpen(true)
       return
     }
-    void runCommit()
+    void runCommit(false)
+  }
+
+  const handleCommitAndPush = () => {
+    if (!canCommit || commitInFlight.current || generationInFlight.current) return
+    if (amend && commitContext?.hasUpstream && commitContext.ahead === 0) {
+      setConfirmAmendOpen(true)
+      return
+    }
+    void runCommit(true)
   }
 
   const handlePush = async () => {
-    if (isPushing || isCommitting || generationInFlight.current) return
+    if (isPushing || isPulling || isCommitting || generationInFlight.current) return
     setIsPushing(true)
     try {
       await push(cwd)
@@ -455,6 +503,20 @@ export function useGitActions({ cwd, setSelectedStaged, clearSelection }: UseGit
       toast.error(`Failed to push: ${String(error)}`)
     } finally {
       setIsPushing(false)
+    }
+  }
+
+  const handlePull = async () => {
+    if (isPulling || isPushing || isCommitting || generationInFlight.current) return
+    setIsPulling(true)
+    try {
+      const result = await pull(cwd)
+      const firstLine = result.split(/\r?\n/)[0]?.trim()
+      toast.success(firstLine || 'Pulled latest changes from remote')
+    } catch (error) {
+      toast.error(`Failed to pull: ${String(error)}`)
+    } finally {
+      setIsPulling(false)
     }
   }
 
@@ -625,6 +687,7 @@ export function useGitActions({ cwd, setSelectedStaged, clearSelection }: UseGit
     isCommitting,
     isGenerating,
     isPushing,
+    isPulling,
     confirmAmendOpen,
     setConfirmAmendOpen,
     hasUncommittedChanges,
@@ -643,7 +706,9 @@ export function useGitActions({ cwd, setSelectedStaged, clearSelection }: UseGit
     handleGenerateMessage,
     runCommit,
     handleCommit,
+    handleCommitAndPush,
     handlePush,
+    handlePull,
     handleSwitchBranch,
     handleExecuteSwitchBranch,
     handleCreateBranch,

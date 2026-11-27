@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useCodeMirror, type VisibleLineRange } from '@/hooks/use-codemirror'
 import {
   registerEditorContentFlusher,
   unregisterEditorContentFlusher
 } from '@/lib/editor-content-flush'
+import { EDITOR_SEND_SELECTION_EVENT, sendSelectionToAiChat } from '@/lib/send-selection-to-chat'
 import { EditorTocLayout } from './EditorTocLayout'
 import { TocPanel } from './TocPanel'
 
@@ -160,6 +161,49 @@ export function CodeEditor({
     pendingRevealTermRef.current = undefined
   }, [isVisible, scrollToLine, view])
 
+  const dispatchSelectionToChat = useCallback(() => {
+    if (!view) return
+    const sel = view.state.selection.main
+    const startLineObj = view.state.doc.lineAt(sel.from)
+    const endLineObj = view.state.doc.lineAt(sel.to)
+    const selectedText =
+      sel.from !== sel.to ? view.state.sliceDoc(sel.from, sel.to) : startLineObj.text
+    sendSelectionToAiChat({
+      filePath,
+      startLine: startLineObj.number,
+      endLine: endLineObj.number,
+      selectedText,
+      language
+    })
+  }, [view, filePath, language])
+
+  useEffect(() => {
+    const onToolbarSend = (event: Event): void => {
+      const detail = (event as CustomEvent<{ filePath?: string }>).detail
+      if (detail?.filePath && detail.filePath !== filePath) return
+      if (!isVisible) return
+      dispatchSelectionToChat()
+    }
+    window.addEventListener(EDITOR_SEND_SELECTION_EVENT, onToolbarSend)
+    return () => window.removeEventListener(EDITOR_SEND_SELECTION_EVENT, onToolbarSend)
+  }, [filePath, isVisible, dispatchSelectionToChat])
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        !event.shiftKey &&
+        !event.altKey &&
+        event.key.toLowerCase() === 'l'
+      ) {
+        event.preventDefault()
+        event.stopPropagation()
+        dispatchSelectionToChat()
+      }
+    },
+    [dispatchSelectionToChat]
+  )
+
   return (
     <EditorTocLayout
       isVisible={isVisible}
@@ -179,7 +223,8 @@ export function CodeEditor({
         />
       )}
     >
-      <div className="relative h-full min-w-0 flex-1">
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: keyboard shortcut wrapper for CodeMirror editor */}
+      <div className="relative h-full min-w-0 flex-1" onKeyDown={handleKeyDown}>
         <div ref={containerRef} className="w-full h-full overflow-hidden" />
         {!isReady && (
           <div

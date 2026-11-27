@@ -1251,7 +1251,8 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_notification::init());
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_updater::Builder::new().build());
 
     // Defense-in-depth: reject top-level navigation on the main app webview so
     // a stray chat-link click (or any external anchor) can never tear down the
@@ -1848,14 +1849,6 @@ pub fn run() {
                 tauri::async_runtime::handle().inner(),
             )));
 
-            // The automation engine runs next to the reaper, never from
-            // `serve_router`. Every transport reaches the service through
-            // `automation::service::installed`; a store that cannot open
-            // leaves automations unavailable without blocking startup.
-            let project_roots: automation::engine::ProjectRoots = {
-                let registry = Arc::clone(&project_registry);
-                Arc::new(move |project_id| registry.canonical_root(project_id))
-            };
             // The subagent orchestrator: one engine per process, reached
             // through `acp::orchestrator::installed` by the host MCP tools,
             // the stop interception and the chat/agent lifecycle hooks. The
@@ -1874,34 +1867,8 @@ pub fn run() {
                 sweep_roots,
                 tauri::async_runtime::handle().inner().clone(),
             );
-            // `mcp_tool` nodes call the host's one MCP server list.
             let mcp_store = handle.state::<DesktopStoreState>().store.clone();
             crate::acp::host_mcp::mcp_install::install_live(Arc::clone(&mcp_store));
-            let mcp_servers = automation::mcp::store_servers(mcp_store);
-            match automation::service::AutomationService::open(
-                &app_data_dir,
-                Arc::clone(&acp_manager),
-                project_roots,
-                mcp_servers,
-            ) {
-                Ok(service) => {
-                    let service = Arc::new(service);
-                    app.manage(Arc::new(
-                        service
-                            .engine()
-                            .start(tauri::async_runtime::handle().inner()),
-                    ));
-                    // Changes reach the desktop renderer through its own
-                    // channel carrier and every other relay client
-                    // (shared-live peers) as an `agents` watch delta.
-                    tauri::async_runtime::spawn(web::automation_api::forward_changes(
-                        service.subscribe(),
-                        Arc::clone(&ws_relay),
-                    ));
-                    automation::service::install(service);
-                }
-                Err(error) => log::error!("[Automation] unavailable: {error}"),
-            }
 
             // Host-owned browser policy (allow-list, pre-approvals, global
             // profile switch). The relay sink carries `browser_policy_changed`
@@ -2326,6 +2293,8 @@ pub fn run() {
             commands::git_get_commit_file_diff,
             commands::git_commit,
             commands::git_push,
+            commands::git_pull,
+            commands::git_fetch,
             commands::git_get_commit_context,
             commands::git_init,
             commands::git_checkout_branch,
@@ -2337,6 +2306,11 @@ pub fn run() {
             commands::git_stash_drop,
             commands::git_branch_list,
             commands::git_branch_switch,
+            // Custom third-party HTTP API connections
+            commands::custom_api_save_key,
+            commands::custom_api_has_key,
+            commands::custom_api_delete_key,
+            commands::custom_api_test,
             // Project icon resolution (local file scan → git-remote fetch)
             commands::project_icon_resolve,
             // Link preview (favicon + title) for links written in agent chat

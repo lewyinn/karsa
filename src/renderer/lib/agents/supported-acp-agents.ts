@@ -19,6 +19,7 @@ import {
 } from '@/lib/agents/agent-aliases'
 import { registryConfigId } from '@/lib/agents/registry-config-id'
 import { acpCatalogApi } from '@/lib/api'
+import { describeCustomApiConfig, isCustomApiAgentConfig } from '@/lib/custom-api'
 import { logFrontendError } from '@/lib/log-api'
 
 const REGISTRY_AGENT_IDS = new Set(REGISTRY_AGENTS.map((agent) => agent.id))
@@ -503,7 +504,7 @@ function customAgentEntriesFromPersisted(
         id: config.id,
         name: config.name,
         version: '',
-        description: '',
+        description: isCustomApiAgentConfig(config) ? describeCustomApiConfig(config) : '',
         distribution: {}
       },
       config,

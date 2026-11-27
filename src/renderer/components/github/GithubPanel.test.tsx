@@ -364,9 +364,14 @@ describe('GithubPanel list', () => {
     expect(screen.queryByText('me/app')).toBeNull()
     expect(screen.queryByRole('combobox', { name: 'Repository' })).toBeNull()
     const kind = screen.getByRole('group', { name: 'Kind' })
-    const refresh = screen.getByRole('button', { name: 'Refresh' })
-    expect(kind.parentElement).toBe(refresh.parentElement)
-    expect(kind.nextElementSibling).toBe(refresh)
+    const actions = kind.nextElementSibling as HTMLElement | null
+    expect(actions).not.toBeNull()
+    expect(within(actions!).getByRole('button', { name: 'New issue' })).toBeInTheDocument()
+    expect(within(actions!).getByRole('button', { name: 'New pull request' })).toBeInTheDocument()
+    expect(
+      within(actions!).getByRole('button', { name: 'Git pull from GitHub' })
+    ).toBeInTheDocument()
+    expect(within(actions!).getByRole('button', { name: 'Refresh' })).toBeInTheDocument()
   })
 
   it('refreshes past the host cache from the refresh button', async () => {

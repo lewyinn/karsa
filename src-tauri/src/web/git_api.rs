@@ -520,6 +520,77 @@ pub async fn push(
     (StatusCode::OK, Json(body))
 }
 
+/// `POST /git/pull` — pull latest commits for the current branch from remote
+/// (network write, loopback-guarded).
+pub async fn pull(
+    State(state): State<AppState>,
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
+    Json(req): Json<GitCwdRequest>,
+) -> impl IntoResponse {
+    let resolved = match resolve_cwd::<String>(&req.cwd, &state, Some(peer), true) {
+        Ok(p) => p,
+        Err(resp) => return resp,
+    };
+    let cwd = match cwd_string::<String>(&resolved) {
+        Ok(s) => s,
+        Err(resp) => return resp,
+    };
+    let cwd_for_log = cwd.clone();
+    let result = tokio::task::spawn_blocking(move || git_tracker::git_pull_current(&cwd))
+        .await
+        .map_err(|e| format!("git pull task failed: {e}"));
+    let body = match result {
+        Ok(Ok(summary)) => {
+            tracing::info!(path = %cwd_for_log, "git pull ok");
+            IpcBody::ok(summary)
+        }
+        Ok(Err(e)) => {
+            tracing::warn!(path = %cwd_for_log, error = %e, "git pull failed");
+            IpcBody::<String>::err(e, "GIT_PULL_ERROR")
+        }
+        Err(e) => {
+            tracing::error!(path = %cwd_for_log, error = %e, "git pull task panicked");
+            IpcBody::<String>::err(format!("git pull task failed: {e}"), "GIT_PULL_ERROR")
+        }
+    };
+    (StatusCode::OK, Json(body))
+}
+
+/// `POST /git/fetch` — quietly fetch remote tracking refs so ahead/behind
+/// counts update without touching local branches.
+pub async fn fetch(
+    State(state): State<AppState>,
+    Json(req): Json<GitCwdRequest>,
+) -> impl IntoResponse {
+    let resolved = match resolve_cwd::<()>(&req.cwd, &state, None, false) {
+        Ok(p) => p,
+        Err(resp) => return resp,
+    };
+    let cwd = match cwd_string::<()>(&resolved) {
+        Ok(s) => s,
+        Err(resp) => return resp,
+    };
+    let cwd_for_log = cwd.clone();
+    let result = tokio::task::spawn_blocking(move || git_tracker::git_fetch_remote(&cwd))
+        .await
+        .map_err(|e| format!("git fetch task failed: {e}"));
+    let body = match result {
+        Ok(Ok(())) => {
+            tracing::debug!(path = %cwd_for_log, "git fetch ok");
+            IpcBody::<()>::ok(())
+        }
+        Ok(Err(e)) => {
+            tracing::debug!(path = %cwd_for_log, error = %e, "git fetch failed");
+            IpcBody::<()>::err(e, "GIT_FETCH_ERROR")
+        }
+        Err(e) => {
+            tracing::error!(path = %cwd_for_log, error = %e, "git fetch task panicked");
+            IpcBody::<()>::err(format!("git fetch task failed: {e}"), "GIT_FETCH_ERROR")
+        }
+    };
+    (StatusCode::OK, Json(body))
+}
+
 /// `POST /git/commit-context` — branch, upstream, ahead/behind, last commit
 /// (read-only). Used to prefill the commit footer.
 pub async fn get_commit_context(

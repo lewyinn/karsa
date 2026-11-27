@@ -5,8 +5,20 @@ import {
   UpdaterErrorCodes,
   type UpdateState
 } from '@shared/types/updater.types'
+import { getVersion } from '@tauri-apps/api/app'
+import { invoke } from '@tauri-apps/api/core'
+import { openUrl } from '@tauri-apps/plugin-opener'
+import { relaunch } from '@tauri-apps/plugin-process'
+import { check, type DownloadEvent, Update } from '@tauri-apps/plugin-updater'
 import { logFrontendError } from './log-api'
+import { BackupErrorCodes, createBackup, setAppVersion } from './tauri-backup-api'
+import { keepPreviousVersion, setCurrentVersion } from './tauri-rollback-api'
 
+const STABLE_UPDATE_MANIFEST_URL =
+  'https://github.com/lewyinn/karsa/releases/latest/download/latest.json'
+const UPSTREAM_LATEST_RELEASE_URL = 'https://api.github.com/repos/lewyinn/karsa/releases/latest'
+const AUR_UPDATE_CHECK_TIMEOUT_MS = 8000
+const UPDATE_DOWNLOAD_TIMEOUT_MS = 30 * 60 * 1000
 const LOG_SOURCE = 'tauri-updater-api'
 
 function logUpdater(level: 'info' | 'warn' | 'error', message: string): void {
@@ -17,13 +29,13 @@ export type UpdateChannel = 'stable' | 'nightly'
 export const DEFAULT_UPDATE_CHANNEL: UpdateChannel = 'stable'
 
 const CHANNEL_MANIFEST_URLS: Record<UpdateChannel, string> = {
-  stable: 'https://github.com/gnoviawan/troupe/releases/latest/download/latest-stable.json',
-  nightly: 'https://github.com/gnoviawan/troupe/releases/download/nightly/nightly.json'
+  stable: STABLE_UPDATE_MANIFEST_URL,
+  nightly: 'https://github.com/lewyinn/karsa/releases/download/nightly/nightly.json'
 }
 
 const CHANNEL_RELEASE_PAGE_URLS: Record<UpdateChannel, string> = {
-  stable: 'https://github.com/gnoviawan/troupe/releases/latest',
-  nightly: 'https://github.com/gnoviawan/troupe/releases/tag/nightly'
+  stable: 'https://github.com/lewyinn/karsa/releases/latest',
+  nightly: 'https://github.com/lewyinn/karsa/releases/tag/nightly'
 }
 
 export function getChannelManifestUrl(channel: UpdateChannel): string {
@@ -43,22 +55,39 @@ const UPDATE_MODE: UpdateMode = import.meta.env.VITE_TERMUL_UPDATE_MODE === 'aur
 
 export const AUR_UPDATE_COMMAND = 'yay -S karsa'
 
-/** Auto-updater against upstream gnoviawan/troupe is permanently disabled in custom Karsa builds. */
-export const APP_UPDATER_DISABLED = true
+/** Auto-updater is enabled against lewyinn/karsa signed GitHub Releases. */
+export const APP_UPDATER_DISABLED = false
 
-let autoUpdateEnabled = false
-let lastCheckedAt: string | null = null
+let pendingTauriUpdate: Update | null = null
+let downloadedUpdate: Update | null = null
+let downloadingUpdate: Update | null = null
 
-export interface DisabledUpdateHandle {
-  version: string
-  date?: string | null
-  body?: string | null
+function closeIfUnused(handle: Update | null): void {
+  if (
+    !handle ||
+    handle === pendingTauriUpdate ||
+    handle === downloadedUpdate ||
+    handle === downloadingUpdate
+  ) {
+    return
+  }
+  Promise.resolve()
+    .then(() => handle.close())
+    .catch(() => {})
 }
 
+let pendingAurUpdate: UpdateInfo | null = null
+let manualUpdateInfo: UpdateInfo | null = null
+let autoUpdateEnabled = true
+let lastCheckedAt: string | null = null
+let downloadedVersion: string | null = null
+let preparedUpdateVersion: string | null = null
+let isManualUpdateMode = false
+
 export interface TauriUpdaterEventHandlers {
-  onUpdateAvailable?: (update: DisabledUpdateHandle) => void
+  onUpdateAvailable?: (update: Update) => void
   onDownloadProgress?: (progress: DownloadProgress) => void
-  onUpdateDownloaded?: (update: DisabledUpdateHandle) => void
+  onUpdateDownloaded?: (update: Update) => void
   onError?: (error: string) => void
 }
 
@@ -68,6 +97,127 @@ export function getUpdateMode(): UpdateMode {
 
 export function isAurUpdateMode(): boolean {
   return UPDATE_MODE === 'aur'
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message
+  }
+  if (typeof error === 'string' && error.trim()) {
+    return error
+  }
+  try {
+    const serialized = JSON.stringify(error)
+    if (serialized && serialized !== '{}') {
+      return serialized
+    }
+  } catch {
+    // Ignore serialization failures and use the fallback below.
+  }
+  return fallback
+}
+
+function createUpdaterCheckError(error: unknown, sourceUrl: string): Error {
+  const details = getErrorMessage(error, 'Unknown updater error')
+  return new Error(`Failed to check for updates from ${sourceUrl}: ${details}`)
+}
+
+async function syncRecoveryVersionMetadata(): Promise<string> {
+  const currentVersion = await getVersion()
+  await Promise.all([setAppVersion(currentVersion), setCurrentVersion(currentVersion)])
+  return currentVersion
+}
+
+async function prepareUpdateRecovery(): Promise<IpcResult<void>> {
+  let currentVersion: string
+  try {
+    currentVersion = await syncRecoveryVersionMetadata()
+  } catch (error) {
+    return {
+      success: false,
+      error: `Failed to determine current app version: ${getErrorMessage(error, 'Unknown error')}`,
+      code: UpdaterErrorCodes.INSTALL_FAILED
+    }
+  }
+
+  const backupResult = await createBackup()
+  if (!backupResult.success) {
+    return {
+      success: false,
+      error: backupResult.error ?? 'Failed to create backup before update',
+      code:
+        backupResult.code === BackupErrorCodes.DISK_SPACE_ERROR
+          ? UpdaterErrorCodes.DISK_SPACE_INSUFFICIENT
+          : UpdaterErrorCodes.INSTALL_FAILED
+    }
+  }
+
+  const preserveResult = await keepPreviousVersion(currentVersion)
+  if (!preserveResult.success) {
+    return {
+      success: false,
+      error: preserveResult.error ?? 'Failed to preserve current version before update',
+      code: UpdaterErrorCodes.INSTALL_FAILED
+    }
+  }
+
+  return { success: true, data: undefined }
+}
+
+export function isUpdateAvailable(update: Update | null): update is Update {
+  return Boolean(update)
+}
+
+export function mapTauriUpdateToInfo(update: Update): UpdateInfo {
+  return {
+    version: update.version,
+    releaseDate: update.date ?? new Date().toISOString(),
+    releaseNotes: update.body ?? undefined,
+    isSecurityUpdate: false,
+    installMode: 'in-app'
+  }
+}
+
+function mapDownloadEventToProgress(
+  event: DownloadEvent,
+  downloadedSoFar: number,
+  totalBytes: number
+): { progress: DownloadProgress; downloadedSoFar: number; totalBytes: number } {
+  if (event.event === 'Started') {
+    const total = event.data.contentLength ?? totalBytes
+    return {
+      progress: { bytesPerSecond: 0, percent: 0, transferred: 0, total },
+      downloadedSoFar: 0,
+      totalBytes: total
+    }
+  }
+  if (event.event === 'Progress') {
+    const nextDownloaded = downloadedSoFar + event.data.chunkLength
+    const percent = totalBytes > 0 ? Math.min(100, (nextDownloaded / totalBytes) * 100) : 0
+    return {
+      progress: {
+        bytesPerSecond: 0,
+        percent,
+        transferred: nextDownloaded,
+        total: totalBytes
+      },
+      downloadedSoFar: nextDownloaded,
+      totalBytes
+    }
+  }
+  return {
+    progress: { bytesPerSecond: 0, percent: 100, transferred: totalBytes, total: totalBytes },
+    downloadedSoFar,
+    totalBytes
+  }
+}
+
+interface GitHubRelease {
+  tag_name?: string
+  name?: string
+  body?: string
+  html_url?: string
+  published_at?: string
 }
 
 interface ParsedSemver {
@@ -134,51 +284,290 @@ export function compareVersions(a: string, b: string): number {
   return 0
 }
 
+function mapGitHubReleaseToInfo(release: GitHubRelease): UpdateInfo {
+  const version = normalizeVersion(release.tag_name ?? release.name ?? '')
+  return {
+    version,
+    releaseDate: release.published_at ?? new Date().toISOString(),
+    releaseNotes: release.body ?? undefined,
+    isSecurityUpdate: false,
+    downloadUrl: release.html_url
+  }
+}
+
+async function checkGitHubFallback(): Promise<UpdateInfo | null> {
+  const controller = new AbortController()
+  const timeoutId = window.setTimeout(() => {
+    controller.abort()
+  }, AUR_UPDATE_CHECK_TIMEOUT_MS)
+
+  const [currentVersion, response] = await Promise.all([
+    getVersion(),
+    fetch(UPSTREAM_LATEST_RELEASE_URL, {
+      headers: { Accept: 'application/vnd.github+json' },
+      signal: controller.signal
+    })
+  ]).finally(() => {
+    window.clearTimeout(timeoutId)
+  })
+
+  if (!response.ok) {
+    throw new Error(`GitHub returned HTTP ${response.status}`)
+  }
+
+  const release = (await response.json()) as GitHubRelease
+  const latestVersion = normalizeVersion(release.tag_name ?? release.name ?? '')
+  if (!latestVersion) {
+    throw new Error('Latest release has no version tag')
+  }
+
+  return compareVersions(latestVersion, currentVersion) > 0 ? mapGitHubReleaseToInfo(release) : null
+}
+
+function adoptSignedUpdate(update: Update | null): UpdateInfo | null {
+  const previousPending = pendingTauriUpdate
+  const previousDownloaded = downloadedUpdate
+  pendingTauriUpdate = update
+  isManualUpdateMode = false
+  manualUpdateInfo = null
+  downloadedVersion = update && downloadedVersion === update.version ? downloadedVersion : null
+  downloadedUpdate =
+    update && downloadedUpdate && downloadedUpdate.version === update.version
+      ? downloadedUpdate
+      : null
+  preparedUpdateVersion =
+    update && preparedUpdateVersion === update.version ? preparedUpdateVersion : null
+  lastCheckedAt = new Date().toISOString()
+  closeIfUnused(previousPending)
+  if (previousDownloaded !== previousPending) closeIfUnused(previousDownloaded)
+  return update ? mapTauriUpdateToInfo(update) : null
+}
+
+type SignedUpdateMetadata = ConstructorParameters<typeof Update>[0]
+
+async function checkSignedChannelUpdate(channel: UpdateChannel): Promise<UpdateInfo | null> {
+  try {
+    const metadata = await invoke<SignedUpdateMetadata | null>('updater_check_channel', { channel })
+    return adoptSignedUpdate(metadata ? new Update(metadata) : null)
+  } catch {
+    return adoptSignedUpdate(await check())
+  }
+}
+
 export async function checkForUpdates(
   channel: UpdateChannel = DEFAULT_UPDATE_CHANNEL
 ): Promise<UpdateInfo | null> {
-  logUpdater(
-    'info',
-    `auto-updates disabled in custom Karsa build; ignoring check (channel=${channel})`
-  )
-  return null
+  if (isAurUpdateMode()) {
+    try {
+      const update = await checkGitHubFallback()
+      pendingAurUpdate = update
+      lastCheckedAt = new Date().toISOString()
+      return update
+    } catch (error) {
+      lastCheckedAt = new Date().toISOString()
+      throw createUpdaterCheckError(error, UPSTREAM_LATEST_RELEASE_URL)
+    }
+  }
+
+  if (channel === 'nightly') {
+    return checkSignedChannelUpdate(channel)
+  }
+
+  try {
+    return adoptSignedUpdate(await check())
+  } catch (error) {
+    lastCheckedAt = new Date().toISOString()
+    const errorMsg = getErrorMessage(error, '')
+    const isManifestMissing =
+      errorMsg.includes('valid release JSON') ||
+      errorMsg.includes('Could not fetch') ||
+      errorMsg.includes('404')
+    if (isManifestMissing) {
+      try {
+        const fallback = await checkGitHubFallback()
+        if (fallback) {
+          const manualFallback: UpdateInfo = { ...fallback, installMode: 'manual' }
+          isManualUpdateMode = true
+          manualUpdateInfo = manualFallback
+          pendingTauriUpdate = null
+          return manualFallback
+        }
+        return null
+      } catch (fallbackError) {
+        throw createUpdaterCheckError(fallbackError, UPSTREAM_LATEST_RELEASE_URL)
+      }
+    }
+    throw createUpdaterCheckError(error, STABLE_UPDATE_MANIFEST_URL)
+  }
 }
 
 export async function downloadUpdate(
-  _onProgress?: (progress: DownloadProgress) => void
+  onProgress?: (progress: DownloadProgress) => void
 ): Promise<IpcResult<void>> {
-  return {
-    success: false,
-    error: 'Automatic updates are disabled in custom Karsa builds',
-    code: UpdaterErrorCodes.UPDATE_NOT_AVAILABLE
+  if (isAurUpdateMode()) {
+    if (!pendingAurUpdate) {
+      return {
+        success: false,
+        error: 'No update available to download',
+        code: UpdaterErrorCodes.UPDATE_NOT_AVAILABLE
+      }
+    }
+    return {
+      success: false,
+      error: `AUR build cannot self-update. Update with: ${AUR_UPDATE_COMMAND}`,
+      code: UpdaterErrorCodes.UPDATE_NOT_AVAILABLE
+    }
+  }
+
+  if (isManualUpdateMode && manualUpdateInfo) {
+    await openUrl(manualUpdateInfo.downloadUrl ?? UPSTREAM_LATEST_RELEASE_URL)
+    return { success: true, data: undefined }
+  }
+
+  if (!pendingTauriUpdate) {
+    return {
+      success: false,
+      error: 'No update available to download',
+      code: UpdaterErrorCodes.UPDATE_NOT_AVAILABLE
+    }
+  }
+
+  const updateHandle = pendingTauriUpdate
+  downloadingUpdate = updateHandle
+
+  try {
+    const updateVersion = updateHandle.version
+
+    if (preparedUpdateVersion !== updateVersion) {
+      logUpdater('info', `backing up app data before downloading ${updateVersion}`)
+      const preparationStartedAt = Date.now()
+      const preparationResult = await prepareUpdateRecovery()
+      if (!preparationResult.success) {
+        logUpdater('error', `update preparation failed: ${preparationResult.error}`)
+        return preparationResult
+      }
+      logUpdater('info', `backup finished in ${Date.now() - preparationStartedAt} ms`)
+      preparedUpdateVersion = updateVersion
+    }
+
+    let downloadedSoFar = 0
+    let totalBytes = 0
+
+    if (onProgress) {
+      onProgress({ bytesPerSecond: 0, percent: 0, transferred: 0, total: 0 })
+    }
+
+    logUpdater('info', `downloading ${updateVersion}`)
+    const downloadStartedAt = Date.now()
+    await updateHandle.download(
+      (event) => {
+        const mapped = mapDownloadEventToProgress(event, downloadedSoFar, totalBytes)
+        downloadedSoFar = mapped.downloadedSoFar
+        totalBytes = mapped.totalBytes
+        onProgress?.(mapped.progress)
+      },
+      { timeout: UPDATE_DOWNLOAD_TIMEOUT_MS }
+    )
+    logUpdater(
+      'info',
+      `downloaded ${updateVersion} (${downloadedSoFar} bytes) in ${Date.now() - downloadStartedAt} ms`
+    )
+
+    downloadedUpdate = updateHandle
+    downloadedVersion = updateVersion
+    return { success: true, data: undefined }
+  } catch (error) {
+    const message = getErrorMessage(error, 'Failed to download update')
+    logUpdater('error', `download failed: ${message}`)
+    return {
+      success: false,
+      error: message,
+      code: UpdaterErrorCodes.DOWNLOAD_FAILED
+    }
+  } finally {
+    if (downloadingUpdate === updateHandle) downloadingUpdate = null
+    closeIfUnused(updateHandle)
   }
 }
 
 export async function installAndRestart(): Promise<IpcResult<void>> {
-  return {
-    success: false,
-    error: 'Automatic updates are disabled in custom Karsa builds',
-    code: UpdaterErrorCodes.UPDATE_NOT_AVAILABLE
+  if (isAurUpdateMode()) {
+    return {
+      success: false,
+      error: `AUR build cannot self-install updates. Update with: ${AUR_UPDATE_COMMAND}`,
+      code: UpdaterErrorCodes.UPDATE_NOT_AVAILABLE
+    }
+  }
+
+  if (isManualUpdateMode && manualUpdateInfo) {
+    await openUrl(manualUpdateInfo.downloadUrl ?? UPSTREAM_LATEST_RELEASE_URL)
+    return { success: true, data: undefined }
+  }
+
+  if (
+    !pendingTauriUpdate ||
+    downloadedVersion !== pendingTauriUpdate.version ||
+    !downloadedUpdate
+  ) {
+    return {
+      success: false,
+      error: 'No downloaded update ready to install',
+      code: UpdaterErrorCodes.UPDATE_NOT_AVAILABLE
+    }
+  }
+
+  try {
+    logUpdater('info', `installing ${downloadedUpdate.version} and relaunching`)
+    await downloadedUpdate.install()
+    await relaunch()
+    return { success: true, data: undefined }
+  } catch (error) {
+    const message = getErrorMessage(error, 'Failed to install and restart after update')
+    logUpdater('error', `installAndRestart failed: ${message}`)
+    return {
+      success: false,
+      error: message,
+      code: UpdaterErrorCodes.INSTALL_FAILED
+    }
   }
 }
 
-export function isUpdateDownloaded(_version: string): boolean {
-  return false
+export function isUpdateDownloaded(version: string): boolean {
+  return (
+    !isAurUpdateMode() &&
+    !isManualUpdateMode &&
+    pendingTauriUpdate !== null &&
+    pendingTauriUpdate.version === version &&
+    downloadedUpdate !== null &&
+    downloadedVersion === version
+  )
 }
 
 export async function getUpdaterState(): Promise<IpcResult<UpdateState>> {
+  const updateAvailable = isAurUpdateMode()
+    ? pendingAurUpdate !== null
+    : pendingTauriUpdate !== null || isManualUpdateMode
+  const version = isAurUpdateMode()
+    ? (pendingAurUpdate?.version ?? null)
+    : (pendingTauriUpdate?.version ?? manualUpdateInfo?.version ?? null)
+  const downloaded = isAurUpdateMode()
+    ? false
+    : !isManualUpdateMode &&
+      pendingTauriUpdate !== null &&
+      downloadedVersion === pendingTauriUpdate.version
+
   return {
     success: true,
     data: {
-      updateAvailable: false,
-      downloaded: false,
-      version: null,
+      updateAvailable,
+      downloaded,
+      version,
       isChecking: false,
       isDownloading: false,
       downloadProgress: null,
       error: null,
       lastChecked: lastCheckedAt,
-      isManualUpdateMode: false
+      isManualUpdateMode: !isAurUpdateMode() && isManualUpdateMode
     }
   }
 }
@@ -192,19 +581,38 @@ export async function getAutoUpdateEnabled(): Promise<IpcResult<boolean>> {
   return { success: true, data: autoUpdateEnabled }
 }
 
-export function registerUpdateEventHandlers(_handlers: TauriUpdaterEventHandlers): () => void {
-  return () => {
-    // Auto-updater disabled in custom Karsa builds.
-  }
+export function registerUpdateEventHandlers(handlers: TauriUpdaterEventHandlers): () => void {
+  void syncRecoveryVersionMetadata().catch((error) => {
+    handlers.onError?.(
+      `Failed to initialize updater recovery metadata: ${getErrorMessage(error, 'Unknown error')}`
+    )
+  })
+  return () => {}
 }
 
-export async function clearPendingUpdate(): Promise<void> {}
+export async function clearPendingUpdate(): Promise<void> {
+  pendingTauriUpdate = null
+  downloadedUpdate = null
+  pendingAurUpdate = null
+  manualUpdateInfo = null
+  downloadedVersion = null
+  preparedUpdateVersion = null
+  isManualUpdateMode = false
+}
 
 export function _resetUpdaterStateForTesting(): void {
+  downloadingUpdate = null
+  pendingTauriUpdate = null
+  downloadedUpdate = null
+  pendingAurUpdate = null
+  manualUpdateInfo = null
+  downloadedVersion = null
+  preparedUpdateVersion = null
   lastCheckedAt = null
-  autoUpdateEnabled = false
+  autoUpdateEnabled = true
+  isManualUpdateMode = false
 }
 
 export function isInManualUpdateMode(): boolean {
-  return false
+  return !isAurUpdateMode() && isManualUpdateMode
 }

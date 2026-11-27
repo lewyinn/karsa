@@ -225,6 +225,8 @@ pub static ROUTES: &[ApiRoute] = &[
         .json::<GitCommitRequest>()
         .describe("`expectedHead` refuses the commit with `PRECONDITION_FAILED` when `HEAD` moved."),
     ApiRoute::post("/git/push", Tag::Git, "Push the current branch").json::<GitCwdRequest>(),
+    ApiRoute::post("/git/pull", Tag::Git, "Pull the current branch").json::<GitCwdRequest>(),
+    ApiRoute::post("/git/fetch", Tag::Git, "Fetch remote tracking refs").json::<GitCwdRequest>(),
     ApiRoute::post("/git/commit-context", Tag::Git, "Context for drafting a commit message")
         .json::<GitCwdRequest>()
         .ipc::<GitCommitContext>(),

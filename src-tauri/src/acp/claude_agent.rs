@@ -420,6 +420,12 @@ trait ClaudeRuntimeProbe: Send + Sync {
         &self,
         config_dir: Option<&Path>,
     ) -> Result<Option<bool>, String>;
+
+    /// Best-effort display label (email address) read from non-secret local
+    /// Claude metadata (`.claude.json`). Test probes return `None`.
+    fn detected_profile_label(&self, _config_dir: Option<&Path>) -> Option<String> {
+        None
+    }
 }
 
 /// System keychain adapter over the shared ACP credentials plumbing. It

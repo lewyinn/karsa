@@ -43,7 +43,7 @@ export function AntigravityUsageMeters({
               <span
                 className={cn('ml-auto shrink-0 font-semibold tabular-nums', PERCENT_TEXT[tone])}
               >
-                {Math.round(window.percent)}%
+                {Math.round(window.percent)}% used
               </span>
               {reset && <span className="shrink-0 text-muted-foreground">{reset}</span>}
             </div>

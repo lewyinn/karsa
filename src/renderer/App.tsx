@@ -15,6 +15,7 @@ import { DirectoryPicker } from '@/components/DirectoryPicker'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ExternalLinkConfirmHost } from '@/components/external-link/ExternalLinkConfirm'
 import { GlobalContextMenu } from '@/components/GlobalContextMenu'
+import { WorkspaceSearchHost } from '@/components/search/WorkspaceSearchHost'
 import { McpOAuthPasteDialogHost } from '@/components/settings/McpOAuthPasteDialog'
 import { ServerSetupGate } from '@/components/setup/ServerSetupGate'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -25,7 +26,6 @@ import { useAcpUpdateChecks } from './hooks/use-acp-update-checks'
 import { useAgentChatNotification } from './hooks/use-agent-chat-notification'
 import { useAgentOverlayLoader } from './hooks/use-agent-overlay'
 import { useAppSettingsLoader } from './hooks/use-app-settings'
-import { useAutomationProposals } from './hooks/use-automation-proposals'
 import { useAppliedColorThemeSync } from './hooks/use-color-theme'
 import { useCrashRecovery } from './hooks/use-crash-recovery'
 import { useCwd } from './hooks/use-cwd'
@@ -207,7 +207,6 @@ function AppEffects(): null {
   useAntigravityLimitActions()
   useAntigravityLimitProbe()
   // A chat agent's proposed automation opens for review. Both roots.
-  useAutomationProposals()
   useAcpMcp()
   usePreventFileDropNavigation()
   // Suppress the native browser context menu app-wide (BUBBLE phase) for web
@@ -317,6 +316,7 @@ const App = () => {
                   dialog (spec-acp-terminal-auth) — auth can be triggered from a
                   chat panel or warm pool, not just the launcher. */}
                 <BrowserAuthDialogHost />
+                <WorkspaceSearchHost />
                 <CodexCliAuthSync />
                 {/* Web MCP OAuth paste-back (spec-mcp-oauth-web-paste-back): the
                   loopback redirect the host registered is unreachable from a

@@ -23,9 +23,10 @@ export { formatUsageChecked, formatUsageReset, usageTone }
 
 export const ANTIGRAVITY_USAGE_WARNING_PERCENT = 80
 
-/** The model name of a window, e.g. "Gemini 3 Pro". */
+/** The model/window name of a quota bar, stripping misleading "Remaining" suffixes since the meter shows % used (0% -> 100%). */
 export function antigravityWindowLabel(window: AntigravityUsageWindow): string {
-  return window.label || window.modelId
+  const raw = window.label || window.modelId
+  return raw.replace(/\s+remaining\s*$/i, '').trim()
 }
 
 /** Unix seconds of a window reset, for the live limit record. */

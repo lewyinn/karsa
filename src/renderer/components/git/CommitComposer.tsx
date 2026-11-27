@@ -1,6 +1,6 @@
 import type { GitCommitContext } from '@shared/types/ipc.types'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
-import { ArrowUp, GitCommit, MoreHorizontal, Sparkles } from '@/components/icons'
+import { ArrowDown, ArrowUp, GitCommit, MoreHorizontal, Sparkles } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -28,6 +28,7 @@ interface CommitComposerProps {
   isCommitting: boolean
   isGenerating: boolean
   isPushing: boolean
+  isPulling?: boolean
   commitContext: GitCommitContext | null
   stagedCount: number
   hasUncommittedChanges?: boolean
@@ -36,7 +37,9 @@ interface CommitComposerProps {
   canCommit: boolean
   onGenerateMessage: () => void
   onCommit: () => void
+  onCommitAndPush?: () => void
   onPush: () => void
+  onPull?: () => void
 }
 
 export function CommitComposer({
@@ -50,6 +53,7 @@ export function CommitComposer({
   isCommitting,
   isGenerating,
   isPushing,
+  isPulling = false,
   commitContext,
   stagedCount,
   hasUncommittedChanges = false,
@@ -58,7 +62,9 @@ export function CommitComposer({
   canCommit,
   onGenerateMessage,
   onCommit,
-  onPush
+  onCommitAndPush,
+  onPush,
+  onPull
 }: CommitComposerProps) {
   const admitted = useServerAdmitsRemoteWrites()
   const onBranch = !!commitContext?.branch
@@ -68,7 +74,33 @@ export function CommitComposer({
   // Before an upstream exists, publishing is always meaningful.
   const hasSomethingToPush = !commitContext?.hasUpstream || ahead > 0
   const canPush =
-    admitted && onBranch && hasSomethingToPush && !isPushing && !isCommitting && !isGenerating
+    admitted &&
+    onBranch &&
+    hasSomethingToPush &&
+    !isPushing &&
+    !isPulling &&
+    !isCommitting &&
+    !isGenerating
+  const canPull = admitted && onBranch && !isPulling && !isPushing && !isCommitting && !isGenerating
+  const autoStageAll = !amend && stagedCount === 0 && hasUncommittedChanges
+  const commitLabel = isCommitting
+    ? 'Committing...'
+    : amend
+      ? 'Amend commit'
+      : autoStageAll
+        ? commitContext?.branch
+          ? `Commit all to ${commitContext.branch}`
+          : 'Commit all'
+        : commitContext?.branch
+          ? `Commit to ${commitContext.branch}`
+          : 'Commit'
+  const commitTitle = amend
+    ? 'Amend the last commit'
+    : autoStageAll
+      ? 'Stage all changes and commit'
+      : stagedCount === 0
+        ? 'No changes to commit'
+        : 'Commit staged changes'
   const pushLabel = !commitContext?.hasUpstream
     ? 'Publish branch'
     : ahead > 0
@@ -151,33 +183,67 @@ export function CommitComposer({
           />
           Amend last commit
         </label>
-        <div className="flex items-center gap-2">
-          <WriteGate gated={!admitted} className="flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <WriteGate gated={!admitted} className="flex-1 min-w-[140px]">
             <Button
               type="button"
               variant="default"
               size="touch"
-              className="h-11 flex-1 text-xs gap-2"
+              className="h-11 w-full text-xs gap-2"
               onClick={onCommit}
               disabled={!canCommit || !admitted}
-              title={
-                amend
-                  ? 'Amend the last commit'
-                  : stagedCount === 0
-                    ? 'Stage files to commit'
-                    : 'Commit staged changes'
-              }
+              title={commitTitle}
             >
               <GitCommit size={14} />
-              {isCommitting
-                ? 'Committing...'
-                : amend
-                  ? 'Amend commit'
-                  : commitContext?.branch
-                    ? `Commit to ${commitContext.branch}`
-                    : 'Commit'}
+              {commitLabel}
             </Button>
           </WriteGate>
+          {onCommitAndPush && (
+            <WriteGate gated={!admitted} className="shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                size="touch"
+                className="h-11 shrink-0 px-3 text-xs gap-1.5"
+                onClick={onCommitAndPush}
+                disabled={!canCommit || !onBranch || !admitted}
+                aria-label="Commit and push"
+                title={
+                  !onBranch
+                    ? 'Not on a branch (detached HEAD)'
+                    : autoStageAll
+                      ? 'Stage all changes, commit, and push to remote in 1 click'
+                      : 'Commit staged changes and push to remote in 1 click'
+                }
+              >
+                <ArrowUp size={14} className={cn(isCommitting && isPushing && 'animate-pulse')} />
+                &amp; Push
+              </Button>
+            </WriteGate>
+          )}
+          {onPull && (
+            <WriteGate gated={!admitted} className="shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                size="touch"
+                className="h-11 shrink-0 px-3 text-xs gap-2"
+                onClick={onPull}
+                disabled={!canPull}
+                aria-label={behind > 0 ? `Pull ${behind}` : 'Pull'}
+                title={
+                  !onBranch
+                    ? 'Not on a branch (detached HEAD)'
+                    : behind > 0
+                      ? `Pull ${behind} commit${behind === 1 ? '' : 's'} from remote`
+                      : 'Pull latest changes from remote'
+                }
+              >
+                <ArrowDown size={14} className={cn(isPulling && 'animate-pulse')} />
+                {isPulling ? 'Pulling...' : behind > 0 ? `Pull ${behind}` : 'Pull'}
+              </Button>
+            </WriteGate>
+          )}
           {commitContext?.hasUpstream ? (
             <WriteGate gated={!admitted} className="shrink-0">
               <Button
@@ -315,55 +381,96 @@ export function CommitComposer({
           {isGenerating ? 'Generating...' : 'Generate message'}
         </button>
       </div>
-      <div className="flex gap-2">
-        <WriteGate gated={!admitted} className="min-w-0 flex-1">
-          <Button
-            size="xs"
-            className="h-[30px] min-w-0 flex-1 gap-1.5 px-2.5 text-2xs [&_svg]:size-auto"
-            onClick={onCommit}
-            disabled={!canCommit || !admitted}
-            title={
-              amend
-                ? 'Amend the last commit'
-                : stagedCount === 0
-                  ? 'Stage files to commit'
-                  : 'Commit staged changes'
-            }
-          >
-            <GitCommit size={13} />
-            <span className="truncate">
-              {isCommitting
-                ? 'Committing...'
-                : amend
-                  ? 'Amend commit'
-                  : commitContext?.branch
-                    ? `Commit to ${commitContext.branch}`
-                    : 'Commit'}
-            </span>
-          </Button>
-        </WriteGate>
-        <WriteGate gated={!admitted} className="shrink-0">
-          <Button
-            variant="secondary"
-            size="xs"
-            className="h-[30px] shrink-0 gap-1.5 px-2.5 text-2xs [&_svg]:size-auto"
-            onClick={onPush}
-            disabled={!canPush}
-            title={
-              !onBranch
-                ? 'Not on a branch (detached HEAD)'
-                : !commitContext?.hasUpstream
-                  ? 'Publish this branch to origin'
-                  : ahead > 0
-                    ? 'Push commits to the remote'
-                    : 'Nothing to push — up to date with the remote'
-            }
-          >
-            <ArrowUp size={13} className={cn(isPushing && 'animate-pulse')} />
-            {isPushing ? 'Pushing...' : pushLabel}
-            {behind > 0 && <span className="tabular-nums text-warning">↓{behind}</span>}
-          </Button>
-        </WriteGate>
+      <div className="flex flex-col gap-1.5">
+        <div className="flex gap-1.5">
+          <WriteGate gated={!admitted} className="min-w-0 flex-1">
+            <Button
+              size="xs"
+              className="h-[30px] min-w-0 w-full gap-1.5 px-2.5 text-2xs [&_svg]:size-auto"
+              onClick={onCommit}
+              disabled={!canCommit || !admitted}
+              title={commitTitle}
+            >
+              <GitCommit size={13} />
+              <span className="truncate">{commitLabel}</span>
+            </Button>
+          </WriteGate>
+          {onCommitAndPush && (
+            <WriteGate gated={!admitted} className="shrink-0">
+              <Button
+                type="button"
+                variant="secondary"
+                size="xs"
+                className="h-[30px] shrink-0 gap-1 px-2 text-2xs [&_svg]:size-auto"
+                onClick={onCommitAndPush}
+                disabled={!canCommit || !onBranch || !admitted}
+                aria-label="Commit and push"
+                title={
+                  !onBranch
+                    ? 'Not on a branch (detached HEAD)'
+                    : autoStageAll
+                      ? 'Stage all changes, commit, and push to remote in 1 click'
+                      : 'Commit staged changes and push to remote in 1 click'
+                }
+              >
+                <ArrowUp size={13} className={cn(isCommitting && isPushing && 'animate-pulse')} />
+                <span>&amp; Push</span>
+              </Button>
+            </WriteGate>
+          )}
+        </div>
+        <div className="flex gap-1.5">
+          {onPull && (
+            <WriteGate gated={!admitted} className="min-w-0 flex-1">
+              <Button
+                type="button"
+                variant="secondary"
+                size="xs"
+                className="h-[28px] w-full gap-1 px-2 text-2xs [&_svg]:size-auto"
+                onClick={onPull}
+                disabled={!canPull}
+                aria-label={behind > 0 ? `Pull ${behind}` : 'Pull'}
+                title={
+                  !onBranch
+                    ? 'Not on a branch (detached HEAD)'
+                    : behind > 0
+                      ? `Pull ${behind} commit${behind === 1 ? '' : 's'} from remote`
+                      : 'Pull latest changes from remote'
+                }
+              >
+                <ArrowDown size={13} className={cn(isPulling && 'animate-pulse')} />
+                <span>{isPulling ? 'Pulling...' : behind > 0 ? `Pull ${behind}` : 'Pull'}</span>
+              </Button>
+            </WriteGate>
+          )}
+          <WriteGate gated={!admitted} className={onPull ? 'min-w-0 flex-1' : 'shrink-0'}>
+            <Button
+              variant="secondary"
+              size="xs"
+              className={cn(
+                'h-[28px] gap-1.5 px-2.5 text-2xs [&_svg]:size-auto',
+                onPull ? 'w-full' : 'shrink-0'
+              )}
+              onClick={onPush}
+              disabled={!canPush}
+              title={
+                !onBranch
+                  ? 'Not on a branch (detached HEAD)'
+                  : !commitContext?.hasUpstream
+                    ? 'Publish this branch to origin'
+                    : ahead > 0
+                      ? 'Push commits to the remote'
+                      : 'Nothing to push — up to date with the remote'
+              }
+            >
+              <ArrowUp size={13} className={cn(isPushing && 'animate-pulse')} />
+              <span className="truncate">{isPushing ? 'Pushing...' : pushLabel}</span>
+              {!onPull && behind > 0 && (
+                <span className="tabular-nums text-warning">↓{behind}</span>
+              )}
+            </Button>
+          </WriteGate>
+        </div>
       </div>
     </div>
   )

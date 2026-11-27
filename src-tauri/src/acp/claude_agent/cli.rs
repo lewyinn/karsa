@@ -55,6 +55,25 @@ impl ClaudeRuntimeProbe for SystemClaudeRuntimeProbe {
             _ => None,
         })
     }
+
+    fn detected_profile_label(&self, config_dir: Option<&Path>) -> Option<String> {
+        let path = match config_dir {
+            Some(dir) => dir.join(".claude.json"),
+            None => crate::acp::claude_accounts::ClaudeAccountStore::host_home_dir()?
+                .join(".claude.json"),
+        };
+        let raw = std::fs::read_to_string(path).ok()?;
+        let value: serde_json::Value = serde_json::from_str(&raw).ok()?;
+        let email = value
+            .get("oauthAccount")?
+            .get("emailAddress")?
+            .as_str()?
+            .trim();
+        if email.is_empty() || !email.contains('@') {
+            return None;
+        }
+        Some(email.to_string())
+    }
 }
 
 /// A `claude <args>` command on the login-shell `PATH`, scoped to one Claude

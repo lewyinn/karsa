@@ -14,12 +14,12 @@ import { useCodexLimitProbe } from '@/components/chat/codex-account/limit-probe'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ExternalLinkConfirmHost } from '@/components/external-link/ExternalLinkConfirm'
 import { GlobalContextMenu } from '@/components/GlobalContextMenu'
+import { WorkspaceSearchHost } from '@/components/search/WorkspaceSearchHost'
 import { McpOAuthPasteDialogHost } from '@/components/settings/McpOAuthPasteDialog'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useAcpUpdateChecks } from '@/hooks/use-acp-update-checks'
 import { useAgentOverlayLoader } from '@/hooks/use-agent-overlay'
-import { useAutomationProposals } from '@/hooks/use-automation-proposals'
 import { usePreventDevToolsShortcuts } from '@/hooks/use-prevent-devtools-shortcuts'
 import { usePreventNativeContextMenu } from '@/hooks/use-prevent-native-context-menu'
 import { useWindowState } from '@/hooks/use-window-state'
@@ -132,7 +132,6 @@ function AppEffects(): null {
   useAntigravityLimitActions()
   useAntigravityLimitProbe()
   // A chat agent's proposed automation opens for review. Both roots.
-  useAutomationProposals()
   useAcpMcp()
   usePreventFileDropNavigation()
   // Suppress the native webview context menu app-wide (BUBBLE phase) so
@@ -228,6 +227,7 @@ export default function TauriApp(): React.JSX.Element {
                 dialog (spec-acp-terminal-auth) — auth can be triggered from a
                 chat panel or warm pool, not just the launcher. */}
               <BrowserAuthDialogHost />
+              <WorkspaceSearchHost />
               {/* MCP OAuth paste-back: only the web flow sets its state, so this
                 renders nothing on desktop. Mounted on both roots for parity. */}
               <McpOAuthPasteDialogHost />

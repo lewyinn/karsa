@@ -151,6 +151,12 @@ export const gitApi = {
   push: (cwd: string) =>
     isTauriContext() ? invoke<void>('git_push', { cwd }) : webServerGit.push(cwd),
 
+  pull: (cwd: string) =>
+    isTauriContext() ? invoke<string>('git_pull', { cwd }) : webServerGit.pull(cwd),
+
+  fetch: (cwd: string) =>
+    isTauriContext() ? invoke<void>('git_fetch', { cwd }) : webServerGit.fetch(cwd),
+
   getCommitContext: (cwd: string) =>
     isTauriContext()
       ? invoke<GitCommitContext>('git_get_commit_context', { cwd })

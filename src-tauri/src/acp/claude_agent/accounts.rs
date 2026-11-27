@@ -117,11 +117,19 @@ impl ClaudeAgentService {
             .iter()
             .map(|dir| self.runtime_probe.cli_authentication_status(dir.as_deref()));
         let states = futures::future::join_all(probes).await;
-        for (row, state) in snapshot.profiles.iter_mut().zip(states) {
+        for ((row, dir), state) in snapshot.profiles.iter_mut().zip(&dirs).zip(states) {
             row.signed_in = state.unwrap_or_else(|_error| {
                 log::warn!("[claude-accounts] login probe failed");
                 None
             });
+            if row.signed_in == Some(true)
+                && row.builtin
+                && row.name.eq_ignore_ascii_case("Default")
+            {
+                if let Some(label) = self.runtime_probe.detected_profile_label(dir.as_deref()) {
+                    row.name = label;
+                }
+            }
         }
         Ok(snapshot)
     }

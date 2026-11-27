@@ -79,14 +79,14 @@ pub use launch::{AgentLaunch, LaunchRecipe};
 mod import_steps;
 mod native_subagents;
 mod project_binding;
-mod reopen;
+pub(crate) mod reopen;
 mod reopen_gate;
 pub use reopen_gate::HostMove;
 mod sign_in;
 mod spawn_error;
 pub(crate) mod stderr_ring;
 mod timeouts;
-mod turn;
+pub(crate) mod turn;
 mod wire;
 mod worktree_branch;
 
@@ -246,7 +246,7 @@ pub struct ChildOrigin {
 /// Every variant that expects a result carries a `oneshot::Sender`; the driver
 /// thread fulfills it after performing the protocol exchange. All payloads are
 /// `Send`, so the awaiting command future stays `Send`.
-enum AcpCommand {
+pub(crate) enum AcpCommand {
     NewSession {
         cwd: String,
         mcp_servers: Vec<McpServer>,
@@ -449,9 +449,9 @@ pub(crate) struct StartedPrompt {
 /// method (opaque `id`/`name`/optional `description`). The renderer needs the
 /// full method metadata to present a Sign-in action and call
 /// `authenticate(methodId)` before `session/new`.
-struct InitOutcome {
-    capabilities: AgentCapabilities,
-    auth_methods: Vec<AuthMethodInfo>,
+pub(crate) struct InitOutcome {
+    pub(crate) capabilities: AgentCapabilities,
+    pub(crate) auth_methods: Vec<AuthMethodInfo>,
 }
 
 /// Authoritative spawn result returned by [`AcpManager::spawn`] and mirrored

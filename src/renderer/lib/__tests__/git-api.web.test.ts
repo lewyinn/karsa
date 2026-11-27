@@ -418,6 +418,34 @@ describe('gitApi (web vs desktop branch)', () => {
     await expectDesktopCall(() => gitApi.push(CWD), 'git_push', { cwd: CWD })
   })
 
+  // ---- pull ----
+  it('pull: web → POST /git/pull', async () => {
+    await expectWebCall(
+      () => gitApi.pull(CWD),
+      '/git/pull',
+      'POST',
+      { cwd: CWD },
+      { success: true, data: 'Already up to date.' }
+    )
+  })
+  it('pull: desktop → invoke("git_pull")', async () => {
+    await expectDesktopCall(() => gitApi.pull(CWD), 'git_pull', { cwd: CWD })
+  })
+
+  // ---- fetch ----
+  it('fetch: web → POST /git/fetch', async () => {
+    await expectWebCall(
+      () => gitApi.fetch(CWD),
+      '/git/fetch',
+      'POST',
+      { cwd: CWD },
+      { success: true }
+    )
+  })
+  it('fetch: desktop → invoke("git_fetch")', async () => {
+    await expectDesktopCall(() => gitApi.fetch(CWD), 'git_fetch', { cwd: CWD })
+  })
+
   // ---- getCommitContext ----
   it('getCommitContext: web → POST /git/commit-context', async () => {
     await expectWebCall(

@@ -2,6 +2,7 @@ import type { ShellInfo } from '@shared/types/ipc.types'
 import { type ReactNode, useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
 import { ResizeEdges } from '@/components/ResizeEdges'
+import { RestartToUpdatePill } from '@/components/shell/RestartToUpdatePill'
 import { ShellRail } from '@/components/shell/ShellRail'
 import { SidePanelColumn } from '@/components/shell/SidePanelColumn'
 import { WindowControls } from '@/components/shell/TopRowChrome'
@@ -196,6 +197,12 @@ export function ShellFrame({
               sshOpen={ssh.workspaceOpen}
               onNewTerminal={handleNewTerminal}
               onNewBrowserTab={handleNewBrowserTab}
+            />
+
+            <RestartToUpdatePill
+              className={
+                platform.windowControls ? 'absolute top-0 right-[128px]' : 'absolute top-0 right-3'
+              }
             />
 
             {/* Windows/Linux: the window controls in the top-right corner,

@@ -6,8 +6,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { subscribeAntigravityAccountList } from '@/lib/antigravity-account-list'
 import { antigravityLaunchConfig } from '@/lib/antigravity-account-sign-in'
 import { antigravityAccountsApi } from '@/lib/antigravity-accounts-api'
+import { useUsageHistoryStore } from '@/stores/usage-history-store'
 
-export const ANTIGRAVITY_USAGE_POLL_MS = 5 * 60 * 1000
+export const ANTIGRAVITY_USAGE_POLL_MS = 60 * 1000
+const TURN_USAGE_REFRESH_DEBOUNCE_MS = 3_000
 
 export interface AntigravityAccountsState {
   snapshot: AntigravityAccountsSnapshot | null
@@ -107,9 +109,19 @@ export function useAntigravityAccounts(
     }
     void refreshUsage(false)
     const timer = setInterval(() => void refreshUsage(false), ANTIGRAVITY_USAGE_POLL_MS)
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null
+    let prevSessions = useUsageHistoryStore.getState().sessions
+    const unsubscribeUsage = useUsageHistoryStore.subscribe((state) => {
+      if (state.sessions === prevSessions) return
+      prevSessions = state.sessions
+      if (debounceTimer) clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(() => void refreshUsage(false), TURN_USAGE_REFRESH_DEBOUNCE_MS)
+    })
     return () => {
       mounted.current = false
       unsubscribeList()
+      unsubscribeUsage()
+      if (debounceTimer) clearTimeout(debounceTimer)
       clearInterval(timer)
     }
   }, [reload, refreshUsage, withUsage, enabled])

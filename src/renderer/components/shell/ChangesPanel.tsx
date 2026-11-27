@@ -16,6 +16,9 @@ import { SidePanelHeader } from '@/components/shell/SidePanelHeader'
 import { useGitStatusStore } from '@/stores/git-status-store'
 import { useWorkspaceActions } from '@/stores/workspace-store/selectors'
 
+const AUTO_GIT_FETCH_MS = 5 * 60 * 1000
+const lastAutoFetchByRepo = new Map<string, number>()
+
 interface ChangesPanelProps {
   /** Working copy the panel shows; the caller resolves it. */
   cwd: string
@@ -40,6 +43,25 @@ export function ChangesPanel({
   onSelectRepo,
   isVisible
 }: ChangesPanelProps): React.JSX.Element {
+  // Periodic silent `git fetch` every 5 minutes so `↓N` behind badges on Pull
+  // update automatically when new commits arrive on GitHub.
+  useEffect(() => {
+    if (!isVisible || !cwd) return
+    const runFetch = (): void => {
+      const now = Date.now()
+      const last = lastAutoFetchByRepo.get(cwd) ?? 0
+      if (now - last < AUTO_GIT_FETCH_MS - 1_000) return
+      lastAutoFetchByRepo.set(cwd, now)
+      void useGitStatusStore
+        .getState()
+        .fetchRemote(cwd)
+        .catch(() => {})
+    }
+    runFetch()
+    const timer = setInterval(runFetch, AUTO_GIT_FETCH_MS)
+    return () => clearInterval(timer)
+  }, [isVisible, cwd])
+
   const { addDiffTab } = useWorkspaceActions()
 
   // Keep change counts fresh for sibling repos in the switcher dropdown.
@@ -75,6 +97,7 @@ export function ChangesPanel({
   } = useGitSelection()
 
   const actions = useGitActions({ cwd, setSelectedStaged, clearSelection })
+
   const {
     isMutating,
     setIsCreateBranchOpen,
@@ -87,6 +110,7 @@ export function ChangesPanel({
     isCommitting,
     isGenerating,
     isPushing,
+    isPulling,
     hasUncommittedChanges,
     commitContext,
     stagedCount,
@@ -99,7 +123,9 @@ export function ChangesPanel({
     handleToggleAmend,
     handleGenerateMessage,
     handleCommit,
+    handleCommitAndPush,
     handlePush,
+    handlePull,
     handleSwitchBranch,
     handleApplyStash,
     handlePopStash,
@@ -163,6 +189,7 @@ export function ChangesPanel({
           isCommitting={isCommitting}
           isGenerating={isGenerating}
           isPushing={isPushing}
+          isPulling={isPulling}
           commitContext={commitContext}
           stagedCount={stagedCount}
           hasUncommittedChanges={hasUncommittedChanges}
@@ -171,7 +198,9 @@ export function ChangesPanel({
           canCommit={canCommit}
           onGenerateMessage={handleGenerateMessage}
           onCommit={handleCommit}
+          onCommitAndPush={handleCommitAndPush}
           onPush={handlePush}
+          onPull={handlePull}
         />
 
         <div className="px-2 pt-2 pb-0.5">

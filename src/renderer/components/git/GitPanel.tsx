@@ -80,6 +80,7 @@ export function GitPanel({ cwd, isVisible }: GitPanelProps) {
     isCommitting,
     isGenerating,
     isPushing,
+    isPulling,
     hasUncommittedChanges,
     commitContext,
     stagedCount,
@@ -94,7 +95,9 @@ export function GitPanel({ cwd, isVisible }: GitPanelProps) {
     handleToggleAmend,
     handleGenerateMessage,
     handleCommit,
+    handleCommitAndPush,
     handlePush,
+    handlePull,
     handleSwitchBranch,
     handleApplyStash,
     handlePopStash,
@@ -171,6 +174,7 @@ export function GitPanel({ cwd, isVisible }: GitPanelProps) {
             isCommitting={isCommitting}
             isGenerating={isGenerating}
             isPushing={isPushing}
+            isPulling={isPulling}
             commitContext={commitContext}
             stagedCount={stagedCount}
             hasUncommittedChanges={hasUncommittedChanges}
@@ -179,7 +183,9 @@ export function GitPanel({ cwd, isVisible }: GitPanelProps) {
             canCommit={canCommit}
             onGenerateMessage={handleGenerateMessage}
             onCommit={handleCommit}
+            onCommitAndPush={handleCommitAndPush}
             onPush={handlePush}
+            onPull={handlePull}
           />
         </div>
       )}

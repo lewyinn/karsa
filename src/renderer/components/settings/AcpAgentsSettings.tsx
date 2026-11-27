@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { CustomAcpAgentDialog, exportAgentConfig } from '@/components/agents/CustomAcpAgentDialog'
+import { CustomApiDialog } from '@/components/agents/CustomApiDialog'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
-import { Clipboard, Plus, RefreshCw } from '@/components/icons'
+import { Clipboard, Edit, Plug, Plus, RefreshCw } from '@/components/icons'
 import { SettingsFilter } from '@/components/settings/SettingsFilter'
 import {
   SETTINGS_CARD_CLASS,
@@ -16,6 +17,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { useAcpRegistryCatalog } from '@/hooks/use-acp-registry-catalog'
 import { useProviderSignIn } from '@/hooks/use-provider-sign-in'
 import { useSupportedAcpAgentCatalog } from '@/hooks/use-resolved-supported-acp-agents'
+import type { StoredAgentConfig } from '@/lib/acp-agents-persistence'
 import { agentPolicy } from '@/lib/agents/acp-registry'
 import { useAgentIconCatalog } from '@/lib/agents/agent-icon-catalog'
 import {
@@ -36,6 +38,7 @@ import {
   type SupportedAcpAgentEntry
 } from '@/lib/agents/supported-acp-agents'
 import { dialogApi } from '@/lib/api'
+import { customApi, isCustomApiAgentConfig } from '@/lib/custom-api'
 import { logFrontendError } from '@/lib/log-api'
 import { cn } from '@/lib/utils'
 import { useAcpStore, useConfigWarmState } from '@/stores/acp-store'
@@ -196,6 +199,7 @@ interface AgentRowProps {
   /** No drift for this agent after a completed check (spawn version matches). */
   latest?: boolean
   onUpdate: (entry: SupportedAcpAgentEntry, update: AgentUpdate) => void
+  onEditApi: (config: StoredAgentConfig) => void
   onInstalled: () => void
 }
 
@@ -205,6 +209,7 @@ function AgentRow({
   update,
   latest,
   onUpdate,
+  onEditApi,
   onInstalled
 }: AgentRowProps): React.JSX.Element {
   const warmState = useConfigWarmState(entry.configId)
@@ -216,6 +221,7 @@ function AgentRow({
   const iconEntry = useMemo(() => catalog.byKey(`acp:${entry.agent.id}`), [catalog, entry.agent.id])
   // Prefer a persisted custom icon (bundled or uploaded) over the catalog.
   const customIcon = entry.config?.icon
+  const isCustomApi = isCustomApiAgentConfig(entry.config)
   const onDemand = isOnDemandRuntimeAgent(entry)
 
   const status: { label: string; tone: StatusTone; pending?: boolean } = installing
@@ -227,11 +233,13 @@ function AgentRow({
         : warmState.connected
           ? { label: 'Warm', tone: 'success' }
           : entry.status === 'ready'
-            ? signIn === 'signed-out'
-              ? { label: 'Needs sign-in', tone: 'warning' }
-              : onDemand
-                ? { label: `Ready via ${entry.runtimeLauncher}`, tone: 'muted' }
-                : { label: 'Installed', tone: 'success' }
+            ? isCustomApi
+              ? { label: 'API ready', tone: 'success' }
+              : signIn === 'signed-out'
+                ? { label: 'Needs sign-in', tone: 'warning' }
+                : onDemand
+                  ? { label: `Ready via ${entry.runtimeLauncher}`, tone: 'muted' }
+                  : { label: 'Installed', tone: 'success' }
             : entry.status === 'install-required'
               ? { label: 'Needs install', tone: 'warning' }
               : entry.status === 'needs-runtime'
@@ -295,6 +303,10 @@ function AgentRow({
     if (!entry.config) return
     setRemoving(true)
     try {
+      if (isCustomApi) {
+        const cid = entry.config.configId ?? entry.config.id
+        await customApi.deleteApiKey(cid).catch(() => {})
+      }
       // Delete by the persisted record's `id`, same as the path editor's clear.
       await deleteAgentConfig(entry.config.id)
       toast.success(`${entry.agent.name} removed`)
@@ -313,6 +325,8 @@ function AgentRow({
           <InlineIcon svg={customIcon} />
         ) : iconEntry ? (
           <InlineIcon svg={iconEntry.svg} />
+        ) : isCustomApi ? (
+          <Plug size={14} className="text-foreground/80" />
         ) : (
           <span className="text-xs font-semibold uppercase text-muted-foreground">
             {entry.agent.name.charAt(0)}
@@ -418,6 +432,7 @@ function AgentRow({
         )}
         {entry.status === 'ready' &&
           entry.config &&
+          !isCustomApi &&
           entry.config.command !== 'npx' &&
           entry.config.command !== 'uvx' && <AgentPathEditor entry={entry} />}
         {entry.status === 'manual-install' && entry.manualInstall && (
@@ -428,10 +443,22 @@ function AgentRow({
         )}
         {isCustomAgentEntry(entry) && entry.config && (
           <div className="mt-1.5 flex items-center gap-1">
-            <Button type="button" size="sm" variant="ghost" onClick={() => void handleCopyJson()}>
-              <Clipboard size={13} className="mr-1.5" />
-              Copy JSON
-            </Button>
+            {isCustomApi ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => entry.config && onEditApi(entry.config)}
+              >
+                <Edit size={13} className="mr-1.5" />
+                Edit API
+              </Button>
+            ) : (
+              <Button type="button" size="sm" variant="ghost" onClick={() => void handleCopyJson()}>
+                <Clipboard size={13} className="mr-1.5" />
+                Copy JSON
+              </Button>
+            )}
             <Button
               type="button"
               size="sm"
@@ -466,6 +493,8 @@ function AgentRow({
 export function AcpAgentsSettings(): React.JSX.Element {
   const [filter, setFilter] = useState('')
   const [customDialogOpen, setCustomDialogOpen] = useState(false)
+  const [apiDialogOpen, setApiDialogOpen] = useState(false)
+  const [editingApi, setEditingApi] = useState<StoredAgentConfig | null>(null)
   const {
     usingRemoteRegistry,
     remoteAvailable,
@@ -585,6 +614,18 @@ export function AcpAgentsSettings(): React.JSX.Element {
           <Button
             type="button"
             size="xs"
+            variant="default"
+            onClick={() => {
+              setEditingApi(null)
+              setApiDialogOpen(true)
+            }}
+          >
+            <Plug size={12} />
+            Add API
+          </Button>
+          <Button
+            type="button"
+            size="xs"
             variant="secondary"
             onClick={() => setCustomDialogOpen(true)}
           >
@@ -618,6 +659,10 @@ export function AcpAgentsSettings(): React.JSX.Element {
               update={updateByConfigId.get(entry.configId)}
               latest={latestConfigIds.has(entry.configId)}
               onUpdate={handleAgentUpdate}
+              onEditApi={(cfg) => {
+                setEditingApi(cfg)
+                setApiDialogOpen(true)
+              }}
               onInstalled={() => {
                 recheck()
                 void signIn.reload()
@@ -627,6 +672,14 @@ export function AcpAgentsSettings(): React.JSX.Element {
         </SettingsCard>
       )}
 
+      <CustomApiDialog
+        open={apiDialogOpen}
+        onOpenChange={(next) => {
+          setApiDialogOpen(next)
+          if (!next) setEditingApi(null)
+        }}
+        editing={editingApi}
+      />
       <CustomAcpAgentDialog open={customDialogOpen} onOpenChange={setCustomDialogOpen} />
     </SettingsGroup>
   )

@@ -1,11 +1,13 @@
 import { useCallback, useMemo, useState } from 'react'
-import { ChevronRight, Code2, Columns2, Eye, PanelRight, Save } from '@/components/icons'
+import { ChevronRight, Code2, Columns2, Eye, PanelRight, Save, Sparkles } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import { FOCUS_RING_CLASS, SEGMENTED_TRACK_CLASS, segmentClass } from '@/components/ui/panel-styles'
 import { useMobileWebShell } from '@/hooks/use-mobile-web-shell'
 import { type EditorViewMode, textPreviewForPath, viewModesForPath } from '@/lib/editor-file-kind'
 import { requestSaveEditorFile } from '@/lib/editor-save'
+import { EDITOR_SEND_SELECTION_EVENT } from '@/lib/send-selection-to-chat'
 import { cn } from '@/lib/utils'
+import { useAppSettingsStore, useEditorAutoSave } from '@/stores/app-settings-store'
 import { useEditorStore } from '@/stores/editor-store'
 import { useTocIsVisible, useTocSettingsStore } from '@/stores/toc-settings-store'
 import { formatDocumentStats, getDocumentStats } from './outline/document-stats'
@@ -57,6 +59,20 @@ export function EditorToolbar({
   const isDirty = Boolean(fileState?.isDirty)
   const isSaving = fileState?.operationStatus === 'saving'
   const [saveTapped, setSaveTapped] = useState(false)
+  const autoSave = useEditorAutoSave()
+  const updateSetting = useAppSettingsStore((state) => state.updateSetting)
+
+  const handleToggleAutoSave = useCallback(() => {
+    void updateSetting('editorAutoSave', !autoSave)
+  }, [autoSave, updateSetting])
+
+  const handleAskAi = useCallback(() => {
+    window.dispatchEvent(
+      new CustomEvent<{ filePath: string }>(EDITOR_SEND_SELECTION_EVENT, {
+        detail: { filePath }
+      })
+    )
+  }, [filePath])
 
   const isMarkdown = textPreviewForPath(filePath) === 'markdown'
   const content = isMarkdown && fileState?.kind === 'text' ? fileState.content : undefined
@@ -109,6 +125,52 @@ export function EditorToolbar({
       </div>
 
       <div className="flex shrink-0 items-center gap-1.5">
+        {!isMobileWebShell && (
+          <>
+            <button
+              type="button"
+              onClick={handleAskAi}
+              title="Send selection to AI Chat (Ctrl+L)"
+              aria-label="Ask AI about selection"
+              className={cn(
+                'inline-flex h-6 items-center gap-1 rounded-md border border-border/60 bg-muted/30 px-2 text-3xs font-medium text-secondary-foreground transition-colors hover:bg-muted/70 hover:text-foreground',
+                FOCUS_RING_CLASS
+              )}
+            >
+              <Sparkles size={11} aria-hidden="true" />
+              <span>Ask AI</span>
+              <span className="font-mono text-4xs text-muted-foreground">Ctrl+L</span>
+            </button>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={autoSave}
+              onClick={handleToggleAutoSave}
+              title={
+                autoSave
+                  ? 'Auto-save is ON (click to turn off)'
+                  : 'Auto-save is OFF (click to turn on)'
+              }
+              className={cn(
+                'inline-flex h-6 items-center gap-1.5 rounded-md px-2 text-3xs font-medium transition-colors',
+                FOCUS_RING_CLASS,
+                autoSave
+                  ? 'bg-success/10 text-success hover:bg-success/15'
+                  : 'bg-muted/30 text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+              )}
+            >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'size-1.5 rounded-full',
+                  autoSave ? 'bg-success' : 'bg-muted-foreground/50'
+                )}
+              />
+              <span>Auto-save</span>
+            </button>
+          </>
+        )}
+
         <div
           role="radiogroup"
           aria-label="View mode"

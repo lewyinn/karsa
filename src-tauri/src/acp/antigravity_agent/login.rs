@@ -150,6 +150,25 @@ impl AntigravityLoginStatus for SystemAntigravityLoginProbe {
             Ok(())
         }
     }
+
+    fn detected_profile_label(&self, home: Option<&Path>) -> Option<String> {
+        let dir = home
+            .map(Path::to_path_buf)
+            .or_else(AntigravityAccountStore::host_shared_dir)?;
+        read_google_active_label(&dir)
+    }
+}
+
+/// Read the active Google email from `<home>/google_accounts.json` (`active`
+/// field only — never reads or logs tokens).
+pub(crate) fn read_google_active_label(home: &Path) -> Option<String> {
+    let raw = std::fs::read_to_string(home.join("google_accounts.json")).ok()?;
+    let value: serde_json::Value = serde_json::from_str(&raw).ok()?;
+    let active = value.get("active")?.as_str()?.trim();
+    if active.is_empty() || !active.contains('@') {
+        return None;
+    }
+    Some(active.to_string())
 }
 
 #[cfg(test)]

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { RotateCcw } from '@/components/icons'
 import { AnimatedMenuContent } from '@/components/ui/animated-menu-content'
 import { Popover, PopoverTrigger } from '@/components/ui/popover'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
@@ -26,6 +27,10 @@ interface ContextUsageIndicatorProps {
   className?: string
   /** Sends `/compact`. Pass it only when the agent lists a `compact` command. */
   onCompact?: () => void
+  /** Resets conversation context in-place (`/clear` or fresh session in the same tab). */
+  onResetContext?: () => void | Promise<void>
+  /** True while a context reset is in progress. */
+  resetting?: boolean
   /** Session state the Compact button watches so its pending state never sticks. */
   compactSignals?: Omit<CompactSignals, 'usageUpdatedAt'>
 }
@@ -71,6 +76,8 @@ export function ContextUsageDetails({
   showHeading = true,
   warning,
   onCompact,
+  onResetContext,
+  resetting = false,
   compactPhase = 'idle',
   compactDisabled = false
 }: {
@@ -78,6 +85,8 @@ export function ContextUsageDetails({
   showHeading?: boolean
   warning?: boolean
   onCompact?: () => void
+  onResetContext?: () => void
+  resetting?: boolean
   compactPhase?: CompactPhase
   compactDisabled?: boolean
 }): React.JSX.Element {
@@ -156,22 +165,40 @@ export function ContextUsageDetails({
           </div>
         </dl>
       </div>
-      {onCompact && (
-        <button
-          type="button"
-          onClick={onCompact}
-          style={stagger(3)}
-          disabled={pending || compactDisabled}
-          aria-busy={pending || undefined}
-          className={cn(
-            'inline-flex h-7 w-full items-center justify-center rounded-md border border-border/60 text-xs font-medium text-foreground transition-colors duration-150',
-            'hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-            'disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none',
-            STAGGER_ITEM
+      {(onCompact || onResetContext) && (
+        <div className={cn('flex items-center gap-1.5', STAGGER_ITEM)} style={stagger(3)}>
+          {onCompact && (
+            <button
+              type="button"
+              onClick={onCompact}
+              disabled={pending || resetting || compactDisabled}
+              aria-busy={pending || undefined}
+              className={cn(
+                'inline-flex h-7 flex-1 items-center justify-center rounded-md border border-border/60 text-xs font-medium text-foreground transition-colors duration-150',
+                'hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                'disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none'
+              )}
+            >
+              {pending ? 'Compacting…' : 'Compact'}
+            </button>
           )}
-        >
-          {pending ? 'Compacting…' : 'Compact'}
-        </button>
+          {onResetContext && (
+            <button
+              type="button"
+              onClick={onResetContext}
+              disabled={pending || resetting || compactDisabled}
+              aria-busy={resetting || undefined}
+              className={cn(
+                'inline-flex h-7 flex-1 items-center justify-center gap-1.5 rounded-md border border-border/60 px-2 text-xs font-medium text-foreground transition-colors duration-150',
+                'hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                'disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none'
+              )}
+            >
+              <RotateCcw size={12} className={cn(resetting && 'animate-spin')} />
+              {resetting ? 'Resetting…' : 'Reset context'}
+            </button>
+          )}
+        </div>
       )}
       {isMeaningfulReportedCost(usage.cost) && usage.cost && (
         <div
@@ -221,6 +248,8 @@ export function ContextUsageIndicator({
   messages,
   className,
   onCompact,
+  onResetContext,
+  resetting = false,
   compactSignals = IDLE_SIGNALS
 }: ContextUsageIndicatorProps): React.JSX.Element | null {
   // Every hook runs before the early return below so the hook order never
@@ -230,7 +259,10 @@ export function ContextUsageIndicator({
   const [cardOpen, setCardOpen] = useState(false)
   const closeSheet = useCallback(() => setSheetOpen(false), [])
   const visible = shouldShowSessionUsage(usage, messages)
-  const ringRendered = Boolean(visible && isDisplayableSessionUsage(visible))
+  const hasUsage = Boolean(visible && isDisplayableSessionUsage(visible))
+  const hasUserMessage = messages.some((m) => m.role === 'user')
+  const showFallbackReset = !hasUsage && Boolean(onResetContext) && hasUserMessage
+  const ringRendered = hasUsage || showFallbackReset
   // The sheet only exists on the mobile shell, so only a mobile sheet registers.
   useOverlayRegistration('context-details-sheet', isMobile && sheetOpen && ringRendered, closeSheet)
   // A hidden ring, or a shell flip to desktop (the `Sheet` unmounts), must not
@@ -247,7 +279,88 @@ export function ContextUsageIndicator({
     visible && isDisplayableSessionUsage(visible) ? displayedUsagePercent(visible) : 0
   )
 
-  if (!visible || !isDisplayableSessionUsage(visible)) return null
+  const handleReset = useCallback(() => {
+    if (!onResetContext) return
+    setCardOpen(false)
+    setSheetOpen(false)
+    void onResetContext()
+  }, [onResetContext])
+
+  if (!ringRendered) return null
+
+  const actionsDisabled = compactSignals.activeTurn || !compactSignals.connected
+
+  if (!hasUsage || !visible) {
+    const fallbackTrigger = (
+      <button
+        type="button"
+        aria-label="Context options"
+        className={cn(
+          'relative inline-flex h-7 shrink-0 items-center gap-1 rounded-md px-1.5 text-2xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+          className
+        )}
+      >
+        <RotateCcw size={13} className={cn(resetting && 'animate-spin')} />
+        {!isMobile && <span>Context</span>}
+      </button>
+    )
+    const fallbackBody = (
+      <div className="space-y-2.5">
+        <p className="font-medium text-foreground">Context window</p>
+        <p className="text-muted-foreground">
+          Token usage has not been reported by this agent yet. You can still reset context to start
+          fresh in this tab.
+        </p>
+        <div className="flex items-center gap-1.5">
+          {onCompact && (
+            <button
+              type="button"
+              onClick={compact.request}
+              disabled={compact.phase === 'pending' || resetting || actionsDisabled}
+              className="inline-flex h-7 flex-1 items-center justify-center rounded-md border border-border/60 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {compact.phase === 'pending' ? 'Compacting…' : 'Compact'}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleReset}
+            disabled={compact.phase === 'pending' || resetting || actionsDisabled}
+            className="inline-flex h-7 flex-1 items-center justify-center gap-1.5 rounded-md border border-border/60 px-2 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RotateCcw size={12} className={cn(resetting && 'animate-spin')} />
+            {resetting ? 'Resetting…' : 'Reset context'}
+          </button>
+        </div>
+      </div>
+    )
+    if (isMobile) {
+      return (
+        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+          <SheetTrigger asChild>{fallbackTrigger}</SheetTrigger>
+          <SheetContent
+            side="bottom"
+            aria-describedby={undefined}
+            className="flex max-h-[85dvh] flex-col gap-0 overflow-y-auto overscroll-contain p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+          >
+            <SheetHeader className="space-y-0 px-2 py-2 pr-10 text-left">
+              <SheetTitle className="text-base">Context window</SheetTitle>
+            </SheetHeader>
+            <div className="space-y-2.5 px-2 pb-2 text-sm">{fallbackBody}</div>
+          </SheetContent>
+        </Sheet>
+      )
+    }
+    return (
+      <Popover open={cardOpen} onOpenChange={setCardOpen}>
+        <PopoverTrigger asChild>{fallbackTrigger}</PopoverTrigger>
+        <AnimatedMenuContent open={cardOpen} align="start" className="w-60 space-y-2.5 p-3 text-xs">
+          {fallbackBody}
+        </AnimatedMenuContent>
+      </Popover>
+    )
+  }
 
   const percent = displayedUsagePercent(visible)
   const offset = CIRCUMFERENCE * (1 - percent / 100)
@@ -257,8 +370,10 @@ export function ContextUsageIndicator({
       showHeading={showHeading}
       warning={warning}
       onCompact={onCompact ? compact.request : undefined}
+      onResetContext={onResetContext ? handleReset : undefined}
+      resetting={resetting}
       compactPhase={compact.phase}
-      compactDisabled={compactSignals.activeTurn || !compactSignals.connected}
+      compactDisabled={actionsDisabled}
     />
   )
 
@@ -270,7 +385,8 @@ export function ContextUsageIndicator({
       )} of ${formatTokenCount(visible.size)} tokens${warning ? ', nearing the limit' : ''}`}
       data-warning={warning || undefined}
       className={cn(
-        'relative inline-flex size-8 shrink-0 items-center justify-center transition-[color,transform] ease-out motion-reduce:transition-none',
+        'relative inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-md transition-[color,transform] ease-out motion-reduce:transition-none',
+        isMobile ? 'w-8' : 'px-1.5',
         warning ? 'text-warning' : 'text-muted-foreground hover:text-foreground',
         // 32px ring, 44px hit area on every side; a mouse on a wide pane keeps
         // the tighter desktop pad.
@@ -309,6 +425,11 @@ export function ContextUsageIndicator({
           className={FILL_TRANSITION}
         />
       </svg>
+      {!isMobile && (
+        <span aria-hidden="true" className="text-2xs font-medium tabular-nums leading-none">
+          {Math.round(percent)}%
+        </span>
+      )}
     </button>
   )
 
@@ -334,7 +455,7 @@ export function ContextUsageIndicator({
     <Popover open={cardOpen} onOpenChange={setCardOpen}>
       <PopoverTrigger asChild>{ring}</PopoverTrigger>
       {/* Transition, not keyframes: a close stopped halfway reverses smoothly. */}
-      <AnimatedMenuContent open={cardOpen} align="start" className="w-56 space-y-2.5 p-3 text-xs">
+      <AnimatedMenuContent open={cardOpen} align="start" className="w-60 space-y-2.5 p-3 text-xs">
         {details(true)}
       </AnimatedMenuContent>
     </Popover>

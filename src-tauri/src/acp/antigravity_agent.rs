@@ -140,6 +140,12 @@ pub(crate) trait AntigravityLoginStatus: Send + Sync {
     async fn logout(&self, _home: Option<&Path>) -> Result<(), String> {
         Ok(())
     }
+
+    /// Best-effort display label (email address) read from non-secret local
+    /// profile metadata (e.g. `google_accounts.json`). Test probes return `None`.
+    fn detected_profile_label(&self, _home: Option<&Path>) -> Option<String> {
+        None
+    }
 }
 
 mod login;

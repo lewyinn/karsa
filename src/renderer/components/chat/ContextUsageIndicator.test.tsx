@@ -367,4 +367,30 @@ describe('ContextUsageIndicator warning and Compact', () => {
       vi.useRealTimers()
     }
   })
+
+  it('shows the percentage label on desktop and triggers Reset context', () => {
+    const onResetContext = vi.fn()
+    render(
+      <ContextUsageIndicator
+        usage={usage()}
+        messages={MESSAGES}
+        onCompact={vi.fn()}
+        onResetContext={onResetContext}
+      />
+    )
+    expect(ring()).toHaveTextContent('25%')
+    fireEvent.click(ring())
+    fireEvent.click(screen.getByRole('button', { name: 'Reset context' }))
+    expect(onResetContext).toHaveBeenCalledTimes(1)
+  })
+
+  it('exposes Reset context even when token usage has not been reported yet', () => {
+    const onResetContext = vi.fn()
+    render(
+      <ContextUsageIndicator usage={null} messages={MESSAGES} onResetContext={onResetContext} />
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Context options' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Reset context' }))
+    expect(onResetContext).toHaveBeenCalledTimes(1)
+  })
 })

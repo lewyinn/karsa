@@ -56,24 +56,6 @@ jobs:
       - name: Fetch and verify Figcraft canvas bundle
         run: node scripts/canvas/fetch-figcraft-bundle.mjs
 
-      - name: Build Karsa Windows installer
-        run: bun run build:tauri:win
-
-      - name: Collect installer files
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path release-artifacts | Out-Null
-          Get-ChildItem -Path "src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe" -ErrorAction SilentlyContinue | Copy-Item -Destination release-artifacts/
-          Get-ChildItem -Path "src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi" -ErrorAction SilentlyContinue | Copy-Item -Destination release-artifacts/
-          Get-ChildItem release-artifacts/
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: karsa-windows-x64
-          path: release-artifacts/*
-          if-no-files-found: error
-
       - name: Determine release tag
         id: tag
         shell: pwsh
@@ -85,6 +67,52 @@ jobs:
             $tag = "${{ inputs.release_tag }}"
           }
           "value=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Build Karsa Windows installer
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: bun run build:tauri:win
+
+      - name: Collect installer files & generate updater latest.json
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path release-artifacts | Out-Null
+          Get-ChildItem -Path "src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe" -ErrorAction SilentlyContinue | Copy-Item -Destination release-artifacts/
+          Get-ChildItem -Path "src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.sig" -ErrorAction SilentlyContinue | Copy-Item -Destination release-artifacts/
+          Get-ChildItem -Path "src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi" -ErrorAction SilentlyContinue | Copy-Item -Destination release-artifacts/
+
+          $tag = "${{ steps.tag.outputs.value }}"
+          $exe = Get-ChildItem -Path "release-artifacts/*.exe" | Select-Object -First 1
+          $sig = Get-ChildItem -Path "release-artifacts/*.exe.sig" | Select-Object -First 1
+          if ($tag -and $exe -and $sig) {
+            $version = $tag.TrimStart('v')
+            $signature = (Get-Content -Raw -Path $sig.FullName).Trim()
+            $encodedExe = [System.Uri]::EscapeDataString($exe.Name)
+            $manifest = [ordered]@{
+              version   = $version
+              notes     = "Karsa $tag"
+              pub_date  = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+              platforms = [ordered]@{
+                "windows-x86_64" = [ordered]@{
+                  signature = $signature
+                  url       = "https://github.com/lewyinn/karsa/releases/download/$tag/$encodedExe"
+                }
+              }
+            }
+            $manifest | ConvertTo-Json -Depth 5 | Set-Content -Path "release-artifacts/latest.json" -Encoding UTF8
+            Write-Output "Generated latest.json for $tag -> $($exe.Name)"
+          } else {
+            Write-Warning "Skipping latest.json generation (tag='$tag', exe='$($exe.Name)', sig='$($sig.Name)')"
+          }
+          Get-ChildItem release-artifacts/
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: karsa-windows-x64
+          path: release-artifacts/*
+          if-no-files-found: error
 
       - name: Publish GitHub Release (Initial v0.1.0)
         if: steps.tag.outputs.value == 'v0.1.0'
@@ -100,16 +128,16 @@ jobs:
 
             ### Added & Customized
             - **Multi-Repo Workspace Support** (`frontend` + `backend` in 1 project) with synced Repo Switcher across Changes & GitHub
-            - **GitHub Power-Ups:** `All repos` merged view, `+ New issue`, `+ New PR` (with AI draft), `Start Branch` from Issue, and Issue `Development` tracker (branches, commits, linked PRs, & post progress)
-            - **Inline `N files changed` Card in Chat** with downward inline diff dropdown, multi-repo pills, and per-file Stage/Unstage & Revert
-            - **Upgraded AI Commit Message Generator** (Conventional Commits, unstaged fallback, auto-skip lockfiles)
-            - **One-Click `Run Stack`** multi-service runner with localhost URL detection & `Fix in Chat`
-            - **Share-Screen-Safe `.env` Quick Manager** (masked by default + `.env.example` missing-key sync)
-            - **AI Usage & Quota Dashboard** (live Claude/Antigravity quotas, live OpenRouter model pricing, daily charts, Sessions & Projects breakdown)
-            - Curated ACP catalog (**Claude Code** & **Antigravity**), unified Accounts/Runtime banner, 10s toast duration, collapsible Git sections
+            - **GitHub & Git Power-Ups:** `All repos` merged view, `+ New issue`, `+ New PR` (with AI draft), `Start Branch` from Issue, Issue `Development` tracker, 1-click **Pull**, **Auto `git fetch` every 5 min**, 1-click **Auto-Stage Commit**, and 1-click **Commit & Push**
+            - **Custom 3rd-Party HTTP API Connections:** Connect any API endpoint with your own name, endpoint URL, OS-keychain API key, protocol (`OpenAI Compatible`, `Anthropic Messages`, `Google Gemini`), models, custom headers, streaming SSE, and workspace coding tools
+            - **Context Window & 1-Click Reset Context:** Visible context `%` readout in chat composer + 1-click **Compact** & **Reset context** in the same tab
+            - **Editor & Workspace Productivity:** Auto-Save ON by default + quick toggle, **Ask AI (`Ctrl+L`)** selection to chat, **Quick File Open (`Ctrl+P`)** & **Global Search (`Ctrl+Shift+F`)** across multi-repo workspaces, collapsible inline diff cards in chat
+            - **One-Click `Run Stack`** multi-service runner with localhost URL detection & `Fix in Chat`, plus **Share-Screen-Safe `.env` Quick Manager**
+            - **Redesigned AI Usage & Limits Dashboard:** Realtime `Limits` (`% left` + hatched track + pace line + reset pills), multi-provider `Tokens` & `Cost` smooth charts, 100% real Totals, ranked Breakdown (`Model | Day | Project`), and account email auto-labeling
+            - **Built-in Signed Auto-Updater:** Silent background download from `lewyinn/karsa` Releases with 1-click **`Restart to Update →`** pill in the top bar
 
             ### Removed
-            - Remote Server / Mobile Companion (`troupe-server`, `apps/rune`), Tauri auto-updater, Codex & Gemini CLI, Workspace Snapshots, upstream Report a bug links, and legacy upstream workflows
+            - Automations, Remote Server / Mobile Companion (`troupe-server`, `apps/rune`), Codex & Gemini CLI, Workspace Snapshots, upstream Report a bug links, and legacy upstream workflows
           files: release-artifacts/*
 
       - name: Publish GitHub Release

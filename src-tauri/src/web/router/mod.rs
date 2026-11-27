@@ -25,6 +25,7 @@ use crate::trackers::{CwdTracker, ExitCodeTracker, GitTracker, TerminalEventHub}
 use crate::web::catalog_api;
 use crate::web::mcp_catalog_api;
 use crate::web::connection_runtime::ConnectionRuntime;
+use crate::web::custom_api;
 use crate::web::diagnostics_api;
 use crate::web::fs_api;
 use crate::web::git_api;
@@ -222,6 +223,11 @@ pub fn router(
             "/projects/{projectId}",
             put(projects_api::update_project).delete(projects_api::remove_project),
         )
+        // Custom third-party HTTP API connections (desktop + web parity).
+        .route("/api-connections/key", post(custom_api::save_key))
+        .route("/api-connections/has-key", post(custom_api::has_key))
+        .route("/api-connections/delete-key", post(custom_api::delete_key))
+        .route("/api-connections/test", post(custom_api::test_connection))
         // On-demand MCP client probe (web parity): runs on the termul-server
         // host where stdio commands execute. Mirrors the `acp_probe_mcp_server`
         // Tauri command; returns the same `IpcBody<ProbeResult>` shape.
@@ -279,6 +285,8 @@ pub fn router(
         )
         .route("/git/commit", post(git_api::commit))
         .route("/git/push", post(git_api::push))
+        .route("/git/pull", post(git_api::pull))
+        .route("/git/fetch", post(git_api::fetch))
         .route("/git/commit-context", post(git_api::get_commit_context))
         .route("/git/checkout-branch", post(git_api::checkout_branch))
         .route("/git/create-branch", post(git_api::create_branch))
@@ -566,6 +574,8 @@ pub fn router_with_static(
         )
         .route("/git/commit", post(git_api::commit))
         .route("/git/push", post(git_api::push))
+        .route("/git/pull", post(git_api::pull))
+        .route("/git/fetch", post(git_api::fetch))
         .route("/git/commit-context", post(git_api::get_commit_context))
         .route("/git/checkout-branch", post(git_api::checkout_branch))
         .route("/git/create-branch", post(git_api::create_branch))

@@ -923,6 +923,71 @@ pub fn git_push_current(cwd: &str) -> Result<(), String> {
     }
 }
 
+/// Pull latest commits for the current branch from its upstream (or `origin <branch>`
+/// when no upstream is configured). Uses the network timeout and non-interactive
+/// credentials (`GIT_TERMINAL_PROMPT=0`). Rejects detached HEAD.
+pub fn git_pull_current(cwd: &str) -> Result<String, String> {
+    let branch = GitTracker::check_branch_internal(cwd)
+        .ok_or_else(|| "Not on a branch (detached HEAD); cannot pull".to_string())?;
+
+    let has_upstream =
+        GitTracker::run_git_command(cwd, &["rev-parse", "--verify", "--quiet", "@{u}"])
+            .map(|o| o.status.success())
+            .unwrap_or(false);
+
+    let args: Vec<&str> = if has_upstream {
+        vec!["pull"]
+    } else {
+        vec!["pull", "origin", &branch]
+    };
+
+    log::info!("[git] pulling branch '{}' in {}", branch, cwd);
+    let output = GitTracker::run_git_push(cwd, &args, GIT_NETWORK_TIMEOUT_MS).ok_or_else(|| {
+        "git pull did not complete (it timed out, could not start, or the \
+             remote required interactive credentials)"
+            .to_string()
+    })?;
+    if output.status.success() {
+        let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        log::info!("[git] pull succeeded for '{}'", branch);
+        Ok(if stdout.is_empty() {
+            "Pulled latest changes".to_string()
+        } else {
+            stdout
+        })
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        log::warn!("[git] pull failed for '{}': {}", branch, stderr);
+        Err(if stderr.is_empty() {
+            "git pull failed".to_string()
+        } else {
+            stderr
+        })
+    }
+}
+
+/// Fetch remote tracking refs quietly (`git fetch --quiet`) so ahead/behind
+/// counts stay fresh without modifying the working tree or local branch.
+pub fn git_fetch_remote(cwd: &str) -> Result<(), String> {
+    let output = GitTracker::run_git_push(cwd, &["fetch", "--quiet"], GIT_NETWORK_TIMEOUT_MS)
+        .ok_or_else(|| {
+            "git fetch did not complete (it timed out, could not start, or required credentials)"
+                .to_string()
+        })?;
+    if output.status.success() {
+        log::debug!("[git] fetch succeeded in {}", cwd);
+        Ok(())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        log::debug!("[git] fetch failed in {}: {}", cwd, stderr);
+        Err(if stderr.is_empty() {
+            "git fetch failed".to_string()
+        } else {
+            stderr
+        })
+    }
+}
+
 /// Gather the commit-footer context for a repo. Tolerant of no-HEAD and
 /// no-upstream repos: missing values come back as zeros / empty / false.
 pub fn git_get_commit_context(cwd: &str) -> Result<GitCommitContext, String> {

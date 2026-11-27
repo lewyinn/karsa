@@ -3,7 +3,7 @@ import type { DiscoveredGitRepo } from '@shared/types/ipc.types'
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { AlertTriangle, GitPullRequest, Plus, RefreshCw } from '@/components/icons'
+import { AlertTriangle, ArrowDown, GitPullRequest, Plus, RefreshCw } from '@/components/icons'
 import { ALL_REPOS_VALUE, RepoSwitcherBar } from '@/components/shell/RepoSwitcherBar'
 import { Button } from '@/components/ui/button'
 import { PANEL_ICON_BUTTON_CLASS } from '@/components/ui/panel-styles'
@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { openGithubSignInTerminal } from '@/lib/github-sign-in'
 import { cn } from '@/lib/utils'
 import { returnToWorkspaceRoute } from '@/lib/workspace-route'
+import { useGitStatusStore } from '@/stores/git-status-store'
 import {
   githubListKey,
   resourceOf,
@@ -76,7 +77,23 @@ export function GithubPanel({
   const pathname = useLocation().pathname
   const [createOpen, setCreateOpen] = useState(false)
   const [createPrOpen, setCreatePrOpen] = useState(false)
+  const [pulling, setPulling] = useState(false)
   const showAllRepos = allRepos && repos.length > 1
+
+  const handleGitPull = async (): Promise<void> => {
+    if (pulling) return
+    setPulling(true)
+    try {
+      const output = await useGitStatusStore.getState().pull(cwd)
+      const firstLine = output.split(/\r?\n/)[0]?.trim()
+      toast.success(firstLine || 'Pulled latest changes from GitHub')
+      void loadList(cwd, { refresh: true })
+    } catch (error) {
+      toast.error(`Git pull failed: ${String(error)}`)
+    } finally {
+      setPulling(false)
+    }
+  }
   const context = useGithubStore((s) => resourceOf(s.contexts[cwd]))
   const filter = useGithubStore(selectGithubFilter(cwd))
   const list = useGithubStore((s) => resourceOf(s.lists[githubListKey(cwd, filter)]))
@@ -310,6 +327,16 @@ export function GithubPanel({
               aria-label="New pull request"
             >
               <GitPullRequest size={14} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleGitPull()}
+              disabled={pulling}
+              className={cn(PANEL_ICON_BUTTON_CLASS, 'shrink-0 pointer-coarse:size-11')}
+              title="Git pull from GitHub"
+              aria-label="Git pull from GitHub"
+            >
+              <ArrowDown size={14} aria-hidden="true" className={cn(pulling && 'animate-pulse')} />
             </button>
             <button
               type="button"

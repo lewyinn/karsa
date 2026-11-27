@@ -52,19 +52,35 @@ pub(super) fn run_agent(
     let profile = AgentRuntimeProfile::resolve(&config);
     let agent_kind = agent_kind(&config).to_string();
     let agent_command = config.command.clone();
-    let result = runtime.block_on(drive_connection(
-        config,
-        sinks.clone(),
-        host_plan_server.clone(),
-        agent_id.clone(),
-        command_rx,
-        init_tx,
-        spawned.clone(),
-        driver_state.clone(),
-        persistence.clone(),
-        profile,
-        stderr_ring.clone(),
-    ));
+    let result = if config.command == crate::acp::custom_api::KARSA_API_COMMAND {
+        let local = tokio::task::LocalSet::new();
+        runtime.block_on(local.run_until(
+            crate::acp::custom_api::driver::drive_api_connection(
+                config,
+                sinks.clone(),
+                agent_id.clone(),
+                command_rx,
+                init_tx,
+                spawned.clone(),
+                driver_state.clone(),
+                persistence.clone(),
+            ),
+        ))
+    } else {
+        runtime.block_on(drive_connection(
+            config,
+            sinks.clone(),
+            host_plan_server.clone(),
+            agent_id.clone(),
+            command_rx,
+            init_tx,
+            spawned.clone(),
+            driver_state.clone(),
+            persistence.clone(),
+            profile,
+            stderr_ring.clone(),
+        ))
+    };
 
     let was_spawned = spawned.load(Ordering::Acquire);
 

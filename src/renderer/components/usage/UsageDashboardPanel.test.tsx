@@ -7,7 +7,7 @@ import { UsageDashboardPanel } from './UsageDashboardPanel'
 vi.mock('@/lib/claude-accounts-api', () => ({
   claudeAccountsApi: {
     list: vi.fn(async () => ({
-      accounts: [{ id: 'default', name: 'Personal', builtin: true, signedIn: true }],
+      accounts: [{ id: 'default', name: 'ridho@example.com', builtin: true, signedIn: true }],
       defaultAccountId: 'default',
       autoSwitch: false
     })),
@@ -36,11 +36,29 @@ vi.mock('@/lib/claude-accounts-api', () => ({
 vi.mock('@/lib/antigravity-accounts-api', () => ({
   antigravityAccountsApi: {
     list: vi.fn(async () => ({
-      accounts: [],
-      defaultAccountId: null,
+      accounts: [{ id: 'default', name: 'ridho@gmail.com', builtin: true, signedIn: true }],
+      defaultAccountId: 'default',
       autoSwitch: false
     })),
-    usage: vi.fn(async () => [])
+    usage: vi.fn(async () => [
+      {
+        accountId: 'default',
+        status: 'ok',
+        planType: 'Google AI Pro',
+        windows: [
+          {
+            kind: 'model',
+            label: 'Gemini Models · Five Hour Limit Remaining',
+            modelId: 'gemini-5h',
+            percent: 80,
+            resetsAt: null
+          }
+        ],
+        checkedAt: Date.now(),
+        message: null
+      }
+    ]),
+    checkUsage: vi.fn(async () => null)
   }
 }))
 
@@ -53,7 +71,7 @@ beforeEach(() => {
 })
 
 describe('UsageDashboardPanel', () => {
-  it('displays live Claude quota, estimated cost KPI, and switches between Sessions and Projects tabs', async () => {
+  it('displays Limits (% left), Tokens, and Cost tabs with real breakdown', async () => {
     const now = Date.now()
     useUsageHistoryStore.getState().recordSample({
       sessionId: 'sess-1',
@@ -69,13 +87,22 @@ describe('UsageDashboardPanel', () => {
 
     render(<UsageDashboardPanel />)
 
-    await waitFor(() => expect(screen.getByText('Claude · Personal')).toBeInTheDocument())
-    expect(screen.getByText('42%')).toBeInTheDocument()
-    expect(screen.getByTestId('usage-total-tokens')).toHaveTextContent('100.0K')
-    expect(screen.getByTestId('usage-total-cost')).toHaveTextContent('~$0.54')
-    expect(screen.getByTestId('usage-session-sess-1')).toHaveTextContent('Implement Multi-Repo')
+    // Limits tab (default): shows % left (100 - 42 = 58% left for Claude, 100 - 80 = 20% left for Antigravity)
+    await waitFor(() => expect(screen.getByText('58%')).toBeInTheDocument())
+    expect(screen.getByText('20%')).toBeInTheDocument()
+    expect(screen.getByText('Gemini · 5-hour')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: /Projects \(1\)/i }))
+    // Switch to Tokens tab
+    fireEvent.click(screen.getByRole('tab', { name: 'Tokens' }))
+    expect(screen.getByTestId('usage-total-tokens')).toHaveTextContent('100.0K')
+    expect(screen.getByTestId('usage-model-claude-sonnet-4')).toBeInTheDocument()
+
+    // Switch breakdown to Project
+    fireEvent.click(screen.getByRole('button', { name: 'project' }))
     expect(screen.getByTestId('usage-project-internity')).toBeInTheDocument()
+
+    // Switch to Cost tab
+    fireEvent.click(screen.getByRole('tab', { name: 'Cost' }))
+    expect(screen.getByTestId('usage-total-cost')).toHaveTextContent('~$0.54')
   })
 })

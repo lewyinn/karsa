@@ -182,6 +182,8 @@ export interface GitStatusState {
   unstageHunk: (cwd: string, path: string, hunkPatch: string) => Promise<void>
   commit: (cwd: string, summary: string, description: string, amend: boolean) => Promise<void>
   push: (cwd: string) => Promise<void>
+  pull: (cwd: string) => Promise<string>
+  fetchRemote: (cwd: string) => Promise<void>
   stashSave: (cwd: string, message?: string, includeUntracked?: boolean) => Promise<void>
   stashApply: (cwd: string, index: number) => Promise<void>
   stashPop: (cwd: string, index: number) => Promise<void>
@@ -504,6 +506,18 @@ export const useGitStatusStore = create<GitStatusState>((set, get) => ({
     assertWritable(cwd)
     await gitApi.push(cwd)
     await refreshAfterMutation(get, cwd)
+  },
+
+  pull: async (cwd) => {
+    assertWritable(cwd)
+    const summary = await gitApi.pull(cwd)
+    await refreshAfterMutation(get, cwd)
+    return summary
+  },
+
+  fetchRemote: async (cwd) => {
+    await gitApi.fetch(cwd)
+    await get().fetchCommitContext(cwd)
   },
 
   fetchStashes: async (cwd) => {

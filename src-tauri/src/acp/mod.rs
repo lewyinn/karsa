@@ -31,6 +31,7 @@ pub mod codex_limit;
 pub mod commands;
 pub mod config;
 pub mod credentials;
+pub mod custom_api;
 pub mod destructive_guard;
 pub mod events;
 pub mod factory_key;

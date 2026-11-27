@@ -4,9 +4,11 @@ import type {
 } from '@shared/types/claude-accounts.types'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { claudeAccountsApi } from '@/lib/claude-accounts-api'
+import { useUsageHistoryStore } from '@/stores/usage-history-store'
 
-/** The host caches usage for 5 minutes, so polling faster gains nothing. */
-export const CLAUDE_USAGE_POLL_MS = 5 * 60 * 1000
+/** Poll Claude usage every 60s and right after turns settle for realtime quota bars. */
+export const CLAUDE_USAGE_POLL_MS = 60 * 1000
+const TURN_USAGE_REFRESH_DEBOUNCE_MS = 3_000
 
 export interface ClaudeAccountsState {
   snapshot: ClaudeAccountsSnapshot | null
@@ -87,8 +89,18 @@ export function useClaudeAccounts(
     }
     void refreshUsage(false)
     const timer = setInterval(() => void refreshUsage(false), CLAUDE_USAGE_POLL_MS)
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null
+    let prevSessions = useUsageHistoryStore.getState().sessions
+    const unsubscribeUsage = useUsageHistoryStore.subscribe((state) => {
+      if (state.sessions === prevSessions) return
+      prevSessions = state.sessions
+      if (debounceTimer) clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(() => void refreshUsage(false), TURN_USAGE_REFRESH_DEBOUNCE_MS)
+    })
     return () => {
       mounted.current = false
+      unsubscribeUsage()
+      if (debounceTimer) clearTimeout(debounceTimer)
       clearInterval(timer)
     }
   }, [reload, refreshUsage, withUsage, enabled])
