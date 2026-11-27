@@ -2,7 +2,7 @@
 
 Personal AI-assisted desktop workspace built with Tauri, React, TypeScript, and Rust by [**lewyinn**](https://github.com/lewyinn).
 
-> **Upstream attribution:** Karsa (`v0.1.0`) is a customized personal fork of [**gnoviawan/troupe**](https://github.com/gnoviawan/troupe) (with Tauri porting contributions by **mannnrachman**), distributed under the [MIT License](./LICENSE).
+> **Upstream attribution:** Karsa (`v0.1.1`) is a customized personal fork of [**gnoviawan/troupe**](https://github.com/gnoviawan/troupe) (with Tauri porting contributions by **mannnrachman**), distributed under the [MIT License](./LICENSE).
 
 ---
 

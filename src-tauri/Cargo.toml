@@ -1,6 +1,6 @@
 [package]
 name = "termul-manager"
-version = "0.1.0"
+version = "0.1.1"
 description = "Karsa — personal AI-assisted multi-repo workspace and terminal manager"
 authors = ["lewyinn", "gnoviawan", "mannnrachman (Tauri port)"]
 edition = "2021"
