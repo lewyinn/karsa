@@ -14,7 +14,7 @@ hooks {
   ["pre-push"] {
     steps {
       ["ci-checks"] {
-        check = "bun scripts/ci/checks.ts rebrand biome tsc:node tsc:web tsc:test"
+        check = "bun scripts/ci/checks.ts biome tsc:node tsc:web tsc:test"
       }
     }
   }

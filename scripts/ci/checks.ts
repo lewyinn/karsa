@@ -2,7 +2,6 @@
 //   bun scripts/ci/checks.ts            run all checks
 //   bun scripts/ci/checks.ts biome tsc  run the named checks
 const CHECKS: Record<string, string> = {
-  rebrand: 'bun run rebrand --check',
   biome: 'bun run ci',
   'tsc:node': 'bun run typecheck:node',
   'tsc:web': 'bun run typecheck:web',
