@@ -5,9 +5,9 @@
 	"version": "0.1.0",
 	"identifier": "com.karsa.app",
 	"build": {
-		"beforeDevCommand": "npx vite --config vite.config.tauri.ts",
+		"beforeDevCommand": "bun x vite --config vite.config.tauri.ts",
 		"devUrl": "http://localhost:5180/tauri-index.html",
-		"beforeBuildCommand": "npx vite build --config vite.config.web.ts && npx vite build --config vite.config.tauri.ts",
+		"beforeBuildCommand": "bun run build:web && bun run build:frontend:tauri",
 		"frontendDist": "../dist-tauri"
 	},
 	"app": {
