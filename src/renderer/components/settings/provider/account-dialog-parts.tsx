@@ -60,6 +60,7 @@ export function AccountNameStep({
   provider,
   name,
   onNameChange,
+  nameOptional = false,
   existingNames,
   error,
   busy,
@@ -71,6 +72,8 @@ export function AccountNameStep({
   provider: string
   name: string
   onNameChange: (name: string) => void
+  /** An empty name is allowed: the account is named after its email on sign-in. */
+  nameOptional?: boolean
   /** Names already in use, so suggestions skip them. */
   existingNames: string[]
   error: string | null
@@ -90,7 +93,9 @@ export function AccountNameStep({
           Add {/^[aeiou]/i.test(provider) ? 'an' : 'a'} {provider} account
         </DialogTitle>
         <DialogDescription>
-          Give it a short name. Karsa shows this name, never the email.
+          {nameOptional
+            ? 'Give it a short name, or leave it empty to use the Google email once you sign in.'
+            : 'Give it a short name. Karsa shows this name, never the email.'}
         </DialogDescription>
       </DialogHeader>
       <form
@@ -101,14 +106,14 @@ export function AccountNameStep({
         }}
       >
         <Label htmlFor={inputId} className="text-xs">
-          Name
+          {nameOptional ? 'Name (optional)' : 'Name'}
         </Label>
         <Input
           id={inputId}
           value={name}
           maxLength={MAX_NAME_CHARS}
           autoFocus
-          placeholder="e.g. Work"
+          placeholder={nameOptional ? 'Uses your Google email' : 'e.g. Work'}
           onChange={(event) => onNameChange(event.target.value)}
           className="h-9"
         />

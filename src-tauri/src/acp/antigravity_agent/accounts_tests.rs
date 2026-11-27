@@ -276,3 +276,61 @@ fn a_terminal_login_points_to_the_troupe_ui() {
         "{error}"
     );
 }
+
+/// A host whose store holds one placeholder account and one named "Work";
+/// `placeholder_signed_in` sets the placeholder's login, and both show an email.
+fn host_with_placeholder(
+    placeholder_signed_in: bool,
+) -> (tempfile::TempDir, AntigravityAgentService) {
+    let root = tempfile::tempdir().unwrap();
+    let store = Arc::new(AntigravityAccountStore::new(
+        root.path(),
+        root.path().join("shared"),
+    ));
+    let placeholder = store.add("New account").unwrap().id;
+    let work = store.add("Work").unwrap().id;
+    let signed_out: Vec<&str> = if placeholder_signed_in {
+        vec![]
+    } else {
+        vec![placeholder.as_str()]
+    };
+    let probe = FixedLogins::new(&signed_out)
+        .with_label(&placeholder, "me@example.com")
+        .with_label(&work, "other@example.com");
+    let service = AntigravityAgentService::with_probe(
+        store,
+        Arc::new(probe) as Arc<dyn crate::acp::antigravity_agent::AntigravityLoginStatus>,
+    );
+    (root, service)
+}
+
+#[tokio::test]
+async fn a_signed_in_placeholder_account_takes_its_email_as_name() {
+    let (_root, service) = host_with_placeholder(true);
+    let snapshot = service.profile_list().await.unwrap();
+    let names: Vec<&str> = snapshot.profiles.iter().map(|row| row.name.as_str()).collect();
+    assert!(names.contains(&"me@example.com"), "placeholder takes the email");
+    assert!(names.contains(&"Work"), "a chosen name is never replaced");
+    assert!(!names.contains(&"other@example.com"));
+
+    // The email was stored, so a second listing keeps it.
+    let again = service.profile_list().await.unwrap();
+    assert!(again.profiles.iter().any(|row| row.name == "me@example.com"));
+}
+
+#[tokio::test]
+async fn a_signed_out_placeholder_account_keeps_its_placeholder_name() {
+    let (_root, service) = host_with_placeholder(false);
+    let snapshot = service.profile_list().await.unwrap();
+    assert!(snapshot.profiles.iter().any(|row| row.name == "New account"));
+}
+
+#[test]
+fn placeholder_names_match_only_the_generated_shapes() {
+    use super::is_placeholder_name;
+    assert!(is_placeholder_name("New account"));
+    assert!(is_placeholder_name("New account 2"));
+    assert!(!is_placeholder_name("New account x"));
+    assert!(!is_placeholder_name("New accounts"));
+    assert!(!is_placeholder_name("Work"));
+}

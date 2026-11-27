@@ -2,6 +2,7 @@ import type {
   AntigravityAccountUsage,
   AntigravityAccountView
 } from '@shared/types/antigravity-accounts.types'
+import { placeholderAntigravityName } from '@/lib/antigravity-account-name'
 import { antigravityAccountsApi } from '@/lib/antigravity-accounts-api'
 import {
   antigravityWindowLabel,
@@ -40,6 +41,11 @@ export function AntigravityAddAccountDialog({
     create: async (name) => {
       const created = await antigravityAccountsApi.add(name)
       return { id: created.id, name: created.name, builtin: false, signedIn: false }
+    },
+    placeholderName: placeholderAntigravityName,
+    refreshName: async (account) => {
+      const snapshot = await antigravityAccountsApi.list()
+      return snapshot.accounts.find((row) => row.id === account.id)?.name ?? null
     },
     setDefault: (id) => antigravityAccountsApi.setDefault(id),
     summary: (account) => {

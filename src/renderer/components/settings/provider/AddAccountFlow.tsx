@@ -35,6 +35,13 @@ export interface SignInStepContext<A extends NamedAccount> {
 export interface AddAccountProvider<A extends NamedAccount> {
   id: AccountProviderId
   create: (name: string) => Promise<A>
+  /**
+   * Makes the Name step optional: an empty name becomes this one, and the host
+   * renames the account once it signs in (to the Google email).
+   */
+  placeholderName?: (existingNames: string[]) => string
+  /** The account's name as the host has it now, after sign-in. */
+  refreshName?: (account: A) => Promise<string | null>
   setDefault: (accountId: string) => Promise<void>
   /** Plan and usage of the new account, for the ready step. */
   summary: (account: A) => { plan: string | null; usageLabel: string; usageValue: string }
@@ -134,6 +141,9 @@ function AddAccountFlow<A extends NamedAccount>({
     try {
       await onChanged()
       await onSignedIn(target)
+      // The host may have renamed the account on sign-in (name left empty).
+      const fresh = await provider.refreshName?.(target).catch(() => null)
+      if (fresh) setAccount({ ...target, name: fresh })
       setStep('done')
     } catch (err) {
       fail(accountErrorText(err))
@@ -153,7 +163,7 @@ function AddAccountFlow<A extends NamedAccount>({
   }
 
   const submitName = async (): Promise<void> => {
-    const trimmed = name.trim()
+    const trimmed = name.trim() || provider.placeholderName?.(existingNames) || ''
     if (!trimmed) {
       setError('Enter a name.')
       return
@@ -203,6 +213,7 @@ function AddAccountFlow<A extends NamedAccount>({
           provider={PROVIDER_TERMS[provider.id].name}
           name={name}
           onNameChange={setName}
+          nameOptional={Boolean(provider.placeholderName)}
           existingNames={existingNames}
           error={error}
           busy={busy}

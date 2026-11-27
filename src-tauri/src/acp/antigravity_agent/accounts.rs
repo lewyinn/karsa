@@ -19,6 +19,22 @@ use crate::acp::config::AgentConfig;
 /// terminal sign-in for Antigravity.
 pub const CLI_LOGIN_UNSUPPORTED: &str = "Antigravity has no terminal sign-in. Sign in to this account from Settings → Provider → Antigravity in the Karsa app or the Karsa web UI.";
 
+/// The name the add flow gives an account whose name was left empty. Once the
+/// account is signed in, its name becomes the Google email. Keep in sync with
+/// `src/renderer/lib/antigravity-account-name.ts`.
+const PLACEHOLDER_NAME: &str = "New account";
+
+/// `New account`, or `New account N` for a second one in the list.
+fn is_placeholder_name(name: &str) -> bool {
+    match name.strip_prefix(PLACEHOLDER_NAME) {
+        Some("") => true,
+        Some(rest) => rest
+            .strip_prefix(' ')
+            .is_some_and(|n| !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit())),
+        None => false,
+    }
+}
+
 /// Whether choosing an Account first checks that its login is confirmed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AntigravitySignInCheck {
@@ -77,11 +93,15 @@ impl AntigravityAgentService {
                 log::warn!("[antigravity-accounts] login probe failed");
                 None
             });
-            if row.signed_in == Some(true)
-                && row.builtin
-                && row.name.eq_ignore_ascii_case("Default")
-            {
+            let is_default_name = row.builtin && row.name.eq_ignore_ascii_case("Default");
+            let is_placeholder = !row.builtin && is_placeholder_name(&row.name);
+            if row.signed_in == Some(true) && (is_default_name || is_placeholder) {
                 if let Some(label) = self.login_probe.detected_profile_label(dir.as_deref()) {
+                    // A placeholder name is stored, so the email sticks; if the
+                    // store refuses it (a duplicate), the list still shows it.
+                    if is_placeholder && store.rename(&row.id, &label).is_err() {
+                        log::warn!("[antigravity-accounts] could not store the detected name");
+                    }
                     row.name = label;
                 }
             }
@@ -370,6 +390,8 @@ impl AntigravityAgentService {
 #[cfg(test)]
 pub(crate) struct FixedLogins {
     signed_out: Vec<String>,
+    /// Home directory name (or `default`) to the email its login shows.
+    labels: Vec<(String, String)>,
     pub logouts: std::sync::Mutex<Vec<Option<PathBuf>>>,
 }
 
@@ -378,8 +400,15 @@ impl FixedLogins {
     pub(crate) fn new(signed_out: &[&str]) -> Self {
         Self {
             signed_out: signed_out.iter().map(ToString::to_string).collect(),
+            labels: Vec::new(),
             logouts: std::sync::Mutex::new(Vec::new()),
         }
+    }
+
+    /// The home named `id` shows `email` as its signed-in Google account.
+    pub(crate) fn with_label(mut self, id: &str, email: &str) -> Self {
+        self.labels.push((id.to_string(), email.to_string()));
+        self
     }
 }
 
@@ -402,6 +431,16 @@ impl super::AntigravityLoginStatus for FixedLogins {
             .expect("logout record")
             .push(antigravity_home.map(std::path::Path::to_path_buf));
         Ok(())
+    }
+
+    fn detected_profile_label(&self, antigravity_home: Option<&std::path::Path>) -> Option<String> {
+        let id = antigravity_home
+            .and_then(|dir| dir.file_name()?.to_str())
+            .unwrap_or(BUILTIN_ACCOUNT_ID);
+        self.labels
+            .iter()
+            .find(|(key, _)| key == id)
+            .map(|(_, email)| email.clone())
     }
 }
 
