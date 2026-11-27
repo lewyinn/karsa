@@ -225,7 +225,10 @@ async fn archive_is_guarded_like_remove_and_cascade_archives_in_place() {
 fn another_root(host: &TestHost) -> (String, String) {
     let dir = host.project_dir.parent().unwrap().join("moved");
     std::fs::create_dir_all(&dir).unwrap();
-    let canonical = std::fs::canonicalize(&dir).unwrap().to_string_lossy().into_owned();
+    let canonical = crate::acp::project_registry::validate_root_path(&dir)
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
     (dir.to_string_lossy().into_owned(), canonical)
 }
 

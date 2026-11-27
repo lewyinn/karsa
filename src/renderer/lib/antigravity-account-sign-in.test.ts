@@ -1,12 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAcpStore } from '@/stores/acp-store'
 import { FRESH } from '@/stores/acp-store/testkit'
-import { signInAntigravityAccount } from './antigravity-account-sign-in'
+import {
+  type AntigravitySignInPhase,
+  isAntigravitySignInCancelled,
+  signInAntigravityAccount
+} from './antigravity-account-sign-in'
 
-const { api, authenticateAgent, killAgent } = vi.hoisted(() => ({
+const { api, authenticateAgent, killAgent, clearPendingSignIn } = vi.hoisted(() => ({
   api: { startLogin: vi.fn() },
   authenticateAgent: vi.fn(),
-  killAgent: vi.fn()
+  killAgent: vi.fn(),
+  clearPendingSignIn: vi.fn()
 }))
 
 vi.mock('@/lib/antigravity-accounts-api', () => ({ antigravityAccountsApi: api }))
@@ -36,13 +41,18 @@ beforeEach(() => {
       }
     ],
     authenticateAgent,
-    killAgent
+    killAgent,
+    clearPendingSignIn
   } as never)
 })
 
 describe('signInAntigravityAccount', () => {
   it('spawns with the Antigravity config, authenticates with Google, then stops the agent', async () => {
-    await signInAntigravityAccount('ab12', 'oauth-personal')
+    const phases: AntigravitySignInPhase[] = []
+    await signInAntigravityAccount('ab12', 'oauth-personal', {
+      onPhase: (phase) => phases.push(phase)
+    })
+    expect(phases).toEqual(['starting', 'waiting_browser'])
     expect(api.startLogin).toHaveBeenCalledWith(
       'ab12',
       expect.objectContaining({
@@ -69,6 +79,37 @@ describe('signInAntigravityAccount', () => {
   it('stops the agent when authenticate fails', async () => {
     authenticateAgent.mockRejectedValue(new Error('cancelled'))
     await expect(signInAntigravityAccount('ab12', 'oauth-business')).rejects.toThrow('cancelled')
+    expect(killAgent).toHaveBeenCalledWith('agent-sign-in')
+  })
+
+  it('cancels immediately while starting and kills the late-spawned agent', async () => {
+    let resolveStart: (value: { agentId: string }) => void = () => undefined
+    api.startLogin.mockReturnValue(
+      new Promise((resolve) => {
+        resolveStart = resolve
+      })
+    )
+    const controller = new AbortController()
+    const run = signInAntigravityAccount('ab12', 'oauth-personal', { signal: controller.signal })
+    controller.abort()
+    const err = await run.catch((e) => e)
+    expect(isAntigravitySignInCancelled(err)).toBe(true)
+    resolveStart({ agentId: 'late-agent' })
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(killAgent).toHaveBeenCalledWith('late-agent')
+  })
+
+  it('cancels immediately while waiting for browser sign-in and kills the agent', async () => {
+    authenticateAgent.mockReturnValue(new Promise(() => undefined))
+    const controller = new AbortController()
+    const run = signInAntigravityAccount('ab12', 'oauth-personal', { signal: controller.signal })
+    await Promise.resolve()
+    await Promise.resolve()
+    controller.abort()
+    const err = await run.catch((e) => e)
+    expect(isAntigravitySignInCancelled(err)).toBe(true)
+    expect(clearPendingSignIn).toHaveBeenCalledWith('agent-sign-in')
     expect(killAgent).toHaveBeenCalledWith('agent-sign-in')
   })
 })

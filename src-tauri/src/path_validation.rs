@@ -39,6 +39,16 @@ pub fn strip_verbatim_prefix(path: &str) -> Cow<'_, str> {
     Cow::Borrowed(path)
 }
 
+/// [`strip_verbatim_prefix`] for an owned path. A path that is not valid
+/// UTF-8 is returned unchanged.
+pub fn strip_verbatim_path(path: PathBuf) -> PathBuf {
+    let plain = path.to_str().and_then(|text| match strip_verbatim_prefix(text) {
+        Cow::Owned(plain) => Some(plain),
+        Cow::Borrowed(_) => None,
+    });
+    plain.map_or(path, PathBuf::from)
+}
+
 /// Path form safe to hand to `git` / `git.exe`.
 ///
 /// Windows `canonicalize` yields `\\?\…` paths that git rejects (`fatal: could

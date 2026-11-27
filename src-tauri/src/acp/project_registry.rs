@@ -36,6 +36,8 @@ use agent_client_protocol::schema::v1::McpServer;
 use serde::{Deserialize, Serialize};
 use tracing::{info, warn};
 
+use crate::path_validation::strip_verbatim_path;
+
 /// Current on-disk JSON schema version. Bump when the [`RegistryFile`] shape
 /// changes; [`FileProjectRegistry::load`] routes any other version through
 /// the [`migrate`] hook. v3 renamed `activeProjectId` → `defaultProjectId`
@@ -296,6 +298,15 @@ impl FileProjectRegistry {
                     })?;
                 }
                 RootCheck::Lenient => {
+                    // Older builds saved roots in the verbatim spelling (#2132).
+                    let plain = strip_verbatim_path(root.path.clone());
+                    if plain != root.path {
+                        info!(
+                            project_id = root.id.as_str(),
+                            "project root saved in the Windows verbatim spelling; using its everyday spelling"
+                        );
+                        root.path = plain;
+                    }
                     if validate_root_path(&root.path).is_err() && !root.path.as_os_str().is_empty()
                     {
                         warn!(
@@ -464,7 +475,10 @@ pub fn validate_root_path(raw: &Path) -> Result<PathBuf, String> {
             canonical.display()
         ));
     }
-    Ok(canonical)
+    // Windows `canonicalize` spells the root `\\?\C:\…`. Agents take the root
+    // as their working folder, and some reject that spelling (Antigravity's
+    // `session/new` fails with "Internal error", #2132).
+    Ok(strip_verbatim_path(canonical))
 }
 
 /// Best-effort backup of a corrupt registry file before `load` errors out.

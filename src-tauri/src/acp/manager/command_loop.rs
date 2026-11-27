@@ -168,6 +168,11 @@ pub(super) async fn run_command_loop(
                 let req_state = driver_state.clone();
                 let req_persistence = persistence.clone();
                 spawn_request(&cx, slot, async move {
+                    let cwd = crate::path_validation::strip_verbatim_prefix(&cwd).into_owned();
+                    let additional_directories: Vec<PathBuf> = additional_directories
+                        .into_iter()
+                        .map(crate::path_validation::strip_verbatim_path)
+                        .collect();
                     let mut request = NewSessionRequest::new(cwd.clone())
                         .mcp_servers(mcp_servers)
                         .additional_directories(additional_directories);

@@ -28,8 +28,8 @@ interface AntigravityAddAccountDialogProps {
 
 /**
  * "Add account" for Antigravity: the Sign in step picks a Google account or
- * Gemini Enterprise. A running sign-in cannot be stopped from here, so the
- * dialog stays open until it ends (the sign-in window has its own Cancel).
+ * Gemini Enterprise. Closing via Cancel, Escape, or X aborts any running
+ * sign-in and stops the spawned sign-in agent.
  */
 export function AntigravityAddAccountDialog({
   usage,
@@ -51,10 +51,9 @@ export function AntigravityAddAccountDialog({
         usageValue: primary ? `${Math.round(primary.percent)}% used` : 'not started'
       }
     },
-    renderSignIn: ({ account, onSignedIn, onFailed, onCancel, setLocked }) => (
+    renderSignIn: ({ account, onSignedIn, onFailed, onCancel }) => (
       <AntigravitySignInRun
         account={account}
-        onRunningChange={setLocked}
         onSignedIn={onSignedIn}
         onFailed={onFailed}
         onCancel={onCancel}

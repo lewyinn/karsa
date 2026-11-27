@@ -44,6 +44,8 @@ vi.mock('@/lib/antigravity-account-sign-in', () => ({
     { id: 'oauth-business', label: 'Log in with Gemini Enterprise' }
   ],
   isAntigravitySignInMethod: (id: string) => id === 'oauth-personal' || id === 'oauth-business',
+  isAntigravitySignInCancelled: (err: unknown) =>
+    err instanceof Error && err.name === 'AntigravitySignInCancelledError',
   antigravityLaunchConfig: () => LAUNCH_CONFIG,
   signInAntigravityAccount
 }))
@@ -188,7 +190,7 @@ describe('AntigravityProviderSettings', () => {
     const dialog = await screen.findByRole('dialog')
     expect(within(dialog).getByText('Add an Antigravity account')).toBeInTheDocument()
     expect(within(dialog).getByTestId('second-account-notice')).toHaveTextContent(
-      "Troupe does not recommend using many Antigravity accounts. A separate work account is fine. Using several accounts to get past usage limits can break Google's terms and get your accounts suspended. More info"
+      "Karsa does not recommend using many Antigravity accounts. A separate work account is fine. Using several accounts to get past usage limits can break Google's terms and get your accounts suspended. More info"
     )
     expect(within(dialog).getByLabelText('Steps')).toHaveTextContent('1Name2Sign in3Done')
     // "Work" and "Personal" are in use, so only "Team" is suggested.
@@ -201,30 +203,35 @@ describe('AntigravityProviderSettings', () => {
     expect(screen.getByRole('button', { name: 'Log in with Google' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Log in with Gemini Enterprise' }))
     await waitFor(() =>
-      expect(signInAntigravityAccount).toHaveBeenCalledWith('cd34', 'oauth-business')
+      expect(signInAntigravityAccount).toHaveBeenCalledWith(
+        'cd34',
+        'oauth-business',
+        expect.objectContaining({ signal: expect.any(AbortSignal) })
+      )
     )
     expect(await screen.findByText('Side is ready')).toBeInTheDocument()
     expect(screen.getByText('No — Personal stays default')).toBeInTheDocument()
   })
 
-  it('stays open while a sign-in runs: Escape and Cancel do not close it', async () => {
-    let finish: () => void = () => undefined
-    signInAntigravityAccount.mockReturnValue(
-      new Promise<void>((resolve) => {
-        finish = resolve
-      })
+  it('lets Cancel and Escape abort a running sign-in and close the dialog', async () => {
+    let capturedSignal: AbortSignal | undefined
+    signInAntigravityAccount.mockImplementation(
+      (_id: string, _method: string, options?: { signal?: AbortSignal }) => {
+        capturedSignal = options?.signal
+        return new Promise<void>(() => undefined)
+      }
     )
     render(<AntigravityProviderSettings />)
     fireEvent.click(await screen.findByRole('button', { name: 'Add account' }))
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Side' } })
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Log in with Google' }))
-    expect(await screen.findByText('Waiting for the sign-in…')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
-    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
-    finish()
-    expect(await screen.findByText('Side is ready')).toBeInTheDocument()
+    expect(await screen.findByText('Starting Antigravity…')).toBeInTheDocument()
+    const cancelBtn = screen.getByRole('button', { name: 'Cancel' })
+    expect(cancelBtn).toBeEnabled()
+    fireEvent.click(cancelBtn)
+    expect(capturedSignal?.aborted).toBe(true)
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 
   it('shows the failed step with Try again when the sign-in does not finish', async () => {
@@ -396,6 +403,8 @@ describe('AntigravityProviderSettings', () => {
     expect(screen.queryByRole('button', { name: /Actions for/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Check usage/ })).not.toBeInTheDocument()
     expect(screen.getByLabelText('Switch accounts automatically')).toBeDisabled()
-    expect(screen.getByText(/troupe-server antigravity account/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Sign in from the Karsa desktop app to manage accounts/)
+    ).toBeInTheDocument()
   })
 })

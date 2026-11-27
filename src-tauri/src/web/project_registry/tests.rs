@@ -254,7 +254,9 @@ fn switch_context_rejects_archived_and_carries_private_mcp() {
     let context = reg.switch_context("live").expect("live context");
     assert_eq!(
         context.cwd,
-        live_dir.canonicalize().unwrap().to_string_lossy()
+        crate::acp::project_registry::validate_root_path(&live_dir)
+            .unwrap()
+            .to_string_lossy()
     );
     assert_eq!(context.mcp_servers.len(), 1);
     let public = serde_json::to_value(reg.snapshot()).expect("public snapshot");

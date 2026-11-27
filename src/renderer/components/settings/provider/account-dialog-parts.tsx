@@ -168,14 +168,18 @@ export function AccountStepHeader({
 }
 
 /** The "Waiting for the sign-in…" line. */
-export function AccountSignInWaiting(): React.JSX.Element {
+export function AccountSignInWaiting({
+  label = 'Waiting for the sign-in…'
+}: {
+  label?: string
+}): React.JSX.Element {
   return (
     <div
       role="status"
       className="flex items-center gap-2.5 rounded-lg border border-border bg-background px-3 py-2.5 text-xs text-secondary-foreground"
     >
       <Spinner size={14} decorative />
-      Waiting for the sign-in…
+      {label}
     </div>
   )
 }

@@ -10,6 +10,7 @@ vi.mock('@/hooks/use-server-admits-remote-writes', () => ({
 }))
 vi.mock('@/lib/antigravity-account-sign-in', () => ({
   ANTIGRAVITY_SIGN_IN_METHODS: [],
+  isAntigravitySignInCancelled: () => false,
   signInAntigravityAccount: vi.fn()
 }))
 

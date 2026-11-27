@@ -353,7 +353,8 @@ fn set_home_env(env: &mut HashMap<String, String>, home: Option<&Path>) -> Resul
                 log::warn!("[acp-antigravity] account home is not valid Unicode");
                 "The Antigravity account folder path is not supported".to_string()
             })?;
-            env.insert(GEMINI_HOME_ENV.to_string(), dir.to_string());
+            let plain = crate::path_validation::strip_verbatim_prefix(dir);
+            env.insert(GEMINI_HOME_ENV.to_string(), plain.into_owned());
         }
         None => {
             env.remove(GEMINI_HOME_ENV);

@@ -22,6 +22,24 @@ export const ANTIGRAVITY_SIGN_IN_METHODS = [
   { id: ANTIGRAVITY_BUSINESS_METHOD, label: 'Log in with Gemini Enterprise' }
 ] as const
 
+export type AntigravitySignInPhase = 'starting' | 'waiting_browser'
+
+export interface SignInAntigravityOptions {
+  signal?: AbortSignal
+  onPhase?: (phase: AntigravitySignInPhase) => void
+}
+
+export class AntigravitySignInCancelledError extends Error {
+  constructor() {
+    super('Sign-in was cancelled.')
+    this.name = 'AntigravitySignInCancelledError'
+  }
+}
+
+export function isAntigravitySignInCancelled(error: unknown): boolean {
+  return error instanceof AntigravitySignInCancelledError
+}
+
 export function isAntigravitySignInMethod(methodId: string): boolean {
   return methodId === ANTIGRAVITY_GOOGLE_METHOD || methodId === ANTIGRAVITY_BUSINESS_METHOD
 }
@@ -45,15 +63,69 @@ export function antigravityLaunchConfig(): AgentConfig {
 
 /**
  * Spawn, authenticate, then stop the sign-in agent. The Google login stays in
- * the Account home. The browser sign-in dialog shows the Google page while
- * `authenticate` waits.
+ * the Account home. Passing an `AbortSignal` lets the user cancel while the
+ * agent is booting or waiting for Google sign-in, immediately stopping the
+ * spawned process.
  */
-export async function signInAntigravityAccount(accountId: string, methodId: string): Promise<void> {
+export async function signInAntigravityAccount(
+  accountId: string,
+  methodId: string,
+  options?: SignInAntigravityOptions
+): Promise<void> {
   if (!isAntigravitySignInMethod(methodId)) {
     throw new Error('Antigravity accounts sign in with Google only.')
   }
+  const signal = options?.signal
+  if (signal?.aborted) {
+    throw new AntigravitySignInCancelledError()
+  }
   const config = antigravityLaunchConfig()
-  const result = await antigravityAccountsApi.startLogin(accountId, config)
+  options?.onPhase?.('starting')
+  const startPromise = antigravityAccountsApi.startLogin(accountId, config)
+
+  // If the user cancels while `agy_acp_server` is still booting (which can
+  // take 15–25s on Windows), reject immediately so the dialog closes right
+  // away and kill the spawned process as soon as `startLogin` settles.
+  let result: Awaited<typeof startPromise>
+  if (signal) {
+    let onStartAbort: (() => void) | null = null
+    try {
+      result = await new Promise<Awaited<typeof startPromise>>((resolve, reject) => {
+        onStartAbort = () => {
+          reject(new AntigravitySignInCancelledError())
+        }
+        if (signal.aborted) {
+          onStartAbort()
+          return
+        }
+        signal.addEventListener('abort', onStartAbort, { once: true })
+        startPromise.then(resolve, reject)
+      })
+    } catch (err) {
+      if (isAntigravitySignInCancelled(err)) {
+        void logFrontendError({
+          level: 'info',
+          source: 'antigravityAccounts.signIn',
+          message: `Antigravity account ${accountId} sign-in cancelled while starting (${methodId})`
+        })
+        void startPromise
+          .then((late) => {
+            useAcpStore.getState().clearPendingSignIn?.(late.agentId)
+            return useAcpStore
+              .getState()
+              .killAgent(late.agentId)
+              .catch(() => undefined)
+          })
+          .catch(() => undefined)
+      }
+      throw err
+    } finally {
+      if (onStartAbort) signal.removeEventListener('abort', onStartAbort)
+    }
+  } else {
+    result = await startPromise
+  }
+
   useAcpStore.setState((state) => ({
     agents: {
       ...state.agents,
@@ -66,20 +138,64 @@ export async function signInAntigravityAccount(accountId: string, methodId: stri
     },
     agentStatus: { ...state.agentStatus, [result.agentId]: 'connected' }
   }))
+
   let signedIn = false
+  let killPromise: Promise<unknown> | null = null
+  const stopAgent = (): Promise<unknown> => {
+    if (!killPromise) {
+      useAcpStore.getState().clearPendingSignIn?.(result.agentId)
+      killPromise = useAcpStore
+        .getState()
+        .killAgent(result.agentId)
+        .catch(() => undefined)
+    }
+    return killPromise
+  }
+
+  let onAuthAbort: (() => void) | null = null
   try {
-    await useAcpStore.getState().authenticateAgent(result.agentId, methodId)
+    if (signal?.aborted) {
+      throw new AntigravitySignInCancelledError()
+    }
+    options?.onPhase?.('waiting_browser')
+    const authPromise = useAcpStore.getState().authenticateAgent(result.agentId, methodId)
+    if (signal) {
+      await new Promise<void>((resolve, reject) => {
+        onAuthAbort = () => {
+          void stopAgent()
+          reject(new AntigravitySignInCancelledError())
+        }
+        if (signal.aborted) {
+          onAuthAbort()
+          return
+        }
+        signal.addEventListener('abort', onAuthAbort, { once: true })
+        authPromise.then(
+          () => resolve(),
+          (err) => reject(err)
+        )
+      })
+    } else {
+      await authPromise
+    }
     signedIn = true
     void logFrontendError({
       level: 'info',
       source: 'antigravityAccounts.signIn',
       message: `Antigravity account ${accountId} finished Google sign-in (${methodId})`
     })
+  } catch (err) {
+    if (isAntigravitySignInCancelled(err)) {
+      void logFrontendError({
+        level: 'info',
+        source: 'antigravityAccounts.signIn',
+        message: `Antigravity account ${accountId} sign-in cancelled while waiting (${methodId})`
+      })
+    }
+    throw err
   } finally {
-    await useAcpStore
-      .getState()
-      .killAgent(result.agentId)
-      .catch(() => undefined)
+    if (signal && onAuthAbort) signal.removeEventListener('abort', onAuthAbort)
+    await stopAgent()
   }
   if (signedIn) {
     // Trigger `session/new` on the active/failed Antigravity workspaces so the

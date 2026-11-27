@@ -105,7 +105,12 @@ async fn a_durable_registry_serves_what_a_restart_reloads() {
     assert_eq!(stored.id, "my-api");
     assert_eq!(
         stored.path.as_deref(),
-        Some(std::fs::canonicalize(&host.project_dir).unwrap().to_str().unwrap())
+        Some(
+            crate::acp::project_registry::validate_root_path(&host.project_dir)
+                .unwrap()
+                .to_str()
+                .unwrap()
+        )
     );
 
     // A new server process over the same file lists the project.
@@ -329,7 +334,10 @@ async fn moving_the_root_over_http_is_refused_busy_and_honors_cascade_in_the_bod
     host.add_project("p-1").await;
     let moved = host.project_dir.parent().unwrap().join("moved");
     std::fs::create_dir_all(&moved).unwrap();
-    let canonical = std::fs::canonicalize(&moved).unwrap().to_string_lossy().into_owned();
+    let canonical = crate::acp::project_registry::validate_root_path(&moved)
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
     let original = host.registry.get("p-1").unwrap().path;
     let app = app(state_for(&host));
 

@@ -11,6 +11,7 @@ use std::sync::atomic::Ordering;
 
 use serde::Serialize;
 
+use crate::acp::project_registry::validate_root_path;
 use crate::acp::session_persistence::UNASSIGNED_PROJECT_ID;
 use crate::acp::{FileProjectRegistry, ProjectRegistryError, RootCheck, VfsRoot};
 
@@ -198,7 +199,8 @@ impl ProjectRegistry {
                 let existing = existing.trim();
                 !existing.is_empty()
                     && Path::new(existing) != canonical
-                    && !std::fs::canonicalize(existing).is_ok_and(|resolved| resolved == canonical)
+                    && !validate_root_path(Path::new(existing))
+                        .is_ok_and(|resolved| resolved == canonical)
             })
     }
 
