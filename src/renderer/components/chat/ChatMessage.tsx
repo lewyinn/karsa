@@ -52,6 +52,7 @@ import { enterMessageSelectMode, useMessageSelectMode } from './message-select-m
 import { SelectionContextChip } from './SelectionContextChip'
 import { CommandChipLink, SkillChipLink } from './skill-file-links'
 import { ToolChip } from './ToolChip'
+import { looksLikeMarkdown } from './user-message-markdown'
 
 // The markdown renderer moved to `chat-agent-prose.tsx` to keep this file under
 // the ~800-line limit. Re-exported so existing importers keep their paths.
@@ -160,6 +161,15 @@ function UserMessageText({ text }: { text: string }): React.JSX.Element {
         pushFileSegments(cseg.text)
       }
     }
+  }
+  // No chips and the text has Markdown: render it like an agent reply. Text
+  // with chips keeps the plain path so chip positions stay intact.
+  if (!hasPills && contextCount === 0 && looksLikeMarkdown(text)) {
+    return (
+      <BubbleContent>
+        <AgentProse text={text} streaming={false} reduced />
+      </BubbleContent>
+    )
   }
   return (
     <BubbleContent className="whitespace-pre-wrap">

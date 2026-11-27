@@ -21,6 +21,7 @@ import { chatCodePlugin } from './chat-code-plugin'
 import { remarkBareLinkChips } from './chat-markdown-bare-links'
 import { ChatMarkdownCode } from './chat-markdown-code'
 import { remarkFilePathLinks } from './chat-markdown-file-links'
+import { encodeSpacesInFileLinks } from './chat-markdown-file-url-spaces'
 import {
   type GalleryItem,
   parseChatMarkdownBlocks,
@@ -258,7 +259,8 @@ export function AgentProse({
   // each text change. Throttle the VALUE, not the component: the text fed to
   // Streamdown commits at 10 Hz trailing-edge while streaming; the turn-end
   // render commits the exact final text immediately.
-  const text = useThrottledStreamingText(rawText, streaming)
+  const throttledText = useThrottledStreamingText(rawText, streaming)
+  const text = useMemo(() => encodeSpacesInFileLinks(throttledText), [throttledText])
   const colorTheme = useColorTheme()
   const shikiTheme = useMemo(() => syntaxShikiPair(colorTheme), [colorTheme])
   const rootRef = useRef<HTMLDivElement>(null)
