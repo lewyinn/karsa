@@ -6,7 +6,7 @@ import { useProjectStore } from '@/stores/project-store'
 import type { Project } from '@/types/project'
 import { formatChatReference, resolveChatReference } from './chat-reference'
 
-const HINT = '\nRead it with the Troupe read_chat tool.'
+const HINT = '\nRead it with the Karsa read_chat tool.'
 
 describe('formatChatReference', () => {
   it('writes every known line', () => {
@@ -19,11 +19,11 @@ describe('formatChatReference', () => {
       })
     ).toBe(
       [
-        'Troupe chat: Test the release skill',
+        'Karsa chat: Test the release skill',
         'Chat ID: b7c1e2a4-0001',
         'Project: skills-lab (ID p-skills)',
         'Folder: /home/me/skills-lab',
-        'Read it with the Troupe read_chat tool.'
+        'Read it with the Karsa read_chat tool.'
       ].join('\n')
     )
   })
@@ -35,18 +35,18 @@ describe('formatChatReference', () => {
         title: 'No folder',
         project: { id: 'p1', name: 'Repo' }
       })
-    ).toBe(`Troupe chat: No folder\nChat ID: c1\nProject: Repo (ID p1)${HINT}`)
+    ).toBe(`Karsa chat: No folder\nChat ID: c1\nProject: Repo (ID p1)${HINT}`)
   })
 
   it('leaves out the project when it is unknown', () => {
     expect(formatChatReference({ chatId: 'c1', title: 'Loose chat', cwd: '/tmp/x' })).toBe(
-      `Troupe chat: Loose chat\nChat ID: c1\nFolder: /tmp/x${HINT}`
+      `Karsa chat: Loose chat\nChat ID: c1\nFolder: /tmp/x${HINT}`
     )
   })
 
   it('keeps a multi-line title on its one line', () => {
     expect(formatChatReference({ chatId: 'c1', title: '  Fix\nthe   build ' })).toBe(
-      `Troupe chat: Fix the build\nChat ID: c1${HINT}`
+      `Karsa chat: Fix the build\nChat ID: c1${HINT}`
     )
   })
 
@@ -60,11 +60,11 @@ describe('formatChatReference', () => {
       })
     ).toBe(
       [
-        'Troupe chat: Odd names',
+        'Karsa chat: Odd names',
         'Chat ID: c1',
         'Project: Repo (ID p1\\nChat ID: evil)',
         'Folder: /tmp/a\\r\\nChat ID: evil',
-        'Read it with the Troupe read_chat tool.'
+        'Read it with the Karsa read_chat tool.'
       ].join('\n')
     )
   })

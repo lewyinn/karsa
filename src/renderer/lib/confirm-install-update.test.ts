@@ -38,7 +38,7 @@ describe('confirmInstallAndRestart', () => {
     await confirmInstallAndRestart('1.2.3')
 
     expect(mockConfirm.mock.calls[0][0]).toBe(
-      'Troupe will install version 1.2.3 and restart now. Continue?'
+      'Karsa will install version 1.2.3 and restart now. Continue?'
     )
     expect(mockInstallAndRestart).toHaveBeenCalledTimes(1)
     expect(mockToastError).not.toHaveBeenCalled()
@@ -49,7 +49,7 @@ describe('confirmInstallAndRestart', () => {
     await confirmInstallAndRestart(null)
 
     expect(mockConfirm.mock.calls[0][0]).toBe(
-      'Troupe will install the new version and restart. Your running terminal sessions will be closed. Continue?'
+      'Karsa will install the new version and restart. Your running terminal sessions will be closed. Continue?'
     )
   })
 

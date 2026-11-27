@@ -2734,7 +2734,7 @@ describe('ChatInputBar conversation mentions', () => {
           type: 'text',
           text:
             '<termul-conversation id="chat-2" title="Fix web reconnect">\n' +
-            'Transcript of the Troupe chat "Fix web reconnect" with an agent, attached by the user as context.\n\n' +
+            'Transcript of the Karsa chat "Fix web reconnect" with an agent, attached by the user as context.\n\n' +
             'User: why does it drop?\n' +
             'Agent: Backoff resets too early.\n' +
             '</termul-conversation>'
@@ -2762,7 +2762,7 @@ describe('ChatInputBar conversation mentions', () => {
           type: 'text',
           text:
             `<termul-conversation id="long" title="${capped}">\n` +
-            `Transcript of the Troupe chat "${capped}" with an agent, attached by the user as context.\n\n` +
+            `Transcript of the Karsa chat "${capped}" with an agent, attached by the user as context.\n\n` +
             'User: why does it drop?\n' +
             'Agent: Backoff resets too early.\n' +
             '</termul-conversation>'

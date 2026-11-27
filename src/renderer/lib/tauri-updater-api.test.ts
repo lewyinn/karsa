@@ -90,19 +90,19 @@ describe('compareVersions — SemVer prerelease precedence', () => {
 describe('channel URL selection', () => {
   it('returns the manifest URL for each channel per the spec hosting scheme', () => {
     expect(getChannelManifestUrl('stable')).toBe(
-      'https://github.com/gnoviawan/troupe/releases/latest/download/latest-stable.json'
+      'https://github.com/lewyinn/karsa/releases/latest/download/latest.json'
     )
     expect(getChannelManifestUrl('nightly')).toBe(
-      'https://github.com/gnoviawan/troupe/releases/download/nightly/nightly.json'
+      'https://github.com/lewyinn/karsa/releases/download/nightly/nightly.json'
     )
   })
 
   it('returns the release page URL for manual download fallbacks', () => {
     expect(getChannelReleasePageUrl('stable')).toBe(
-      'https://github.com/gnoviawan/troupe/releases/latest'
+      'https://github.com/lewyinn/karsa/releases/latest'
     )
     expect(getChannelReleasePageUrl('nightly')).toBe(
-      'https://github.com/gnoviawan/troupe/releases/tag/nightly'
+      'https://github.com/lewyinn/karsa/releases/tag/nightly'
     )
   })
 
@@ -146,7 +146,7 @@ describe('fetchChannelManifest via invoke (CSP/CORS-free server-side fetch)', ()
     }))
 
     await expect(checkForUpdates('nightly')).rejects.toThrow(
-      'Failed to check for updates from https://github.com/gnoviawan/troupe/releases/download/nightly/nightly.json: channel manifest returned HTTP 404'
+      'Failed to check for updates from https://github.com/lewyinn/karsa/releases/download/nightly/nightly.json: channel manifest returned HTTP 404'
     )
   })
 
@@ -156,7 +156,7 @@ describe('fetchChannelManifest via invoke (CSP/CORS-free server-side fetch)', ()
     })
 
     await expect(checkForUpdates('nightly')).rejects.toThrow(
-      'Failed to check for updates from https://github.com/gnoviawan/troupe/releases/download/nightly/nightly.json: network down'
+      'Failed to check for updates from https://github.com/lewyinn/karsa/releases/download/nightly/nightly.json: network down'
     )
   })
 })

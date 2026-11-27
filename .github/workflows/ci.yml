@@ -49,6 +49,21 @@ jobs:
           src/renderer/components/git/GitPanel.test.tsx
           src/renderer/components/shell/SidePanelColumn.test.tsx
           src/renderer/components/shell/tool-strip/ShellToolStrip.test.tsx
+          src/renderer/components/chat/chat-markdown-file-url-spaces.test.ts
+          src/renderer/components/chat/chat-agent-prose.file-url-spaces.test.tsx
+          src/renderer/components/chat/user-message-markdown.test.ts
+          src/renderer/lib/antigravity-account-name.test.ts
+          src/renderer/lib/__tests__/git-api.web.test.ts
+          src/renderer/stores/git-status-store.test.ts
+          src/renderer/lib/bug-report-api.test.ts
+          src/renderer/components/bug-report/ReportBugDialog.test.tsx
+          src/renderer/components/settings/provider/AntigravityProviderSettings.test.tsx
+          src/renderer/lib/chat-reference.test.ts
+          src/renderer/components/chat/conversation-context.test.ts
+          src/renderer/lib/confirm-install-update.test.ts
+          src/renderer/lib/factory-key-api.test.ts
+          src/renderer/lib/mcp-catalog-copy.test.ts
+          src/renderer/lib/manifest-check.test.ts
 
       - name: Build Tauri frontend bundle
         run: bun run build:frontend:tauri
