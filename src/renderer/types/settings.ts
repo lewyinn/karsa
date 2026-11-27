@@ -237,13 +237,15 @@ export const ACP_SESSION_REOPEN_TIMEOUT_OPTIONS: Array<{
   { value: 300, label: '5 minutes' }
 ]
 
-/** How long an idle agent chat stays open. `null` = env var or 30 minutes. */
+/** How long an idle agent chat stays open. `null` = env var or 10 minutes. */
 export const AGENT_IDLE_WINDOW_OPTIONS: Array<{
   value: number | null
   label: string
 }> = [
+  { value: 300, label: '5 minutes' },
+  { value: null, label: '10 minutes' },
   { value: 900, label: '15 minutes' },
-  { value: null, label: '30 minutes' },
+  { value: 1800, label: '30 minutes' },
   { value: 3600, label: '1 hour' },
   { value: 7200, label: '2 hours' },
   { value: 21600, label: '6 hours' },

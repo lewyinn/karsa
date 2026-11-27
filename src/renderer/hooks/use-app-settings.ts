@@ -207,7 +207,7 @@ export function useAppSettingsLoader(): void {
           const live = await acpApi.getAgentIdleWindow()
           if (epoch !== idleWindowEpoch) return
           if (live.source === 'setting' || live.source === 'default') {
-            const next = live.source === 'default' || live.secs === 1800 ? null : live.secs
+            const next = live.source === 'default' || live.secs === 600 ? null : live.secs
             if (next !== settings.agentIdleWindowSecs) {
               useAppSettingsStore.getState().updateSetting('agentIdleWindowSecs', next)
               await persistenceApi.writeDebounced(

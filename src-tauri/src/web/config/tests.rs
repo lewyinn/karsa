@@ -400,7 +400,7 @@ fn from_args_tunable_defaults() {
     }
     let cfg = ServerConfig::from_args(Vec::<&str>::new()).expect("defaults");
     restore_env(saved);
-    assert_eq!(cfg.agent_idle_window_secs, 1800);
+    assert_eq!(cfg.agent_idle_window_secs, DEFAULT_AGENT_IDLE_WINDOW_SECS);
     assert!(!cfg.agent_idle_window_locked);
     assert_eq!(cfg.overflow_tolerance, 15);
     assert_eq!(cfg.receipt_retention_secs, 600);

@@ -26,7 +26,7 @@ fn trimmed_env_path(suffix: &str) -> Option<PathBuf> {
 
 /// Default idle-agent reap window in seconds (30 min). The one definition the
 /// standalone server and the desktop host both read; no client holds a copy.
-pub const DEFAULT_AGENT_IDLE_WINDOW_SECS: u64 = 1800;
+pub const DEFAULT_AGENT_IDLE_WINDOW_SECS: u64 = 600;
 /// Default per-project terminal cap. The host enforces it on every spawn
 /// carrier; the global cap of 30 is fixed in the PTY manager.
 pub const DEFAULT_MAX_TERMINALS_PER_PROJECT: usize = 10;
@@ -147,7 +147,7 @@ pub fn server_agent_idle_window_lock(cfg: &ServerConfig) -> Option<&'static str>
     }
 }
 
-/// `$TROUPE_AGENT_IDLE_REAP_SECS` → [`DEFAULT_AGENT_IDLE_WINDOW_SECS`] (1800).
+/// `$TROUPE_AGENT_IDLE_REAP_SECS` → [`DEFAULT_AGENT_IDLE_WINDOW_SECS`] (600).
 /// An invalid env value is ignored with a logged warning.
 #[must_use]
 pub fn desktop_agent_idle_window_secs() -> DesktopAgentIdleWindow {
@@ -427,7 +427,7 @@ pub struct ServerConfig {
     pub event_log_capacity: usize,
     /// Idle window (seconds) after which the host reaps an idle agent.
     /// `--agent-idle-window-secs` → `$TROUPE_AGENT_IDLE_REAP_SECS` →
-    /// [`DEFAULT_AGENT_IDLE_WINDOW_SECS`] (1800). The desktop host reads the
+    /// [`DEFAULT_AGENT_IDLE_WINDOW_SECS`] (600). The desktop host reads the
     /// same env var and default through [`desktop_agent_idle_window_secs`].
     pub agent_idle_window_secs: u64,
     /// `true` when a flag or `$TROUPE_AGENT_IDLE_REAP_SECS` fixed the window.

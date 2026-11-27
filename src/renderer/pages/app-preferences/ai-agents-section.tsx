@@ -138,7 +138,7 @@ export function AiAgentsSection({
           <TimeoutRow
             id="agent-idle-window"
             label="Close idle chats after"
-            value={agentIdleWindowSecs === 1800 ? null : agentIdleWindowSecs}
+            value={agentIdleWindowSecs === 600 ? null : agentIdleWindowSecs}
             options={AGENT_IDLE_WINDOW_OPTIONS}
             onChange={handleAgentIdleWindowChange}
             help="A chat closes after you leave it this long. A running answer or a waiting question keeps it open."

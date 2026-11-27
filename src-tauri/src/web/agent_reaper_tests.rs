@@ -16,6 +16,7 @@ use crate::web::agent_reaper::{
     IDLE_WINDOW_TEST_LOCK,
     DEFAULT_SWEEP_INTERVAL,
 };
+use crate::web::config::DEFAULT_AGENT_IDLE_WINDOW_SECS;
 use crate::web::sink::WsRelaySink;
 
 const WINDOW: Duration = Duration::from_secs(30);
@@ -281,7 +282,7 @@ async fn agent_idle_window_precedence_setting_then_env_lock_then_operator() {
     let _guard = IDLE_WINDOW_TEST_LOCK.lock().await;
     reset_agent_idle_window_for_tests();
     let open = resolved_agent_idle_window();
-    assert_eq!(open.secs, 1800);
+    assert_eq!(open.secs, DEFAULT_AGENT_IDLE_WINDOW_SECS);
     assert_eq!(open.source, "default");
 
     set_agent_idle_window_override(Some(3600));

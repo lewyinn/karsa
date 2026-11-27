@@ -5,7 +5,7 @@
 //! The host owns that lifecycle: the standalone `termul-server` (`serve`) and
 //! the desktop app (`lib.rs` setup) each start exactly one reaper over their
 //! `AcpManager`. The live window is [`resolved_agent_idle_window`]: the server
-//! locks the value from its flag, env var, or the 30-minute default; the
+//! locks the value from its flag, env var, or the 10-minute default; the
 //! desktop reads `$TERMUL_AGENT_IDLE_REAP_SECS` and, when that variable is
 //! unset, accepts the App Preferences override on the next sweep.
 //!

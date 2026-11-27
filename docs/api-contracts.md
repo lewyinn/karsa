@@ -864,7 +864,7 @@ Every ending of an agent is announced to every connected client, never only to t
 
 `close_session` during a running turn cancels the turn, waits for its terminator, then closes the session, so the turn still ends with exactly one `acp:prompt_complete` followed by `acp:session_closed`. If the agent does not confirm the cancel in time, the host drops the session locally, emits `acp:session_closed`, and replies with an error.
 
-The host reaps an agent only after `--agent-idle-window-secs` (default 1800) with no host-observed activity: no running turn, no unanswered approval, question or elicitation, no running agent-owned terminal and no reopen in flight. Connections, subscriptions and presence never keep an agent alive, and a disconnect never stops one.
+The host reaps an agent only after `--agent-idle-window-secs` (default 600) with no host-observed activity: no running turn, no unanswered approval, question or elicitation, no running agent-owned terminal and no reopen in flight. Connections, subscriptions and presence never keep an agent alive, and a disconnect never stops one.
 
 ### `send_prompt` durability ordering
 
