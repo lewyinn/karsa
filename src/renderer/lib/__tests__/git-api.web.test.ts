@@ -417,6 +417,21 @@ describe('gitApi (web vs desktop branch)', () => {
   it('push: desktop → invoke("git_push")', async () => {
     await expectDesktopCall(() => gitApi.push(CWD), 'git_push', { cwd: CWD })
   })
+  it('push after amend: web → POST /git/push with forceWithLease', async () => {
+    await expectWebCall(
+      () => gitApi.push(CWD, true),
+      '/git/push',
+      'POST',
+      { cwd: CWD, forceWithLease: true },
+      { success: true }
+    )
+  })
+  it('push after amend: desktop → invoke("git_push") with forceWithLease', async () => {
+    await expectDesktopCall(() => gitApi.push(CWD, true), 'git_push', {
+      cwd: CWD,
+      forceWithLease: true
+    })
+  })
 
   // ---- pull ----
   it('pull: web → POST /git/pull', async () => {

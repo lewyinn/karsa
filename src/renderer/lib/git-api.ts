@@ -148,8 +148,11 @@ export const gitApi = {
         )
       : webServerGit.commit(cwd, summary, description, amend, expectedHead),
 
-  push: (cwd: string) =>
-    isTauriContext() ? invoke<void>('git_push', { cwd }) : webServerGit.push(cwd),
+  /** `forceWithLease` is only for the push that follows amending a published commit. */
+  push: (cwd: string, forceWithLease = false) =>
+    isTauriContext()
+      ? invoke<void>('git_push', forceWithLease ? { cwd, forceWithLease: true } : { cwd })
+      : webServerGit.push(cwd, forceWithLease),
 
   pull: (cwd: string) =>
     isTauriContext() ? invoke<string>('git_pull', { cwd }) : webServerGit.pull(cwd),

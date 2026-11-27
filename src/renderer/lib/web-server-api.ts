@@ -373,8 +373,11 @@ export const webServerGit = {
     if (!res.success) throw ipcFailureError(res)
   },
 
-  async push(cwd: string): Promise<void> {
-    const res = await postJson<void>('/git/push', { cwd })
+  async push(cwd: string, forceWithLease = false): Promise<void> {
+    const res = await postJson<void>(
+      '/git/push',
+      forceWithLease ? { cwd, forceWithLease: true } : { cwd }
+    )
     if (!res.success) throw new Error(res.error)
   },
 

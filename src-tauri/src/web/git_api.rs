@@ -49,6 +49,16 @@ pub struct GitCwdRequest {
     pub cwd: String,
 }
 
+/// `POST /git/push { cwd, forceWithLease? }` body. `forceWithLease` defaults to
+/// `false` and is only set for the push that follows an amend.
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct GitPushRequest {
+    pub cwd: String,
+    #[serde(default)]
+    pub force_with_lease: bool,
+}
+
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct GitDiscoverReposRequest {
@@ -489,7 +499,7 @@ pub async fn commit(
 pub async fn push(
     State(state): State<AppState>,
     ConnectInfo(peer): ConnectInfo<SocketAddr>,
-    Json(req): Json<GitCwdRequest>,
+    Json(req): Json<GitPushRequest>,
 ) -> impl IntoResponse {
     let resolved = match resolve_cwd::<()>(&req.cwd, &state, Some(peer), true) {
         Ok(p) => p,
@@ -500,7 +510,8 @@ pub async fn push(
         Err(resp) => return resp,
     };
     let cwd_for_log = cwd.clone();
-    let result = tokio::task::spawn_blocking(move || git_tracker::git_push_current(&cwd))
+    let force = req.force_with_lease;
+    let result = tokio::task::spawn_blocking(move || git_tracker::git_push_current_with(&cwd, force))
         .await
         .map_err(|e| format!("git push task failed: {e}"));
     let body = match result {

@@ -419,7 +419,7 @@ export interface GitApi {
     amend?: boolean,
     expectedHead?: string
   ) => Promise<void>
-  push: (cwd: string) => Promise<void>
+  push: (cwd: string, forceWithLease?: boolean) => Promise<void>
   getCommitContext: (cwd: string) => Promise<GitCommitContext>
   init: (cwd: string) => Promise<void>
   checkoutBranch: (cwd: string, branch: string, isRemote?: boolean) => Promise<void>

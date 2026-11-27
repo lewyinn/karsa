@@ -327,12 +327,14 @@ pub(crate) fn commit_failure_text(failure: CommitFailure) -> String {
 }
 
 /// Push the current branch to `origin`, setting upstream when none exists.
+/// `force_with_lease` is for the push after amending a published commit.
 #[tauri::command]
-pub async fn git_push(cwd: String) -> Result<(), String> {
+pub async fn git_push(cwd: String, force_with_lease: Option<bool>) -> Result<(), String> {
     // git_push_current performs a network push (up to the network timeout), so
     // run it on the blocking thread pool instead of the async executor.
+    let force = force_with_lease.unwrap_or(false);
     tauri::async_runtime::spawn_blocking(move || {
-        crate::trackers::git_tracker::git_push_current(&cwd)
+        crate::trackers::git_tracker::git_push_current_with(&cwd, force)
     })
     .await
     .map_err(|e| format!("git push task failed: {e}"))?

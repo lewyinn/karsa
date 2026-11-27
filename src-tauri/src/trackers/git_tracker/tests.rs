@@ -1408,6 +1408,74 @@ fn it_push_sets_upstream_and_resets_ahead() {
 }
 
 #[test]
+fn it_push_after_amend_needs_force_with_lease() {
+    if git_missing() {
+        return;
+    }
+    let repo = init_repo("push-amend");
+    std::fs::write(repo.join("a.txt"), "x\n").unwrap();
+    git(&repo, &["add", "-A"]);
+    git(&repo, &["commit", "-qm", "init"]);
+    let bare = unique_temp_dir("push-amend-bare");
+    git(&bare, &["init", "--bare", "-q"]);
+    git(&repo, &["remote", "add", "origin", bare.to_str().unwrap()]);
+    let cwd = repo.to_str().unwrap();
+    git_push_current(cwd).unwrap();
+
+    // Amending a pushed commit rewrites history: a plain push is refused.
+    git(&repo, &["commit", "--amend", "-qm", "init (amended)"]);
+    assert!(git_push_current(cwd).is_err(), "plain push must be rejected");
+
+    // The lease push goes through, and the branch is in sync again.
+    git_push_current_with(cwd, true).unwrap();
+    let ctx = git_get_commit_context(cwd).unwrap();
+    assert_eq!(ctx.ahead, 0);
+    assert_eq!(ctx.behind, 0);
+
+    std::fs::remove_dir_all(&repo).ok();
+    std::fs::remove_dir_all(&bare).ok();
+}
+
+#[test]
+fn it_force_with_lease_refuses_when_remote_moved() {
+    if git_missing() {
+        return;
+    }
+    let repo = init_repo("push-lease-a");
+    std::fs::write(repo.join("a.txt"), "x\n").unwrap();
+    git(&repo, &["add", "-A"]);
+    git(&repo, &["commit", "-qm", "init"]);
+    let bare = unique_temp_dir("push-lease-bare");
+    git(&bare, &["init", "--bare", "-q"]);
+    let bare_str = bare.to_str().unwrap();
+    git(&repo, &["remote", "add", "origin", bare_str]);
+    let cwd = repo.to_str().unwrap();
+    git_push_current(cwd).unwrap();
+
+    // Someone else pushes a commit on top, which `repo` never fetched.
+    let other = unique_temp_dir("push-lease-b");
+    git(&other, &["clone", "-q", bare_str, "."]);
+    git(&other, &["config", "user.email", "o@example.com"]);
+    git(&other, &["config", "user.name", "other"]);
+    std::fs::write(other.join("b.txt"), "theirs\n").unwrap();
+    git(&other, &["add", "-A"]);
+    git(&other, &["commit", "-qm", "theirs"]);
+    git(&other, &["push", "-q"]);
+
+    git(&repo, &["commit", "--amend", "-qm", "init (amended)"]);
+    // `repo` never fetched, so its remote-tracking ref is the pre-amend commit
+    // while the remote holds "theirs": the lease must not overwrite it.
+    assert!(
+        git_push_current_with(cwd, true).is_err(),
+        "lease must refuse after the remote moved"
+    );
+
+    std::fs::remove_dir_all(&repo).ok();
+    std::fs::remove_dir_all(&bare).ok();
+    std::fs::remove_dir_all(&other).ok();
+}
+
+#[test]
 fn it_push_rejects_detached_head() {
     if git_missing() {
         return;

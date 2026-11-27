@@ -278,7 +278,28 @@ describe('GitPanel commit message generation', () => {
     await waitFor(() => expect(gitState.push).toHaveBeenCalledTimes(1))
     expect(gitState.stageFiles).toHaveBeenCalledWith('/work', ['src/a.ts'])
     expect(commit).toHaveBeenCalledWith('/work', 'feat: one-click commit and push', '', false)
-    expect(gitState.push).toHaveBeenCalledWith('/work')
+    expect(gitState.push).toHaveBeenCalledWith('/work', false)
+  })
+
+  it('pushes with a lease after amending', async () => {
+    commit.mockResolvedValue(undefined)
+    gitState.push.mockResolvedValue(undefined)
+    gitState.commitContexts['/work'].ahead = 1 // not yet pushed: no confirm dialog
+    try {
+      render(<GitPanel cwd="/work" isVisible={false} />)
+
+      fireEvent.click(screen.getByLabelText('Amend last commit'))
+      fireEvent.change(screen.getByLabelText('Commit summary'), {
+        target: { value: 'feat: reworded' }
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'Commit and push' }))
+
+      await waitFor(() => expect(gitState.push).toHaveBeenCalledTimes(1))
+      expect(commit).toHaveBeenCalledWith('/work', 'feat: reworded', '', true)
+      expect(gitState.push).toHaveBeenCalledWith('/work', true)
+    } finally {
+      gitState.commitContexts['/work'].ahead = 0
+    }
   })
 })
 

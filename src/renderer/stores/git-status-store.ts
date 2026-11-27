@@ -181,7 +181,7 @@ export interface GitStatusState {
   stageHunk: (cwd: string, path: string, hunkPatch: string) => Promise<void>
   unstageHunk: (cwd: string, path: string, hunkPatch: string) => Promise<void>
   commit: (cwd: string, summary: string, description: string, amend: boolean) => Promise<void>
-  push: (cwd: string) => Promise<void>
+  push: (cwd: string, forceWithLease?: boolean) => Promise<void>
   pull: (cwd: string) => Promise<string>
   fetchRemote: (cwd: string) => Promise<void>
   stashSave: (cwd: string, message?: string, includeUntracked?: boolean) => Promise<void>
@@ -502,9 +502,9 @@ export const useGitStatusStore = create<GitStatusState>((set, get) => ({
     await refreshAfterMutation(get, cwd)
   },
 
-  push: async (cwd) => {
+  push: async (cwd, forceWithLease) => {
     assertWritable(cwd)
-    await gitApi.push(cwd)
+    await gitApi.push(cwd, forceWithLease)
     await refreshAfterMutation(get, cwd)
   },
 

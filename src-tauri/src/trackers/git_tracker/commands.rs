@@ -896,7 +896,17 @@ pub fn git_commit_stamped(
 /// Push the current branch to `origin`. When the branch has no upstream, it is
 /// published with `--set-upstream origin <branch>`. Uses the network timeout.
 /// Rejects in a detached-HEAD / no-branch state.
+#[cfg(test)]
 pub fn git_push_current(cwd: &str) -> Result<(), String> {
+    git_push_current_with(cwd, false)
+}
+
+/// [`git_push_current`] with an optional `--force-with-lease`, for a push that
+/// follows `commit --amend` of a commit the upstream already holds. The lease
+/// refuses the push when the remote moved since the last fetch, so it never
+/// overwrites someone else's commits the way a bare `--force` would. It only
+/// applies when an upstream exists; publishing a new branch is never forced.
+pub fn git_push_current_with(cwd: &str, force_with_lease: bool) -> Result<(), String> {
     let branch = GitTracker::check_branch_internal(cwd)
         .ok_or_else(|| "Not on a branch (detached HEAD); cannot push".to_string())?;
 
@@ -906,7 +916,12 @@ pub fn git_push_current(cwd: &str) -> Result<(), String> {
             .unwrap_or(false);
 
     let args: Vec<&str> = if has_upstream {
-        vec!["push"]
+        if force_with_lease {
+            log::info!("[git] force-with-lease push for '{}' in {}", branch, cwd);
+            vec!["push", "--force-with-lease"]
+        } else {
+            vec!["push"]
+        }
     } else {
         vec!["push", "--set-upstream", "origin", &branch]
     };

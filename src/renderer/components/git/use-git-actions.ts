@@ -98,6 +98,8 @@ export function useGitActions({ cwd, setSelectedStaged, clearSelection }: UseGit
   // Synchronous in-flight guard so a same-tick double-click cannot dispatch two
   // commits before the isCommitting state has re-rendered.
   const commitInFlight = useRef(false)
+  // Set after an amend; the next push goes out with --force-with-lease.
+  const needsLeasePush = useRef(false)
   const generationInFlight = useRef(false)
   // Synchronous guard for per-hunk stage/unstage: a fast second click on
   // another hunk would otherwise build a patch from the pre-mutation diff
@@ -123,6 +125,7 @@ export function useGitActions({ cwd, setSelectedStaged, clearSelection }: UseGit
     setDescription('')
     setAmend(false)
     setConfirmAmendOpen(false)
+    needsLeasePush.current = false
     clearSelection()
   }, [cwd, setSelectedFile, setSelectedStaged, clearSelection])
 
@@ -441,12 +444,16 @@ export function useGitActions({ cwd, setSelectedStaged, clearSelection }: UseGit
       }
       await commit(cwd, summary, description, amend)
       committed = true
+      // An amend rewrites HEAD, so the next push needs a lease even if the user
+      // pushes later with the plain Push button.
+      if (amend) needsLeasePush.current = true
       setSummary('')
       setDescription('')
       setAmend(false)
 
       if (andPush) {
-        await push(cwd)
+        await push(cwd, needsLeasePush.current)
+        needsLeasePush.current = false
         toast.success(
           autoStage ? 'Staged all, committed & pushed to remote' : 'Committed & pushed to remote'
         )
@@ -497,7 +504,8 @@ export function useGitActions({ cwd, setSelectedStaged, clearSelection }: UseGit
     if (isPushing || isPulling || isCommitting || generationInFlight.current) return
     setIsPushing(true)
     try {
-      await push(cwd)
+      await push(cwd, needsLeasePush.current)
+      needsLeasePush.current = false
       toast.success('Pushed to remote')
     } catch (error) {
       toast.error(`Failed to push: ${String(error)}`)

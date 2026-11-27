@@ -330,9 +330,14 @@ describe('git-status-store commit footer', () => {
 
   it('push invokes gitApi.push then refreshes status and context', async () => {
     await useGitStatusStore.getState().push(CWD)
-    expect(gitApi.push).toHaveBeenCalledWith(CWD)
+    expect(gitApi.push).toHaveBeenCalledWith(CWD, undefined)
     expect(gitApi.getStatus).toHaveBeenCalledWith(CWD)
     expect(gitApi.getCommitContext).toHaveBeenCalledWith(CWD)
+  })
+
+  it('push forwards forceWithLease to gitApi.push', async () => {
+    await useGitStatusStore.getState().push(CWD, true)
+    expect(gitApi.push).toHaveBeenCalledWith(CWD, true)
   })
 
   it('push propagates errors to the caller', async () => {

@@ -497,7 +497,7 @@ export function AmendCommitDialog({
       isOpen={isOpen}
       variant="danger"
       title="Amend pushed commit"
-      message="The last commit appears to already be pushed. Amending rewrites published history and will require a force-push to update the remote. Continue?"
+      message="The last commit appears to already be pushed. Amending rewrites published history, so the next push uses --force-with-lease to update the remote. It is refused if the remote has newer commits you have not fetched. Continue?"
       confirmLabel="Amend anyway"
       isLoading={isLoading}
       onConfirm={onConfirm}
