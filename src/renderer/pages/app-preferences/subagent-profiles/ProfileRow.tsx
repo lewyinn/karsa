@@ -142,8 +142,8 @@ function ApprovalsField({
       {value === 'allowAll' ? (
         <p className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-warning">
           <AlertTriangle size={14} aria-hidden="true" className="mt-px shrink-0" />
-          Karsa answers every permission prompt with Allow, except mode switches. Runs stay in
-          their own worktree.
+          Karsa answers every permission prompt with Allow, except mode switches. Runs stay in their
+          own worktree.
         </p>
       ) : null}
     </FieldRow>

@@ -81,8 +81,8 @@ export function GithubStatusView({
         <>
           <h3 className="text-sm font-medium text-foreground">Sign in to {blocker.host}</h3>
           <p className="text-xs text-muted-foreground">
-            Karsa uses your GitHub CLI login and never stores a token. Sign in opens a terminal
-            that runs:
+            Karsa uses your GitHub CLI login and never stores a token. Sign in opens a terminal that
+            runs:
           </p>
           <code className="max-w-full rounded-md bg-muted px-2 py-1 font-mono text-2xs text-foreground [overflow-wrap:anywhere]">
             {blocker.loginCommand}

@@ -13,7 +13,14 @@ Personal AI-assisted desktop workspace built with Tauri, React, TypeScript, and 
   - Synced **Repo Switcher** across both the **Changes** and **GitHub** panels, plus combined uncommitted-change counts in the right tool strip.
 - **GitHub Panel Enhancements**
   - **`All repos`** merged mode in the GitHub panel combining Issues and Pull Requests from all discovered sub-repositories with per-row repo badges.
-  - **`+ New issue`** dialog (`github_create_issue`) with Target Repo picker, Markdown description, labels, assignees, and automatic opening of the created issue tab (ready for Agent Chat handoff).
+  - **`+ New issue`** dialog (`github_create_issue`) with Target Repo picker, Markdown description, labels, assignees, and automatic opening of the created issue tab.
+  - **`+ New PR`** dialog (`github_create_pr`) with Target Repo picker, auto-detected head/base branches, Draft PR toggle, and **`Generate with AI`** title & Markdown description.
+  - **`Start Branch`** from Issue detail (creates & checks out `fix/<n>-<slug>` directly in the issue's repo folder and opens Agent Chat, with optional auto-send).
+  - **Issue `Development` tracker** showing progress status (`Not started` / `In progress` / `PR open` / `Merged`), linked local branches (with 1-click checkout), matching commits, linked PRs, and 1-click `Post progress` comment.
+- **AI Usage & Quota Dashboard**
+  - Live **Claude (5h & Weekly)** and **Antigravity** model quota bars with reset countdowns.
+  - Automatic live token pricing fetched from **OpenRouter** (24h cached + offline fallback) for estimated USD cost tracking.
+  - Daily `Recharts` chart (`Cost ($)` / `Tokens`) and detailed **Sessions** & **Projects** breakdown lists, plus wide modal view.
 - **Inline `N files changed` Card in Agent Chat**
   - Collapsible summary card above the chat composer with downward inline diffs (without opening a side panel).
   - Multi-repo aware (`frontend` / `backend` pills), plus per-file **Stage / Unstage** and confirmed **Revert** actions directly from chat.

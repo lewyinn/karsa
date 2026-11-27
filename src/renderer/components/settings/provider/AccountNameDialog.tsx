@@ -64,9 +64,7 @@ export function AccountNameDialog({
       <DialogContent className="max-h-[90dvh] overflow-y-auto overscroll-contain sm:max-w-[420px]">
         <DialogHeader>
           <DialogTitle>Rename account</DialogTitle>
-          <DialogDescription>
-            Karsa shows this name instead of the email address.
-          </DialogDescription>
+          <DialogDescription>Karsa shows this name instead of the email address.</DialogDescription>
         </DialogHeader>
         <form
           className="grid gap-1.5 py-2"

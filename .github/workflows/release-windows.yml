@@ -86,8 +86,34 @@ jobs:
           }
           "value=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
+      - name: Publish GitHub Release (Initial v0.1.0)
+        if: steps.tag.outputs.value == 'v0.1.0'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.0
+          name: Karsa v0.1.0
+          generate_release_notes: false
+          body: |
+            ## Karsa v0.1.0
+
+            Initial personal release of **Karsa** by [@lewyinn](https://github.com/lewyinn) (forked from [gnoviawan/troupe](https://github.com/gnoviawan/troupe) under the MIT License).
+
+            ### Added & Customized
+            - **Multi-Repo Workspace Support** (`frontend` + `backend` in 1 project) with synced Repo Switcher across Changes & GitHub
+            - **GitHub Power-Ups:** `All repos` merged view, `+ New issue`, `+ New PR` (with AI draft), `Start Branch` from Issue, and Issue `Development` tracker (branches, commits, linked PRs, & post progress)
+            - **Inline `N files changed` Card in Chat** with downward inline diff dropdown, multi-repo pills, and per-file Stage/Unstage & Revert
+            - **Upgraded AI Commit Message Generator** (Conventional Commits, unstaged fallback, auto-skip lockfiles)
+            - **One-Click `Run Stack`** multi-service runner with localhost URL detection & `Fix in Chat`
+            - **Share-Screen-Safe `.env` Quick Manager** (masked by default + `.env.example` missing-key sync)
+            - **AI Usage & Quota Dashboard** (live Claude/Antigravity quotas, live OpenRouter model pricing, daily charts, Sessions & Projects breakdown)
+            - Curated ACP catalog (**Claude Code** & **Antigravity**), unified Accounts/Runtime banner, 10s toast duration, collapsible Git sections
+
+            ### Removed
+            - Remote Server / Mobile Companion (`troupe-server`, `apps/rune`), Tauri auto-updater, Codex & Gemini CLI, Workspace Snapshots, upstream Report a bug links, and legacy upstream workflows
+          files: release-artifacts/*
+
       - name: Publish GitHub Release
-        if: steps.tag.outputs.value != ''
+        if: steps.tag.outputs.value != '' && steps.tag.outputs.value != 'v0.1.0'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.value }}

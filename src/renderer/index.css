@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "shadcn/tailwind.css";
+@import "./styles/shadcn-tailwind.css";
 @config "../../tailwind.config.ts";
 
 /* App animations. Kept in CSS rather than tailwind.config.ts: JS-config
