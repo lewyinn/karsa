@@ -25,12 +25,12 @@ use crate::process_util::background_command_hygiene;
 const LOG_TAIL_BYTES: usize = 64 * 1024;
 
 /// Repo `gh issue create` files against, in `gh -R` `HOST/OWNER/REPO` form.
-const ISSUE_REPO: &str = "github.com/gnoviawan/troupe";
+const ISSUE_REPO: &str = "github.com/lewyinn/karsa";
 /// Owner part of every issue link the issue repo can print.
-const ISSUE_URL_OWNER_PREFIX: &str = "https://github.com/gnoviawan/";
-/// Every name the issue repo has had. Around the termul -> troupe rename,
-/// `gh` can print the new issue's link under either name.
-const ISSUE_REPO_NAMES: [&str; 2] = ["termul", "troupe"];
+const ISSUE_URL_OWNER_PREFIX: &str = "https://github.com/lewyinn/";
+/// Every name the issue repo has had. `gh` prints the new issue's link under
+/// the repo's current name.
+const ISSUE_REPO_NAMES: [&str; 1] = ["karsa"];
 /// Host `gh` must be authenticated against for the issue repo.
 const ISSUE_HOST: &str = "github.com";
 /// Most chars of `gh` stderr kept in a `Failed` reason.

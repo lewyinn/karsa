@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
-import { Palette, SlidersHorizontal } from '@/components/icons'
+import { Bug, Palette, SlidersHorizontal } from '@/components/icons'
 import { RailButton, type RailButtonSize, railButtonClass } from '@/components/shell/rail-button'
 import { useShortcutLabel } from '@/components/shell/use-shortcut-label'
 import { TitleBarShortcutsPopover } from '@/components/TitleBarShortcutsPopover'
 import { cn } from '@/lib/utils'
+import { useReportBugStore } from '@/stores/report-bug-store'
 import { useSettingsModalStore, useSettingsModalView } from '@/stores/settings-modal-store'
 import { useRailCollapsed } from './rail/rail-density'
 import { RAIL_BLOCK_FADE_CLASS } from './rail/rail-motion'
@@ -153,6 +154,14 @@ export function RailFooter({
         onClick={() => useSettingsModalStore.getState().openApp()}
       >
         <SlidersHorizontal size={14} />
+      </RailButton>
+      <RailButton
+        label="Report a bug"
+        size="base"
+        aria-label="Report a bug"
+        onClick={() => useReportBugStore.getState().openReport()}
+      >
+        <Bug size={14} />
       </RailButton>
       <RailUtilityButtons
         isShortcutsOpen={isShortcutsOpen}

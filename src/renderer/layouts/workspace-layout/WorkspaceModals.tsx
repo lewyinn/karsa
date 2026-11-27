@@ -13,6 +13,7 @@ import {
 } from '@/layouts/workspace-layout/WorkspaceCloseDialogs'
 import { WorktreeCreateModalHost } from '@/layouts/workspace-layout/WorktreeCreateModalHost'
 import { useAppSettingsStore } from '@/stores/app-settings-store'
+import { useReportBugOpen, useReportBugStore } from '@/stores/report-bug-store'
 import { useSettingsModalView } from '@/stores/settings-modal-store'
 import { useThemePickerOpen } from '@/stores/theme-picker-store'
 import type { Project } from '@/types/project'
@@ -25,6 +26,9 @@ const CommandHistoryModal = lazy(() =>
 )
 const CommandPalette = lazy(() =>
   import('@/components/CommandPalette').then((m) => ({ default: m.CommandPalette }))
+)
+const ReportBugDialog = lazy(() =>
+  import('@/components/bug-report/ReportBugDialog').then((m) => ({ default: m.ReportBugDialog }))
 )
 const ThemePicker = lazy(() =>
   import('@/components/ThemePicker').then((m) => ({ default: m.ThemePicker }))
@@ -91,6 +95,7 @@ export function WorkspaceModals({
 }: WorkspaceModalsProps): React.JSX.Element {
   const settingsModalView = useSettingsModalView()
   const isThemePickerOpen = useThemePickerOpen()
+  const isReportBugOpen = useReportBugOpen()
   const terminalProfiles = useAppSettingsStore((state) => state.settings.terminalProfiles)
   const { sshProfiles, handleSSHConnect } = ssh
   const {
@@ -122,6 +127,12 @@ export function WorkspaceModals({
         </Suspense>
       )}
 
+      {isReportBugOpen && (
+        <Suspense fallback={null}>
+          <ReportBugDialog />
+        </Suspense>
+      )}
+
       {isCommandPaletteOpen && (
         <Suspense fallback={null}>
           <CommandPalette
@@ -145,6 +156,7 @@ export function WorkspaceModals({
             onOpenCommandHistory={activeProjectId ? handleOpenCommandHistory : undefined}
             onOpenShortcutMenu={handleOpenShortcutMenu}
             onOpenThemePicker={handleOpenThemePicker}
+            onReportBug={() => useReportBugStore.getState().openReport()}
             onSSHConnect={handleSSHConnect}
             sshProfiles={sshProfiles.map((p) => ({
               id: p.id,

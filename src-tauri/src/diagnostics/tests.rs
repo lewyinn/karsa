@@ -384,7 +384,7 @@ fn gh_success_returns_issue_url_and_cleans_up_body_file() {
             *staged_body.borrow_mut() =
                 std::fs::read_to_string(&file).expect("body file readable during create");
             *staged.borrow_mut() = file;
-            return output(0, "https://github.com/gnoviawan/troupe/issues/42\n", "");
+            return output(0, "https://github.com/lewyinn/karsa/issues/42\n", "");
         }
         output(0, "ok", "")
     });
@@ -392,7 +392,7 @@ fn gh_success_returns_issue_url_and_cleans_up_body_file() {
     assert_eq!(
         result,
         BugReportSubmitResult::Submitted {
-            issue_url: "https://github.com/gnoviawan/troupe/issues/42".to_string()
+            issue_url: "https://github.com/lewyinn/karsa/issues/42".to_string()
         }
     );
 
@@ -405,7 +405,7 @@ fn gh_success_returns_issue_url_and_cleans_up_body_file() {
     let create = calls.nth(2);
     assert_eq!(
         create[..4],
-        ["issue", "create", "-R", "github.com/gnoviawan/troupe"]
+        ["issue", "create", "-R", "github.com/lewyinn/karsa"]
     );
     assert!(
         create
@@ -517,13 +517,14 @@ fn staged_body_file_is_owner_only_and_cleaned_up() {
 }
 
 #[test]
-fn parse_issue_url_accepts_both_repo_names() {
-    // Built from the bare names so the rebrand codemod, which rewrites full
-    // repo URLs, cannot turn the old-name case into a second new-name case.
-    for name in ["termul", "troupe"] {
-        let url = format!("https://github.com/gnoviawan/{name}/issues/7");
-        assert_eq!(parse_issue_url(&format!("{url}\n")), Some(url));
-    }
+fn parse_issue_url_accepts_the_karsa_repo_only() {
+    let url = "https://github.com/lewyinn/karsa/issues/7".to_string();
+    assert_eq!(parse_issue_url(&format!("{url}\n")), Some(url));
+    // The inherited Troupe repo is no longer a valid target.
+    assert_eq!(
+        parse_issue_url("https://github.com/gnoviawan/troupe/issues/7"),
+        None
+    );
 }
 
 #[test]
@@ -531,9 +532,9 @@ fn parse_issue_url_anchors_to_the_issue_repo_shape() {
     // A warning URL printed before the issue URL must not be captured.
     assert_eq!(
         parse_issue_url(
-            "warning: see https://github.com/settings/tokens first\nhttps://github.com/gnoviawan/troupe/issues/42\n"
+            "warning: see https://github.com/settings/tokens first\nhttps://github.com/lewyinn/karsa/issues/42\n"
         ),
-        Some("https://github.com/gnoviawan/troupe/issues/42".to_string())
+        Some("https://github.com/lewyinn/karsa/issues/42".to_string())
     );
     // Non-issue URLs, other repos and non-numeric ids never match.
     assert_eq!(parse_issue_url("https://example.com/x"), None);
@@ -542,19 +543,19 @@ fn parse_issue_url_anchors_to_the_issue_repo_shape() {
         None
     );
     assert_eq!(
-        parse_issue_url("https://github.com/gnoviawan/other/issues/9"),
+        parse_issue_url("https://github.com/lewyinn/other/issues/9"),
         None
     );
     assert_eq!(
-        parse_issue_url("https://github.com/other/troupe/issues/9"),
+        parse_issue_url("https://github.com/other/karsa/issues/9"),
         None
     );
     assert_eq!(
-        parse_issue_url("https://github.com/gnoviawan/troupe/issues/abc"),
+        parse_issue_url("https://github.com/lewyinn/karsa/issues/abc"),
         None
     );
     assert_eq!(
-        parse_issue_url("http://github.com/gnoviawan/troupe/issues/4"),
+        parse_issue_url("http://github.com/lewyinn/karsa/issues/4"),
         None
     );
     assert_eq!(parse_issue_url("Created issue draft"), None);
